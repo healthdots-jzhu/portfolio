@@ -1,10 +1,14 @@
 import React from 'react';
+import { useTranslations } from '../context/LanguageContext';
 import './Footer.css';
 
-const Footer = () => (
-  <footer className="footer">
-    <p>© 2025 by Karen Zhu | Social Media Marketing</p>
-  </footer>
-);
+const Footer = () => {
+  const { t } = useTranslations();
+  return (
+    <footer className="footer">
+      <p>{t('common.footer')}</p>
+    </footer>
+  );
+};
 
 export default Footer;

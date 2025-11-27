@@ -1,11 +1,12 @@
 .navbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
   padding: 1.5rem 2rem;
   background-color: #fff;
   border-bottom: 1px solid #e8e8e8;
   font-family: 'Inter', Arial, sans-serif;
+  gap: 1.5rem;
 }
 
 .navbar-logo {
@@ -21,6 +22,7 @@
   gap: 2rem;
   margin: 0;
   padding: 0;
+  justify-content: flex-end;
 }
 
 .navbar-links li a {
@@ -33,6 +35,28 @@
 
 .navbar-links li a:hover {
   color: #6c63ff;
+}
+
+.navbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.language-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.language-select {
+  border: 1px solid #dfe2ec;
+  border-radius: 4px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.3rem 0.65rem;
+  color: #303053;
 }
 
 .hamburger {
@@ -70,8 +94,8 @@
 
 @media (max-width: 600px) {
   .navbar {
-    flex-wrap: wrap;
-    align-items: center;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
     padding: 1rem 1.25rem;
   }
   .navbar-links {
@@ -85,8 +109,11 @@
   .navbar-links.show {
     display: flex;
   }
-  .navbar-logo {
-    margin-bottom: 0;
+  .navbar-controls {
+    justify-content: space-between;
+  }
+  .language-select {
+    font-size: 0.85rem;
   }
   .hamburger {
     display: flex;

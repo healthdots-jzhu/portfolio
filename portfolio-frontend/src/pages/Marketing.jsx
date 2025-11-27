@@ -1,32 +1,35 @@
 import React, { useEffect } from 'react';
+import { useTranslations } from '../context/LanguageContext';
 
 const Marketing = () => {
+  const { t } = useTranslations();
+  const pageTitle = t('marketing.pageTitle');
+  const roles = t('marketing.roles') || [];
+
   useEffect(() => {
-    document.title = 'Social Media Marketing | Karen Zhu';
-  }, []);
+    document.title = pageTitle;
+  }, [pageTitle]);
 
   return (
     <main className="marketing-page">
-      <h1>Social Media Marketing</h1>
+      <h1>{t('marketing.title')}</h1>
       <section className="leadership-roles">
-        <h2>Leadership Roles</h2>
-        <p>Through my student leadership roles, I created promotional graphics and reels to promote events and increase engagement.</p>
-        <div className="role-card">
-          <img
-            src="/img/RCFG-headers.avif"
-            alt="Director of Creative Content - Rotman Commerce Fashion Group"
-            className="role-card-image"
-          />
-          <h3>Director of Creative Content<br/>Rotman Commerce Fashion Group (2024 - 25)</h3>
-        </div>
-        <div className="role-card">
-          <img
-            src="/img/FLC-headers.avif"
-            alt="Director of Marketing & Design - UofT Finance & Leadership Council"
-            className="role-card-image"
-          />
-          <h3>Director of Marketing & Design<br/>UofT Finance & Leadership Council (2025 - 26)</h3>
-        </div>
+        <h2>{t('marketing.sectionTitle')}</h2>
+        <p>{t('marketing.intro')}</p>
+        {roles.map((role) => (
+          <div className="role-card" key={role.title}>
+            <img
+              src={role.imageSrc}
+              alt={role.imageAlt}
+              className="role-card-image"
+            />
+            <h3>
+              {role.title}
+              <br />
+              {role.organization} {role.duration}
+            </h3>
+          </div>
+        ))}
       </section>
     </main>
   );
