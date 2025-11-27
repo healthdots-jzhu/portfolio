@@ -1,0 +1,119 @@
+.main-content {
+  min-height: 70vh;
+  padding: 2rem 2vw 3rem 2vw;
+  background: #fafbfc;
+}
+
+h1, h2, h3 {
+  color: #2d3142;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  margin-top: 1.5em;
+  font-size: 1.3rem;
+  color: #393e57;
+}
+
+h3 {
+  font-size: 1.1rem;
+  color: #555;
+  margin-top: 1.5em;
+}
+
+main {
+  max-width: 820px;
+  margin: 2.5rem auto 0 auto;
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 12px 0 #dadee9aa;
+  padding: 2.4rem 2.4rem 2.1rem 2.4rem;
+}
+
+ul, p {
+  color: #33374c;
+  line-height: 1.7;
+}
+
+.home-avatar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5em;
+}
+
+.home-avatar {
+  width: 135px;
+  height: 135px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 16px #dadee9;
+}
+
+.leadership-roles > p {
+  margin-bottom: 1rem;
+}
+
+.role-card {
+  margin-top: 1rem;
+}
+
+.role-card-image {
+  width: 100%;
+  border-radius: 12px;
+  background: #f3f3f3;
+  display: block;
+  margin: 1.8rem 0 0;
+}
+
+.merch-design {
+  text-align: center;
+}
+
+.merch-grid {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin: 2rem 0;
+}
+
+.merch-card {
+  max-width: 190px;
+  border-radius: 12px;
+  background: #f3f3f3;
+}
+
+.connect-section {
+  margin-top: 2.5em;
+  text-align: center;
+}
+
+.thrift-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.2rem;
+  margin: 1.5rem auto 0 auto;
+}
+
+.thrift-card {
+  max-width: 180px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px #dadee966;
+  background: #f5f5f8;
+}
+
+@media (max-width: 600px) {
+  .main-content {
+    padding: 1.5rem 0.75rem 2.5rem 0.75rem;
+  }
+  main {
+    margin: 1rem 0.35rem 0 0.35rem;
+    padding: 1.2rem 0.8rem;
+  }
+}
