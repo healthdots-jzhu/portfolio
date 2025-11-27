@@ -36,7 +36,7 @@ const Navbar = () => {
         <button
           className={`hamburger ${isOpen ? 'open' : ''}`}
           onClick={toggleMenu}
-          aria-label="Toggle navigation menu"
+          aria-label={t('common.toggleNavMenu')}
         >
           <span />
           <span />

@@ -1,6 +1,7 @@
 {
   "common": {
     "siteName": "Karen Zhu",
+    "baseTitle": "Karen Zhu",
     "nav": {
       "home": "À propos",
       "rcfg": "RCFG",
@@ -11,6 +12,7 @@
       "en": "English",
       "fr": "Français"
     },
+    "toggleNavMenu": "Basculer le menu de navigation",
     "footer": "© 2024 Karen Zhu | Marketing des médias sociaux"
   },
   "home": {
