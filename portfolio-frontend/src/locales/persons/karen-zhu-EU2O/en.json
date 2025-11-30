@@ -1,0 +1,121 @@
+{
+  "common": {
+    "siteName": "Karen Zhu",
+    "baseTitle": "Karen Zhu",
+    "nav": {
+      "about": "About Me",
+      "rcfg": "RCFG",
+      "marketing": "Marketing"
+    },
+    "languageLabel": "Language",
+    "languages": {
+      "en": "English",
+      "fr": "Français"
+    },
+    "toggleNavMenu": "Toggle navigation menu",
+    "footer": "© 2024 by Karen Zhu | Social Media Marketing"
+  },
+  "home": {
+    "pageTitle": "About Me | Karen Zhu",
+    "title": "Karen Zhu",
+    "subtitle": "About Me",
+    "avatarAlt": "Personal character illustration",
+    "avatarSrc": "/img/karen-zhu-EU2O/Personal-Character.avif",
+    "aboutParagraphs": [
+      "I'm a business student with a strong passion for design. Growing up taking art classes, I always enjoyed expressing my creativity in visual forms and found that I had a talent for it.",
+      "I decided to pursue business as a degree because of the flexibility of being able to mould my interests with work and school. Like art, business requires thoughtful solutions that are both creative and practical. In my first year of classes at the University of Toronto, I particularly enjoyed my marketing classes because they heavily involved a creative components and offer opportunities to expand into design.",
+      "To further explore this area of interest, in July of 2024, I completed the Google UX Design course and learned how to develop wireframes and mockups on Figma. Furthermore, I placed in the final of the 2024 Design Dash competition hosted by Rotman Commerce by applying these skills. This experience revealed a strong interest to continue pursuing creative opportunities as I not only enjoyed them, but had a talent for it.",
+      "I strive to use design and business strategy to create innovative and accessible user experiences. Please reach out to learn a bit more about me!"
+    ],
+    "funFactsTitle": "Some Fun Facts",
+    "funFacts": [
+      "I enjoy making different cafe style drinks! My favourites: matcha lattes, lavender london fogs, Hong Kong style milk tea, yuzu tea. I like visiting local cafes and rating their drinks for inspiration.",
+      "I have a passion for fashion - it's another creative form of expression and I believe in dressing for success. I also admire creative marketing in the fashion industry."
+    ]
+  },
+  "rcfg": {
+    "pageTitle": "RCFG | Karen Zhu",
+    "title": "Rotman Commerce Fashion Group (RCFG)",
+    "aboutHeading": "About",
+    "aboutBody": "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry. The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
+    "journeyHeading": "My Journey",
+    "journeyBody": "Director of Creative Content Feb 2024 - Present<br/>Manager of Creative Content Feb 2023 - Feb 2024",
+    "impactHeading": "Impact",
+    "impactItems": [
+      "450+ student event attendees",
+      "10,000+ engaged audiences",
+      "1,140 Instagram Followers"
+    ],
+    "merchHeading": "Merch Design",
+    "merchBody": "The Creative Content team was responsible for designing merch for this year's team. Below are some rough ideas and iterations upon receiving feedback:",
+    "merchImageAlts": [
+      "karen - 1 (1).png",
+      "karen - 2 (1).png",
+      "Untitled50_20240716182107.png"
+    ],
+    "merchImageSrcs": [
+      "/img/karen-zhu-EU2O/karen-1-1.avif",
+      "/img/karen-zhu-EU2O/karen-2-1.avif",
+      "/img/karen-zhu-EU2O/Untitled50_20240716182107.avif"
+    ],
+    "creativePostsHeading": "Creative Posts",
+    "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
+    "thriftHeading": "RCFG Thrift Finds",
+    "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.<br />759 Accounts Reached · 85.7% from followers · 14.3% from non-followers.",
+    "thriftImageAlts": [
+      "Exec Thrift Finds Cover",
+      "Exec Thrift Finds 1",
+      "Exec Thrift Finds 2",
+      "Exec Thrift Finds 3",
+      "Exec Thrift Finds 4",
+      "Exec Thrift Finds 5",
+      "Exec Thrift Finds 6",
+      "Exec Thrift Finds 7"
+    ],
+    "thriftImageSrcs": [
+      "/img/karen-zhu-EU2O/ExecThriftFinds.avif",
+      "/img/karen-zhu-EU2O/Exec Thrift Finds (1).avif",
+      "/img/karen-zhu-EU2O/Exec Thrift Finds (2).avif",
+      "/img/karen-zhu-EU2O/Exec Thrift Finds (3).avif",
+      "/img/karen-zhu-EU2O/Exec Thrift Finds (4).avif",
+      "/img/karen-zhu-EU2O/Exec Thrift Finds (5).avif",
+      "/img/karen-zhu-EU2O/Exec Thrift Finds (6).avif",
+      "/img/karen-zhu-EU2O/Exec Thrift Finds (7).avif"
+    ],
+    "leadershipHeading": "Director of Creative Content (Feb. 2024 - Present)",
+    "leadershipBullets": [
+      "Directed a group of 5 committee members to increase engagement and maximize event attendance.",
+      "Worked closely with Marketing Directors to organize a content calendar and upload schedule.",
+      "Encouraged idea generation and delegated tasks to committee members based on their strengths.",
+      "Kept up with Instagram/TikTok trends and executed creative fashion content posts."
+    ],
+    "creativeReelsHeading": "Creative Reels",
+    "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
+    "connectHeading": "Connect with Us",
+    "connectInstagramLabel": "Instagram",
+    "connectInstagramHandle": "@rcfashiongroup",
+    "connectWebsiteLabel": "www.rcfashiongroup.com"
+  },
+  "marketing": {
+    "pageTitle": "Social Media Marketing | Karen Zhu",
+    "title": "Social Media Marketing",
+    "sectionTitle": "Leadership Roles",
+    "intro": "Through my student leadership roles, I created promotional graphics and reels to promote events and increase engagement.",
+    "roles": [
+      {
+        "title": "Director of Creative Content",
+        "organization": "Rotman Commerce Fashion Group",
+        "duration": "(2024 - 25)",
+        "imageSrc": "/img/karen-zhu-EU2O/RCFG-headers.avif",
+        "imageAlt": "Director of Creative Content - Rotman Commerce Fashion Group"
+      },
+      {
+        "title": "Director of Marketing & Design",
+        "organization": "UofT Finance & Leadership Council",
+        "duration": "(2025 - 26)",
+        "imageSrc": "/img/karen-zhu-EU2O/FLC-headers.avif",
+        "imageAlt": "Director of Marketing & Design - UofT Finance & Leadership Council"
+      }
+    ]
+  }
+}

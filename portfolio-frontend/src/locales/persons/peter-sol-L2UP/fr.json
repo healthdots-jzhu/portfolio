@@ -1,0 +1,71 @@
+{
+  "common": {
+    "siteName": "Peter Sol",
+    "baseTitle": "Peter Sol",
+    "nav": {
+      "about": "À propos",
+      "projects": "Projets",
+      "contact": "Contact"
+    },
+    "languageLabel": "Langue",
+    "languages": {
+      "en": "English",
+      "fr": "Français"
+    },
+    "toggleNavMenu": "Basculer le menu de navigation",
+    "footer": "© 2024 Peter Sol | Développeur logiciel"
+  },
+  "home": {
+    "pageTitle": "À propos | Peter Sol",
+    "title": "Peter Sol",
+    "subtitle": "Développeur Full Stack",
+    "avatarAlt": "Photo professionnelle",
+    "avatarSrc": "/img/peter-sol-L2UP/Personal-Character.avif",
+    "aboutParagraphs": [
+      "Je suis un développeur full-stack passionné avec plus de 5 ans d'expérience dans la construction d'applications web. Je me spécialise dans React, Node.js et les technologies cloud.",
+      "Mon parcours dans le développement logiciel a commencé pendant mes études en informatique à l'université. Depuis, j'ai travaillé sur divers projets allant des plateformes e-commerce aux outils de visualisation de données.",
+      "Je crois en l'écriture d'un code propre et maintenable et rester à jour avec les dernières technologies. Quand je ne code pas, vous pouvez me trouver contribuant à des projets open-source ou mentorant des développeurs juniors."
+    ],
+    "funFactsTitle": "Quelques faits amusants",
+    "funFacts": [
+      "J'ai commencé à coder quand j'avais 12 ans avec BASIC sur un vieil ordinateur.",
+      "J'ai contribué à plus de 20 projets open-source sur GitHub.",
+      "J'adore résoudre des puzzles algorithmiques et des défis de programmation compétitive."
+    ]
+  },
+  "projects": {
+    "pageTitle": "Projets | Peter Sol",
+    "title": "Mes projets",
+    "sectionTitle": "Travail en vedette",
+    "intro": "Voici quelques-uns des projets sur lesquels j'ai travaillé récemment. Chacun représente un défi unique et une expérience d'apprentissage.",
+    "technologiesLabel": "Technologies :",
+    "projects": [
+      {
+        "title": "Plateforme E-Commerce",
+        "description": "Une solution e-commerce full-stack construite avec React, Node.js et PostgreSQL. Les fonctionnalités incluent l'authentification utilisateur, le traitement des paiements et le tableau de bord administrateur.",
+        "technologies": "React, Node.js, PostgreSQL, Stripe",
+        "imageSrc": "/img/peter-sol-L2UP/project1.avif",
+        "imageAlt": "Capture d'écran de la plateforme e-commerce"
+      },
+      {
+        "title": "Outil de visualisation de données",
+        "description": "Un tableau de bord interactif pour visualiser des ensembles de données complexes. Construit avec D3.js et React, il prend en charge les mises à jour de données en temps réel et plusieurs types de graphiques.",
+        "technologies": "React, D3.js, WebSocket, MongoDB",
+        "imageSrc": "/img/peter-sol-L2UP/project2.avif",
+        "imageAlt": "Capture d'écran de l'outil de visualisation de données"
+      }
+    ]
+  },
+  "contact": {
+    "pageTitle": "Contact | Peter Sol",
+    "title": "Entrer en contact",
+    "sectionTitle": "Informations de contact",
+    "intro": "Je suis toujours intéressé par de nouvelles opportunités et collaborations. N'hésitez pas à me contacter !",
+    "emailLabel": "Email",
+    "email": "peter.sol@example.com",
+    "linkedinLabel": "LinkedIn",
+    "linkedin": "linkedin.com/in/petersol",
+    "githubLabel": "GitHub",
+    "github": "github.com/petersol"
+  }
+}

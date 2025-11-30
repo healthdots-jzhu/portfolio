@@ -1,0 +1,72 @@
+{
+  "common": {
+    "siteName": "Peter Sol",
+    "baseTitle": "Peter Sol",
+    "nav": {
+      "about": "About Me",
+      "projects": "Projects",
+      "contact": "Contact"
+    },
+    "languageLabel": "Language",
+    "languages": {
+      "en": "English",
+      "fr": "Français"
+    },
+    "toggleNavMenu": "Toggle navigation menu",
+    "footer": "© 2024 by Peter Sol | Software Developer"
+  },
+  "home": {
+    "pageTitle": "About Me | Peter Sol",
+    "title": "Peter Sol",
+    "subtitle": "Full Stack Developer",
+    "avatarAlt": "Professional headshot",
+    "avatarSrc": "/img/peter-sol-L2UP/Personal-Character.avif",
+    "aboutParagraphs": [
+      "I'm a passionate full-stack developer with 5+ years of experience building web applications. I specialize in React, Node.js, and cloud technologies.",
+      "My journey in software development started during my computer science studies at university. Since then, I've worked on diverse projects ranging from e-commerce platforms to data visualization tools.",
+      "I believe in writing clean, maintainable code and staying up-to-date with the latest technologies. When I'm not coding, you can find me contributing to open-source projects or mentoring junior developers."
+    ],
+    "funFactsTitle": "Some Fun Facts",
+    "funFacts": [
+      "I started coding when I was 12 years old with BASIC on an old computer.",
+      "I've contributed to over 20 open-source projects on GitHub.",
+      "I love solving algorithmic puzzles and competitive programming challenges.",
+      "I'm a big fan of the TV show The Office."
+    ]
+  },
+  "projects": {
+    "pageTitle": "Projects | Peter Sol",
+    "title": "My Projects",
+    "sectionTitle": "Featured Work",
+    "intro": "Here are some of the projects I've worked on recently. Each one represents a unique challenge and learning experience.",
+    "technologiesLabel": "Technologies:",
+    "projects": [
+      {
+        "title": "E-Commerce Platform",
+        "description": "A full-stack e-commerce solution built with React, Node.js, and PostgreSQL. Features include user authentication, payment processing, and admin dashboard.",
+        "technologies": "React, Node.js, PostgreSQL, Stripe",
+        "imageSrc": "/img/peter-sol-L2UP/project1.avif",
+        "imageAlt": "E-commerce platform screenshot"
+      },
+      {
+        "title": "Data Visualization Tool",
+        "description": "An interactive dashboard for visualizing complex datasets. Built with D3.js and React, it supports real-time data updates and multiple chart types.",
+        "technologies": "React, D3.js, WebSocket, MongoDB",
+        "imageSrc": "/img/peter-sol-L2UP/project2.avif",
+        "imageAlt": "Data visualization tool screenshot"
+      }
+    ]
+  },
+  "contact": {
+    "pageTitle": "Contact | Peter Sol",
+    "title": "Get In Touch",
+    "sectionTitle": "Contact Information",
+    "intro": "I'm always interested in new opportunities and collaborations. Feel free to reach out!",
+    "emailLabel": "Email",
+    "email": "peter.sol@example.com",
+    "linkedinLabel": "LinkedIn",
+    "linkedin": "linkedin.com/in/petersol",
+    "githubLabel": "GitHub",
+    "github": "github.com/petersol"
+  }
+}

@@ -1,29 +1,14 @@
 import React, { useEffect } from 'react';
 import { useTranslations } from '../context/LanguageContext';
 
-const merchImages = [
-  '/img/karen-1-1.avif',
-  '/img/karen-2-1.avif',
-  '/img/Untitled50_20240716182107.avif',
-];
-
-const thriftFindsImages = [
-  '/img/ExecThriftFinds.avif',
-  '/img/Exec Thrift Finds (1).avif',
-  '/img/Exec Thrift Finds (2).avif',
-  '/img/Exec Thrift Finds (3).avif',
-  '/img/Exec Thrift Finds (4).avif',
-  '/img/Exec Thrift Finds (5).avif',
-  '/img/Exec Thrift Finds (6).avif',
-  '/img/Exec Thrift Finds (7).avif',
-];
-
 const RCFG = () => {
   const { t } = useTranslations();
   const pageTitle = t('rcfg.pageTitle');
   const impactItems = t('rcfg.impactItems') || [];
   const merchImageAlts = t('rcfg.merchImageAlts') || [];
+  const merchImageSrcs = t('rcfg.merchImageSrcs') || [];
   const thriftImageAlts = t('rcfg.thriftImageAlts') || [];
+  const thriftImageSrcs = t('rcfg.thriftImageSrcs') || [];
   const leadershipBullets = t('rcfg.leadershipBullets') || [];
 
   useEffect(() => {
@@ -52,32 +37,32 @@ const RCFG = () => {
       <section className="merch-design">
         <h2>{t('rcfg.merchHeading')}</h2>
         <p>{t('rcfg.merchBody')}</p>
-        <div className="merch-grid">
-          {merchImages.map((src, index) => (
-            <img
-              key={src}
-              src={src}
-              alt={merchImageAlts[index] || ''}
-              className="merch-card"
-            />
-          ))}
-        </div>
+      <div className="merch-grid">
+        {merchImageSrcs.map((src, index) => (
+          <img
+            key={src}
+            src={src}
+            alt={merchImageAlts[index] || ''}
+            className="merch-card"
+          />
+        ))}
+      </div>
       </section>
       <section className="creative-posts">
         <h2>{t('rcfg.creativePostsHeading')}</h2>
         <p>{t('rcfg.creativePostsIntro')}</p>
         <h3>{t('rcfg.thriftHeading')}</h3>
         <p>{t('rcfg.thriftStats')}</p>
-        <div className="thrift-gallery">
-          {thriftFindsImages.map((src, index) => (
-            <img
-              key={src}
-              src={src}
-              alt={thriftImageAlts[index] || ''}
-              className="thrift-card"
-            />
-          ))}
-        </div>
+      <div className="thrift-gallery">
+        {thriftImageSrcs.map((src, index) => (
+          <img
+            key={src}
+            src={src}
+            alt={thriftImageAlts[index] || ''}
+            className="thrift-card"
+          />
+        ))}
+      </div>
       </section>
       <section className="leadership">
         <h2>{t('rcfg.leadershipHeading')}</h2>

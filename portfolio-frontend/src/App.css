@@ -99,7 +99,7 @@ ul, p {
   justify-content: center;
   gap: 1.2rem;
   margin: 1.5rem auto 0 auto;
-}
+  }
 
 .thrift-card {
   max-width: 180px;

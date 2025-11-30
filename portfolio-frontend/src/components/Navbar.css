@@ -10,9 +10,18 @@
 }
 
 .navbar-logo {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 2rem;
+  font-weight: 800;
   color: #232946;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: transform 0.3s ease, letter-spacing 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
   letter-spacing: 1px;
 }
 

@@ -1,22 +1,44 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { useTranslations } from '../context/LanguageContext';
 import './Navbar.css';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { t, language, setLanguage, availableLanguages } = useTranslations();
+  const { personId } = useParams();
+  const { t, language, setLanguage, availableLanguages, personId: contextPersonId } = useTranslations();
 
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
 
-  const navLabels = t('common.nav');
+  const navLabels = t('common.nav') || {};
   const languageLabel = t('common.languageLabel');
   const languageNames = t('common.languages');
 
+  // Use personId from context (which handles default route) or from params
+  const currentPersonId = personId || contextPersonId;
+
+  // Get navigation items dynamically with correct paths
+  const navItems = Object.keys(navLabels).map(key => {
+    let path;
+    if (key === 'home') {
+      // Home should go to the person root
+      path = currentPersonId ? `/p/${currentPersonId}` : '/';
+    } else {
+      // Other pages should be relative to the person route
+      path = currentPersonId ? `/p/${currentPersonId}/${key}` : `/${key}`;
+    }
+
+    return {
+      key,
+      label: navLabels[key],
+      path
+    };
+  });
+
   return (
     <nav className="navbar">
-      <div className="navbar-logo">{t('common.siteName')}</div>
+      <Link to={currentPersonId ? `/p/${currentPersonId}` : '/'} className="navbar-logo">{t('common.siteName')}</Link>
       <div className="navbar-controls">
         <div className="language-select-wrapper">
           <select
@@ -44,9 +66,11 @@ const Navbar = () => {
         </button>
       </div>
       <ul className={`navbar-links ${isOpen ? 'show' : ''}`}>
-        <li><Link to="/" onClick={closeMenu}>{navLabels?.home}</Link></li>
-        <li><Link to="/rcfg" onClick={closeMenu}>{navLabels?.rcfg}</Link></li>
-        <li><Link to="/marketing" onClick={closeMenu}>{navLabels?.marketing}</Link></li>
+        {navItems.map(({ key, label, path }) => (
+          <li key={key}>
+            <Link to={path} onClick={closeMenu}>{label}</Link>
+          </li>
+        ))}
       </ul>
     </nav>
   );
