@@ -44,10 +44,10 @@ export const loadTranslations = (personId, language) => {
       common: {
         siteName: "Portfolio Platform",
         baseTitle: "Portfolio Platform",
-        nav: { home: "Home" },
+        nav: { about: "About" },
         footer: "Welcome to our portfolio platform"
       },
-      home: {
+      about: {
         pageTitle: "Welcome",
         title: "Portfolio Platform",
         subtitle: "Showcase your work",

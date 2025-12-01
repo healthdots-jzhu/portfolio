@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Open+Sans:wght@400;600;700&family=Edu+NSW+ACT+Cursive&display=swap');
 
 :root {
   --color-bg: #ffffff;
@@ -8,7 +8,12 @@
   --color-text: #33374c;
   --color-footer: #888;
   --color-shadow: #dadee9aa;
-  font-family: 'Montserrat', Inter, Arial, sans-serif;
+  --font-primary: 'Montserrat', sans-serif;
+  --font-secondary: 'Poppins', sans-serif;
+  --font-display: 'Playfair Display', serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-cursive: 'Edu NSW ACT Cursive', cursive;
+  font-family: var(--font-primary);
 }
 
 body {

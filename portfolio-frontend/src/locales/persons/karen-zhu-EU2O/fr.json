@@ -15,7 +15,7 @@
     "toggleNavMenu": "Basculer le menu de navigation",
     "footer": "© 2024 Karen Zhu | Marketing des médias sociaux"
   },
-  "home": {
+  "about": {
     "pageTitle": "À propos | Karen Zhu",
     "title": "Karen Zhu",
     "subtitle": "À propos de moi",
@@ -35,7 +35,11 @@
   },
   "rcfg": {
     "pageTitle": "RCFG | Karen Zhu",
-    "title": "Rotman Commerce Fashion Group (RCFG)",
+    "logoSrc": "/img/karen-zhu-EU2O/RCFG logo.avif",
+    "logoAlt": "Logo RCFG",
+    "title": "Groupe de mode Rotman Commerce",
+    "taglineFirst": "Des esprits créatifs,",
+    "taglineSecond": "Façonnés ensemble",
     "aboutHeading": "À propos",
     "aboutBody": "Un club d'affaires de mode dirigé par des étudiants de l'Université de Toronto qui tourne autour des valeurs fondamentales d'éducation, de communauté et de réseautage dans l'industrie de la mode. Le but du RCFG est de fournir aux étudiants de Rotman Commerce l'opportunité de se connecter sur des sujets de mode et de beauté tels que les tendances mondiales, les conseils de style, les carrières en mode et la mode d'affaires.",
     "journeyHeading": "Mon parcours",

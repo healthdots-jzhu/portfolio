@@ -15,7 +15,7 @@
     "toggleNavMenu": "Toggle navigation menu",
     "footer": "© 2024 by Karen Zhu | Social Media Marketing"
   },
-  "home": {
+  "about": {
     "pageTitle": "About Me | Karen Zhu",
     "title": "Karen Zhu",
     "subtitle": "About Me",
@@ -35,7 +35,56 @@
   },
   "rcfg": {
     "pageTitle": "RCFG | Karen Zhu",
-    "title": "Rotman Commerce Fashion Group (RCFG)",
+    "logoSrc": "/img/karen-zhu-EU2O/RCFG logo.avif",
+    "logoAlt": "RCFG logo",
+    "title": "Rotman Commerce Fashion Group",
+    "taglineFirst": "Creative Minds,",
+    "taglineSecond": "Fashioned Together",
+    "cards": [
+      {
+        "id": "about",
+        "title": "About",
+        "logoSrc": "",
+        "bodyLines": [
+          "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry.",
+          "The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
+          "We host engaging events and create community within the world of fashion.",
+          "Join us to expand your network and passion for the industry."
+        ]
+      },
+      {
+        "id": "journey",
+        "title": "My Journey",
+        "logoSrc": "",
+        "bodyLines": [
+          "Director of Creative Content Feb 2024 - Present",
+          "Manager of Creative Content Feb 2023 - Feb 2024",
+          "Manager of Creative Content Feb 2023 - Feb 2024"
+        ]
+      },
+      {
+        "id": "impact",
+        "title": "Impact",
+        "logoSrc": "",
+        "bodyLines": [
+          "450+ student event attendees",
+          "10,000+ engaged audiences",
+          "1,140 Instagram Followers"
+        ]
+      },
+      {
+        "id": "connect",
+        "title": "Connect with Us",
+        "logoSrc": "",
+        "bodyLines": [],
+        "isConnectCard": true,
+        "connectInstagramLabel": "Instagram",
+        "connectInstagramHandle": "@rcfashiongroup",
+        "connectInstagramUrl": "https://www.instagram.com/rcfashiongroup",
+        "connectWebsiteLabel": "www.rcfashiongroup.com",
+        "connectWebsiteUrl": "https://www.rcfashiongroup.com"
+      }
+    ],
     "aboutHeading": "About",
     "aboutBody": "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry. The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
     "journeyHeading": "My Journey",
@@ -51,12 +100,14 @@
     "merchImageAlts": [
       "karen - 1 (1).png",
       "karen - 2 (1).png",
-      "Untitled50_20240716182107.png"
+      "Untitled50_20240716182107.png",
+      "RCFG logo"
     ],
     "merchImageSrcs": [
       "/img/karen-zhu-EU2O/karen-1-1.avif",
       "/img/karen-zhu-EU2O/karen-2-1.avif",
-      "/img/karen-zhu-EU2O/Untitled50_20240716182107.avif"
+      "/img/karen-zhu-EU2O/Untitled50_20240716182107.avif",
+      "/img/karen-zhu-EU2O/RCFG logo.avif"
     ],
     "creativePostsHeading": "Creative Posts",
     "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",

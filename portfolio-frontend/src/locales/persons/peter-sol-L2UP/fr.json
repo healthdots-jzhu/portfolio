@@ -4,6 +4,7 @@
     "baseTitle": "Peter Sol",
     "nav": {
       "about": "À propos",
+      "rcfg": "RCFG",
       "projects": "Projets",
       "contact": "Contact"
     },
@@ -15,7 +16,7 @@
     "toggleNavMenu": "Basculer le menu de navigation",
     "footer": "© 2024 Peter Sol | Développeur logiciel"
   },
-  "home": {
+  "about": {
     "pageTitle": "À propos | Peter Sol",
     "title": "Peter Sol",
     "subtitle": "Développeur Full Stack",
@@ -32,6 +33,75 @@
       "J'ai contribué à plus de 20 projets open-source sur GitHub.",
       "J'adore résoudre des puzzles algorithmiques et des défis de programmation compétitive."
     ]
+  },
+  "rcfg": {
+    "pageTitle": "RCFG | Peter Sol",
+    "logoSrc": "/img/peter-sol-L2UP/rcfg-logo.avif",
+    "logoAlt": "Logo RCFG",
+    "title": "Groupe de mode Rotman Commerce",
+    "taglineFirst": "Des esprits créatifs,",
+    "taglineSecond": "Façonnés ensemble",
+    "aboutHeading": "À propos",
+    "aboutBody": "Un club de mode dirigé par des étudiants de l'Université de Toronto qui tourne autour des valeurs fondamentales de l'éducation, de la communauté et du réseautage dans l'industrie de la mode. Le but de RCFG est de fournir aux étudiants de Rotman Commerce l'opportunité de se connecter sur des sujets de mode et de beauté tels que les tendances mondiales, les conseils de style, les carrières de la mode et la mode commerciale.",
+    "journeyHeading": "Mon parcours",
+    "journeyBody": "Directeur du contenu créatif Feb 2024 - Présent<br/>Gestionnaire du contenu créatif Feb 2023 - Feb 2024",
+    "impactHeading": "Impact",
+    "impactItems": [
+      "450+ participants aux événements étudiants",
+      "10 000+ audiences engagées",
+      "1 140 followers Instagram"
+    ],
+    "merchHeading": "Conception de marchandise",
+    "merchBody": "L'équipe de contenu créatif était responsable de la conception de la marchandise pour l'équipe de cette année. Vous trouverez ci-dessous quelques idées brutes et itérations après la réception des retours :",
+    "merchImageAlts": [
+      "Itération de conception 1",
+      "Itération de conception 2",
+      "Itération de conception 3",
+      "Logo RCFG"
+    ],
+    "merchImageSrcs": [
+      "/img/peter-sol-L2UP/merch-1.avif",
+      "/img/peter-sol-L2UP/merch-2.avif",
+      "/img/peter-sol-L2UP/merch-3.avif",
+      "/img/peter-sol-L2UP/rcfg-logo.avif"
+    ],
+    "creativePostsHeading": "Publications créatives",
+    "creativePostsIntro": "Notre équipe pense à des moyens créatifs de promouvoir les événements du club et, quand il n'y a pas d'événements à venir, exécute de grands projets créatifs tels que des interviews de rue et des prises de contrôle d'Instagram pour divertir notre audience et maintenir des téléchargements constants.",
+    "thriftHeading": "Trouvailles Thrift RCFG",
+    "thriftStats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour mettre en valeur les trouvailles thrift de l'équipe exécutive.<br />759 Comptes touchés · 85,7% de followers · 14,3% de non-followers.",
+    "thriftImageAlts": [
+      "Couverture des trouvailles thrift",
+      "Trouvaille thrift 1",
+      "Trouvaille thrift 2",
+      "Trouvaille thrift 3",
+      "Trouvaille thrift 4",
+      "Trouvaille thrift 5",
+      "Trouvaille thrift 6",
+      "Trouvaille thrift 7"
+    ],
+    "thriftImageSrcs": [
+      "/img/peter-sol-L2UP/thrift-cover.avif",
+      "/img/peter-sol-L2UP/thrift-1.avif",
+      "/img/peter-sol-L2UP/thrift-2.avif",
+      "/img/peter-sol-L2UP/thrift-3.avif",
+      "/img/peter-sol-L2UP/thrift-4.avif",
+      "/img/peter-sol-L2UP/thrift-5.avif",
+      "/img/peter-sol-L2UP/thrift-6.avif",
+      "/img/peter-sol-L2UP/thrift-7.avif"
+    ],
+    "leadershipHeading": "Directeur du contenu créatif (Feb. 2024 - Présent)",
+    "leadershipBullets": [
+      "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements.",
+      "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement détaillés.",
+      "Encouragé la génération d'idées et délégué les tâches aux membres du comité en fonction de leurs forces.",
+      "Rester au courant des tendances actuelles sur Instagram et TikTok et exécuter des publications créatives de contenu de mode."
+    ],
+    "creativeReelsHeading": "Bobines créatives",
+    "creativeReelsBody": "Récapitulatifs d'événements, Jour dans la vie, et bien d'autres à venir...",
+    "connectHeading": "Connectez-vous avec nous",
+    "connectInstagramLabel": "Instagram",
+    "connectInstagramHandle": "@rcfashiongroup",
+    "connectWebsiteLabel": "www.rcfashiongroup.com"
   },
   "projects": {
     "pageTitle": "Projets | Peter Sol",
