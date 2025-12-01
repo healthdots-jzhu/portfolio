@@ -4,7 +4,7 @@
     "baseTitle": "Peter Sol",
     "nav": {
       "about": "À propos",
-      "rcfg": "RCFG",
+      "engagements": "Engagements",
       "projects": "Projets",
       "contact": "Contact"
     },
@@ -34,8 +34,8 @@
       "J'adore résoudre des puzzles algorithmiques et des défis de programmation compétitive."
     ]
   },
-  "rcfg": {
-    "pageTitle": "RCFG | Peter Sol",
+  "engagements": {
+    "pageTitle": "Engagements | Peter Sol",
     "logoSrc": "/img/peter-sol-L2UP/rcfg-logo.avif",
     "logoAlt": "Logo RCFG",
     "title": "Groupe de mode Rotman Commerce",

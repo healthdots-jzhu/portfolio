@@ -4,7 +4,7 @@
     "baseTitle": "Peter Sol",
     "nav": {
       "about": "About Me",
-      "rcfg": "RCFG",
+      "engagements": "RCFG",
       "projects": "Projects",
       "contact": "Contact"
     },
@@ -35,10 +35,10 @@
       "I'm a big fan of the TV show The Office."
     ]
   },
-  "rcfg": {
-    "pageTitle": "RCFG | Peter Sol",
+  "engagements": {
+    "pageTitle": "Engagements | Peter Sol",
     "logoSrc": "/img/peter-sol-L2UP/rcfg-logo.avif",
-    "logoAlt": "RCFG logo",
+    "logoAlt": "Engagements logo",
     "title": "Rotman Commerce Fashion Group",
     "taglineFirst": "Creative Minds,",
     "taglineSecond": "Fashioned Together",
@@ -68,7 +68,7 @@
     ],
     "creativePostsHeading": "Creative Posts",
     "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
-    "thriftHeading": "RCFG Thrift Finds",
+    "thriftHeading": "Engagements Thrift Finds",
     "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.<br />759 Accounts Reached · 85.7% from followers · 14.3% from non-followers.",
     "thriftImageAlts": [
       "Exec Thrift Finds Cover",

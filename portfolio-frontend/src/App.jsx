@@ -9,7 +9,7 @@ import PersonHome from './pages/PersonHome';
 import AboutMe from './pages/AboutMe';
 import PersonProjects from './pages/PersonProjects';
 import PersonContact from './pages/PersonContact';
-import RCFG from './pages/RCFG';
+import Engagements from './pages/Engagements';
 import Marketing from './pages/Marketing';
 import './App.css';
 
@@ -27,8 +27,8 @@ function PersonPortfolio() {
     routes.push(<Route key="about" path="about" element={<AboutMe />} />);
 
     // Other sections - relative paths
-    if (t('rcfg.title')) {
-      routes.push(<Route key="rcfg" path="rcfg" element={<RCFG />} />);
+    if (t('engagements.title')) {
+      routes.push(<Route key="engagements" path="engagements" element={<Engagements />} />);
     }
 
     if (t('marketing.title')) {

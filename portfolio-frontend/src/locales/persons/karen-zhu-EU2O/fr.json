@@ -4,7 +4,7 @@
     "baseTitle": "Karen Zhu",
     "nav": {
       "about": "À propos",
-      "rcfg": "RCFG",
+      "engagements": "RCFG",
       "marketing": "Marketing"
     },
     "languageLabel": "Langue",
@@ -33,8 +33,8 @@
       "J'ai une passion pour la mode - c'est une autre forme d'expression créative et je crois en m'habiller pour réussir. J'admire aussi le marketing créatif de l'industrie de la mode."
     ]
   },
-  "rcfg": {
-    "pageTitle": "RCFG | Karen Zhu",
+  "engagements": {
+    "pageTitle": "Engagements | Karen Zhu",
     "logoSrc": "/img/karen-zhu-EU2O/RCFG logo.avif",
     "logoAlt": "Logo RCFG",
     "title": "Groupe de mode Rotman Commerce",
