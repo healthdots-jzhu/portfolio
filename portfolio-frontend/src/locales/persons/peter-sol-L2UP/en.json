@@ -36,13 +36,15 @@
     ]
   },
   "engagements": {
-    "pageTitle": "Engagements | Peter Sol",
-    "logoSrc": "/img/peter-sol-L2UP/rcfg-logo.avif",
-    "logoAlt": "Engagements logo",
-    "title": "Rotman Commerce Fashion Group",
-    "taglineFirst": "Creative Minds,",
-    "taglineSecond": "Fashioned Together",
-    "aboutHeading": "About",
+    "items": [
+      {
+        "pageTitle": "Engagements | Peter Sol",
+        "logoSrc": "/img/peter-sol-L2UP/rcfg-logo.avif",
+        "logoAlt": "Engagements logo",
+        "title": "Rotman Commerce Fashion Group",
+        "taglineFirst": "Creative Minds,",
+        "taglineSecond": "Fashioned Together",
+        "aboutHeading": "About",
     "aboutBody": "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry. The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
     "journeyHeading": "My Journey",
     "journeyBody": "Director of Creative Content Feb 2024 - Present<br/>Manager of Creative Content Feb 2023 - Feb 2024",
@@ -52,15 +54,15 @@
       "10,000+ engaged audiences",
       "1,140 Instagram Followers"
     ],
-    "merchHeading": "Merch Design",
-    "merchBody": "The Creative Content team was responsible for designing merch for this year's team. Below are some rough ideas and iterations upon receiving feedback:",
-    "merchImageAlts": [
+    "artworkHeading": "Merch Design",
+    "artworkBody": "The Creative Content team was responsible for designing artwork for this year's team. Below are some rough ideas and iterations upon receiving feedback:",
+    "artworkImageAlts": [
       "Design iteration 1",
       "Design iteration 2",
       "Design iteration 3",
       "RCFG logo"
     ],
-    "merchImageSrcs": [
+    "artworkImageSrcs": [
       "/img/peter-sol-L2UP/merch-1.avif",
       "/img/peter-sol-L2UP/merch-2.avif",
       "/img/peter-sol-L2UP/merch-3.avif",
@@ -99,10 +101,20 @@
     ],
     "creativeReelsHeading": "Creative Reels",
     "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
+    "showcaseHeading": "Highlights",
+    "showcaseSubtitle": "Recent campaigns and outcomes",
+    "showcaseCards": [
+      { "title": "Leadership", "description": "Hosted 3 on-campus fashion events." },
+      { "title": "Coordination", "description": "Partnered with 5 local brands." },
+      { "title": "Execusion", "description": "+20% Instagram audience in Q4." },
+      { "title": "Market Analysis", "description": "Ran a 48-hour design challenge." }
+    ],
     "connectHeading": "Connect with Us",
     "connectInstagramLabel": "Instagram",
     "connectInstagramHandle": "@rcfashiongroup",
     "connectWebsiteLabel": "www.rcfashiongroup.com"
+      }
+    ]
   },
   "projects": {
     "pageTitle": "Projects | Peter Sol",

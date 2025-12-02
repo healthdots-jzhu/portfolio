@@ -12,8 +12,8 @@ h1 {
 }
 
 h2 {
-  margin-top: 1.5em;
-  font-size: 1.3rem;
+  margin-top: 0.75rem;
+  font-size: 1.8rem;
   color: #393e57;
 }
 
@@ -66,7 +66,7 @@ ul, p {
   margin: 1.8rem 0 0;
 }
 
-.merch-design {
+.artwork-design {
   text-align: center;
 }
 
@@ -124,7 +124,7 @@ ul, p {
   border-radius: 12px;
   border: 1px solid #dfe8ff; /* stronger border */
   box-shadow: 0 10px 30px rgba(32,36,64,0.08); /* deeper shadow */
-  min-height: 180px;
+  min-height: 220px; /* increased base card height */
 }
 
 .engagements-card-icon {
@@ -157,7 +157,8 @@ ul, p {
   margin: 0;
   line-height: 1.6;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  line-clamp: 6; /* show more content before expand */
+  -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -165,6 +166,7 @@ ul, p {
 
 .engagements-card.expanded p {
   display: block;
+  line-clamp: unset;
   -webkit-line-clamp: unset;
 }
 
@@ -177,6 +179,52 @@ ul, p {
   padding: 0.5rem 0;
   margin-top: 0.5rem;
   font-size: 0.9rem;
+}
+
+/* Showcase section */
+.showcase {
+  margin-top: 1rem;
+  text-align: center; /* center heading and subtitle */
+}
+
+.showcase-subtitle {
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+  color: #555a71;
+  text-align: center;
+  font-size: larger;
+}
+
+.showcase h2 {
+  text-align: center;
+}
+
+.showcase .engagements-card {
+  min-height: 160px; /* more room to avoid clipping */
+  padding: 0.8rem; /* tighter padding to match reduced height */
+  text-align: center;
+}
+
+/* images placed inside card (e.g., merch) */
+.engagements-card-image {
+  width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* do not affect card text alignment when centering the section */
+.showcase .engagements-cards {
+  text-align: initial;
+}
+
+.showcase .engagements-card h3 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.showcase .engagements-card p {
+  line-clamp: 5; /* show more lines before cut-off */
+  -webkit-line-clamp: 5;
 }
 
 .engagements-card-expand-btn:hover {
@@ -214,12 +262,28 @@ ul, p {
     gap: 2rem;
   }
 
+  /* Showcase grid columns are set dynamically via inline style from React */
+
   /* On desktop, left-align card content to match boxed card layout */
   .engagements-card {
     align-items: flex-start;
     text-align: left;
   }
+  /* But center titles/content inside showcase cards specifically */
+  .showcase .engagements-card {
+    align-items: center;
+    text-align: center;
+  }
   /* icon is absolute positioned; remove previous margin rule */
+
+  /* Ensure subsequent sections span full width below header/cards */
+  .merch-design,
+  .creative-posts,
+  .leadership,
+  .creative-reels,
+  .showcase {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 768px) {
@@ -238,7 +302,7 @@ ul, p {
   }
 }
 
-.merch-grid {
+.artwork-grid {
   display: flex;
   justify-content: center;
   gap: 1.5rem;
@@ -246,7 +310,7 @@ ul, p {
   margin: 2rem 0;
 }
 
-.merch-card {
+.artwork-card {
   max-width: 190px;
   border-radius: 12px;
   background: #f3f3f3;

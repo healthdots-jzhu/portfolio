@@ -34,118 +34,111 @@
     ]
   },
   "engagements": {
-    "pageTitle": "Engagements | Karen Zhu",
-    "logoSrc": "/img/karen-zhu-EU2O/RCFG logo.avif",
-    "logoAlt": "RCFG logo",
-    "title": "Rotman Commerce Fashion Group",
-    "taglineFirst": "Creative Minds,",
-    "taglineSecond": "Fashioned Together",
-    "cards": [
+    "items": [
       {
-        "id": "about",
-        "title": "About",
-        "logoSrc": "",
-        "bodyLines": [
-          "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry.",
-          "The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
-          "We host engaging events and create community within the world of fashion.",
-          "Join us to expand your network and passion for the industry."
-        ]
-      },
-      {
-        "id": "journey",
-        "title": "My Journey",
-        "logoSrc": "",
-        "bodyLines": [
-          "Director of Creative Content Feb 2024 - Present",
-          "Manager of Creative Content Feb 2023 - Feb 2024",
-          "Manager of Creative Content Feb 2023 - Feb 2024"
-        ]
-      },
-      {
-        "id": "impact",
-        "title": "Impact",
-        "logoSrc": "",
-        "bodyLines": [
-          "450+ student event attendees",
-          "10,000+ engaged audiences",
-          "1,140 Instagram Followers"
-        ]
-      },
-      {
-        "id": "connect",
-        "title": "Connect with Us",
-        "logoSrc": "",
-        "bodyLines": [],
-        "isConnectCard": true,
+        "pageTitle": "Engagements | Karen Zhu",
+        "logoSrc": "/img/karen-zhu-EU2O/RCFG logo.avif",
+        "logoAlt": "RCFG logo",
+        "title": "Rotman Commerce Fashion Group",
+        "taglineFirst": "Creative Minds,",
+        "taglineSecond": "Fashioned Together",
+        "cards": [
+          {
+            "id": "about",
+            "title": "About",
+            "logoSrc": "",
+            "bodyLines": [
+              "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry.",
+              "The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
+              "We host engaging events and create community within the world of fashion.",
+              "Join us to expand your network and passion for the industry."
+            ]
+          },
+          {
+            "id": "journey",
+            "title": "My Journey",
+            "logoSrc": "",
+            "bodyLines": [
+              "Director of Creative Content Feb 2024 - Present",
+              "Manager of Creative Content Feb 2023 - Feb 2024"
+            ]
+          },
+          {
+            "id": "impact",
+            "title": "Impact",
+            "logoSrc": "",
+            "bodyLines": [
+              "450+ student event attendees",
+              "10,000+ engaged audiences",
+              "1,140 Instagram Followers"
+            ]
+          },
+          {
+            "id": "connect",
+            "title": "Connect with Us",
+            "logoSrc": "",
+            "bodyLines": [],
+            "isConnectCard": true,
+            "connectInstagramLabel": "Instagram",
+            "connectInstagramHandle": "@rcfashiongroup",
+            "connectInstagramUrl": "https://www.instagram.com/rcfashiongroup",
+            "connectWebsiteLabel": "www.rcfashiongroup.com",
+            "connectWebsiteUrl": "https://www.rcfashiongroup.com"
+          }
+        ],
+        "artworkHeading": "Merch Design",
+        "artworkBody": "The Creative Content team was responsible for designing artwork for this year's team. Below are some rough ideas and iterations upon receiving feedback:",
+        "artworkImageAlts": [
+          "karen - 1 (1).png",
+          "karen - 2 (1).png",
+          "Untitled50_20240716182107.png"
+        ],
+        "artworkImageSrcs": [
+          "/img/karen-zhu-EU2O/karen-1-1.avif",
+          "/img/karen-zhu-EU2O/karen-2-1.avif",
+          "/img/karen-zhu-EU2O/Untitled50_20240716182107.avif"
+        ],
+        "creativePostsHeading": "Creative Posts",
+        "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
+        "thriftHeading": "RCFG Thrift Finds",
+        "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.<br />759 Accounts Reached · 85.7% from followers · 14.3% from non-followers.",
+        "thriftImageAlts": [
+          "Exec Thrift Finds Cover",
+          "Exec Thrift Finds 1",
+          "Exec Thrift Finds 2",
+          "Exec Thrift Finds 3",
+          "Exec Thrift Finds 4",
+          "Exec Thrift Finds 5",
+          "Exec Thrift Finds 6",
+          "Exec Thrift Finds 7"
+        ],
+        "thriftImageSrcs": [
+          "/img/karen-zhu-EU2O/ExecThriftFinds.avif",
+          "/img/karen-zhu-EU2O/Exec Thrift Finds (1).avif",
+          "/img/karen-zhu-EU2O/Exec Thrift Finds (2).avif",
+          "/img/karen-zhu-EU2O/Exec Thrift Finds (3).avif",
+          "/img/karen-zhu-EU2O/Exec Thrift Finds (4).avif",
+          "/img/karen-zhu-EU2O/Exec Thrift Finds (5).avif",
+          "/img/karen-zhu-EU2O/Exec Thrift Finds (6).avif",
+          "/img/karen-zhu-EU2O/Exec Thrift Finds (7).avif"
+        ],
+        
+        "creativeReelsHeading": "Creative Reels",
+        "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
+        "showcaseHeading": "Director of Creative Content",
+        "showcaseSubtitle": "Feb. 2024 - Present",
+        "showcaseCards": [
+          { "title": "Leadership", "description": "Directed a group of 5 committee members to increase engagement and maximize event attendance." },
+          { "title": "Coordination", "description": "Worked closely with Marketing Directors to organize a content calendar and upload schedule." },
+          { "title": "Execusion", "description": "Encouraged idea generation and delegated tasks to committee members based on their strengths." },
+          { "title": "Market Analysis", "description": "Kept up with Instagram/TikTok trends and executed creative fashion content posts." }
+        ],
+        "connectHeading": "Connect with Us",
         "connectInstagramLabel": "Instagram",
         "connectInstagramHandle": "@rcfashiongroup",
-        "connectInstagramUrl": "https://www.instagram.com/rcfashiongroup",
-        "connectWebsiteLabel": "www.rcfashiongroup.com",
-        "connectWebsiteUrl": "https://www.rcfashiongroup.com"
-      }
-    ],
-    "aboutHeading": "About",
-    "aboutBody": "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry. The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
-    "journeyHeading": "My Journey",
-    "journeyBody": "Director of Creative Content Feb 2024 - Present<br/>Manager of Creative Content Feb 2023 - Feb 2024",
-    "impactHeading": "Impact",
-    "impactItems": [
-      "450+ student event attendees",
-      "10,000+ engaged audiences",
-      "1,140 Instagram Followers"
-    ],
-    "merchHeading": "Merch Design",
-    "merchBody": "The Creative Content team was responsible for designing merch for this year's team. Below are some rough ideas and iterations upon receiving feedback:",
-    "merchImageAlts": [
-      "karen - 1 (1).png",
-      "karen - 2 (1).png",
-      "Untitled50_20240716182107.png",
-      "RCFG logo"
-    ],
-    "merchImageSrcs": [
-      "/img/karen-zhu-EU2O/karen-1-1.avif",
-      "/img/karen-zhu-EU2O/karen-2-1.avif",
-      "/img/karen-zhu-EU2O/Untitled50_20240716182107.avif",
-      "/img/karen-zhu-EU2O/RCFG logo.avif"
-    ],
-    "creativePostsHeading": "Creative Posts",
-    "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
-    "thriftHeading": "RCFG Thrift Finds",
-    "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.<br />759 Accounts Reached · 85.7% from followers · 14.3% from non-followers.",
-    "thriftImageAlts": [
-      "Exec Thrift Finds Cover",
-      "Exec Thrift Finds 1",
-      "Exec Thrift Finds 2",
-      "Exec Thrift Finds 3",
-      "Exec Thrift Finds 4",
-      "Exec Thrift Finds 5",
-      "Exec Thrift Finds 6",
-      "Exec Thrift Finds 7"
-    ],
-    "thriftImageSrcs": [
-      "/img/karen-zhu-EU2O/ExecThriftFinds.avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (1).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (2).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (3).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (4).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (5).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (6).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (7).avif"
-    ],
-    "leadershipHeading": "Director of Creative Content (Feb. 2024 - Present)",
-    "leadershipBullets": [
-      "Directed a group of 5 committee members to increase engagement and maximize event attendance.",
-      "Worked closely with Marketing Directors to organize a content calendar and upload schedule.",
-      "Encouraged idea generation and delegated tasks to committee members based on their strengths.",
-      "Kept up with Instagram/TikTok trends and executed creative fashion content posts."
-    ],
-    "creativeReelsHeading": "Creative Reels",
-    "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
-    "connectHeading": "Connect with Us",
-    "connectInstagramLabel": "Instagram",
-    "connectInstagramHandle": "@rcfashiongroup",
-    "connectWebsiteLabel": "www.rcfashiongroup.com"
+        "connectWebsiteLabel": "www.rcfashiongroup.com"
+          }
+    ]
   },
   "marketing": {
     "pageTitle": "Social Media Marketing | Karen Zhu",

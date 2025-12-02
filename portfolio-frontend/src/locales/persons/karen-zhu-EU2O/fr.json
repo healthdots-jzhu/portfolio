@@ -34,13 +34,15 @@
     ]
   },
   "engagements": {
-    "pageTitle": "Engagements | Karen Zhu",
-    "logoSrc": "/img/karen-zhu-EU2O/RCFG logo.avif",
-    "logoAlt": "Logo RCFG",
-    "title": "Groupe de mode Rotman Commerce",
-    "taglineFirst": "Des esprits créatifs,",
-    "taglineSecond": "Façonnés ensemble",
-    "aboutHeading": "À propos",
+    "items": [
+      {
+        "pageTitle": "Engagements | Karen Zhu",
+        "logoSrc": "/img/karen-zhu-EU2O/RCFG logo.avif",
+        "logoAlt": "Logo RCFG",
+        "title": "Groupe de mode Rotman Commerce",
+        "taglineFirst": "Des esprits créatifs,",
+        "taglineSecond": "Façonnés ensemble",
+        "aboutHeading": "À propos",
     "aboutBody": "Un club d'affaires de mode dirigé par des étudiants de l'Université de Toronto qui tourne autour des valeurs fondamentales d'éducation, de communauté et de réseautage dans l'industrie de la mode. Le but du RCFG est de fournir aux étudiants de Rotman Commerce l'opportunité de se connecter sur des sujets de mode et de beauté tels que les tendances mondiales, les conseils de style, les carrières en mode et la mode d'affaires.",
     "journeyHeading": "Mon parcours",
     "journeyBody": "Directrice de contenu créatif fév 2024 - Présent<br/>Gestionnaire de contenu créatif fév 2023 - fév 2024",
@@ -50,14 +52,14 @@
       "10 000+ audiences engagées",
       "1 140 abonnés Instagram"
     ],
-    "merchHeading": "Conception de marchandise",
-    "merchBody": "L'équipe de contenu créatif était responsable de la conception de marchandise pour l'équipe de cette année. Voici quelques idées approximatives et itérations après avoir reçu des commentaires :",
-    "merchImageAlts": [
+    "artworkHeading": "Conception de marchandise",
+    "artworkBody": "L'équipe de contenu créatif était responsable de la conception artistique pour l'équipe de cette année. Voici quelques idées et itérations après avoir reçu des retours :",
+    "artworkImageAlts": [
       "karen - 1 (1).png",
       "karen - 2 (1).png",
       "Untitled50_20240716182107.png"
     ],
-    "merchImageSrcs": [
+    "artworkImageSrcs": [
       "/img/karen-zhu-EU2O/karen-1-1.avif",
       "/img/karen-zhu-EU2O/karen-2-1.avif",
       "/img/karen-zhu-EU2O/Untitled50_20240716182107.avif"
@@ -86,19 +88,23 @@
       "/img/karen-zhu-EU2O/Exec Thrift Finds (6).avif",
       "/img/karen-zhu-EU2O/Exec Thrift Finds (7).avif"
     ],
-    "leadershipHeading": "Directrice de contenu créatif (fév. 2024 - Présent)",
-    "leadershipBullets": [
-      "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements.",
-      "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement.",
-      "Encouragé la génération d'idées lors des réunions et délégué les tâches aux membres du comité en fonction de leurs forces uniques.",
-      "Resté au courant des tendances Instagram et TikTok et exécuté des publications de contenu créatif en mode."
-    ],
+    
     "creativeReelsHeading": "Bobines créatives",
     "creativeReelsBody": "Résumés d'événements, Journée dans la vie, et plus bientôt...",
+    "showcaseHeading": "Directrice de contenu créatif",
+    "showcaseSubtitle": "fév. 2024 - Présent",
+    "showcaseCards": [
+      { "title": "Leadership", "description": "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements." },
+      { "title": "Coordination", "description": "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement." },
+      { "title": "Exécution", "description": "Encouragé la génération d'idées lors des réunions et délégué les tâches aux membres du comité en fonction de leurs forces uniques." },
+      { "title": "Analyse de marché", "description": "Resté au courant des tendances Instagram et TikTok et exécuté des publications de contenu créatif en mode." }
+    ],
     "connectHeading": "Connectez-vous avec nous",
     "connectInstagramLabel": "Instagram",
     "connectInstagramHandle": "@rcfashiongroup",
     "connectWebsiteLabel": "www.rcfashiongroup.com"
+      }
+    ]
   },
   "marketing": {
     "pageTitle": "Marketing des médias sociaux | Karen Zhu",

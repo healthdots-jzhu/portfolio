@@ -35,13 +35,15 @@
     ]
   },
   "engagements": {
-    "pageTitle": "Engagements | Peter Sol",
-    "logoSrc": "/img/peter-sol-L2UP/rcfg-logo.avif",
-    "logoAlt": "Logo RCFG",
-    "title": "Groupe de mode Rotman Commerce",
-    "taglineFirst": "Des esprits créatifs,",
-    "taglineSecond": "Façonnés ensemble",
-    "aboutHeading": "À propos",
+    "items": [
+      {
+        "pageTitle": "Engagements | Peter Sol",
+        "logoSrc": "/img/peter-sol-L2UP/rcfg-logo.avif",
+        "logoAlt": "Logo RCFG",
+        "title": "Groupe de mode Rotman Commerce",
+        "taglineFirst": "Des esprits créatifs,",
+        "taglineSecond": "Façonnés ensemble",
+        "aboutHeading": "À propos",
     "aboutBody": "Un club de mode dirigé par des étudiants de l'Université de Toronto qui tourne autour des valeurs fondamentales de l'éducation, de la communauté et du réseautage dans l'industrie de la mode. Le but de RCFG est de fournir aux étudiants de Rotman Commerce l'opportunité de se connecter sur des sujets de mode et de beauté tels que les tendances mondiales, les conseils de style, les carrières de la mode et la mode commerciale.",
     "journeyHeading": "Mon parcours",
     "journeyBody": "Directeur du contenu créatif Feb 2024 - Présent<br/>Gestionnaire du contenu créatif Feb 2023 - Feb 2024",
@@ -51,15 +53,15 @@
       "10 000+ audiences engagées",
       "1 140 followers Instagram"
     ],
-    "merchHeading": "Conception de marchandise",
-    "merchBody": "L'équipe de contenu créatif était responsable de la conception de la marchandise pour l'équipe de cette année. Vous trouverez ci-dessous quelques idées brutes et itérations après la réception des retours :",
-    "merchImageAlts": [
+    "artworkHeading": "Conception de marchandise",
+    "artworkBody": "L'équipe de contenu créatif était responsable de la conception artistique pour l'équipe de cette année. Vous trouverez ci-dessous quelques idées et itérations après la réception des retours :",
+    "artworkImageAlts": [
       "Itération de conception 1",
       "Itération de conception 2",
       "Itération de conception 3",
       "Logo RCFG"
     ],
-    "merchImageSrcs": [
+    "artworkImageSrcs": [
       "/img/peter-sol-L2UP/merch-1.avif",
       "/img/peter-sol-L2UP/merch-2.avif",
       "/img/peter-sol-L2UP/merch-3.avif",
@@ -98,10 +100,20 @@
     ],
     "creativeReelsHeading": "Bobines créatives",
     "creativeReelsBody": "Récapitulatifs d'événements, Jour dans la vie, et bien d'autres à venir...",
+    "showcaseHeading": "Points forts",
+    "showcaseSubtitle": "Campagnes récentes et résultats",
+    "showcaseCards": [
+      { "title": "Leadership", "description": "Organisé 3 événements de mode sur le campus." },
+      { "title": "Coordination", "description": "Partenariat avec 5 marques locales." },
+      { "title": "Exécution", "description": "+20% d'audience Instagram au T4." },
+      { "title": "Analyse de marché", "description": "Organisé un défi de design de 48 heures." }
+    ],
     "connectHeading": "Connectez-vous avec nous",
     "connectInstagramLabel": "Instagram",
     "connectInstagramHandle": "@rcfashiongroup",
     "connectWebsiteLabel": "www.rcfashiongroup.com"
+      }
+    ]
   },
   "projects": {
     "pageTitle": "Projets | Peter Sol",
