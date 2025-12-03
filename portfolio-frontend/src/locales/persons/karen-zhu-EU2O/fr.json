@@ -13,7 +13,7 @@
       "fr": "Français"
     },
     "toggleNavMenu": "Basculer le menu de navigation",
-    "footer": "© 2024 Karen Zhu | Marketing des médias sociaux"
+    "footer": "© 2025 Karen Zhu | Marketing des médias sociaux"
   },
   "about": {
     "pageTitle": "À propos | Karen Zhu",
@@ -67,27 +67,14 @@
     "creativePostsHeading": "Publications créatives",
     "creativePostsIntro": "Notre équipe pense à des moyens créatifs de promouvoir les événements du club et, lorsqu'il n'y a pas d'événements à venir, exécute de grands projets créatifs tels que des interviews de rue et des reprises Instagram pour divertir notre audience et maintenir des téléchargements cohérents.",
     "thriftHeading": "Trouvailles de seconde main RCFG",
-    "thriftStats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour présenter les trouvailles de seconde main de l'équipe exécutive.<br />759 comptes atteints · 85,7% des abonnés · 14,3% des non-abonnés.",
-    "thriftImageAlts": [
-      "Couverture des trouvailles de seconde main Exec",
-      "Trouvailles de seconde main Exec 1",
-      "Trouvailles de seconde main Exec 2",
-      "Trouvailles de seconde main Exec 3",
-      "Trouvailles de seconde main Exec 4",
-      "Trouvailles de seconde main Exec 5",
-      "Trouvailles de seconde main Exec 6",
-      "Trouvailles de seconde main Exec 7"
+    "thriftStats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour présenter les trouvailles de seconde main de l'équipe exécutive.",
+    "thriftStatsLines": [
+      "759 comptes atteints",
+      "85,7% des abonnés",
+      "14,3% des non-abonnés"
     ],
-    "thriftImageSrcs": [
-      "/img/karen-zhu-EU2O/ExecThriftFinds.avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (1).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (2).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (3).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (4).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (5).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (6).avif",
-      "/img/karen-zhu-EU2O/Exec Thrift Finds (7).avif"
-    ],
+    "thriftImageAlt": "Couverture des trouvailles de seconde main Exec",
+    "thriftImageSrc": "/img/karen-zhu-EU2O/ExecThriftFinds.avif",
     
     "creativeReelsHeading": "Bobines créatives",
     "creativeReelsBody": "Résumés d'événements, Journée dans la vie, et plus bientôt...",

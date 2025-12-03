@@ -13,7 +13,7 @@
       "fr": "Français"
     },
     "toggleNavMenu": "Toggle navigation menu",
-    "footer": "© 2024 by Karen Zhu | Social Media Marketing"
+    "footer": "© 2025 by Karen Zhu | Social Media Marketing"
   },
   "about": {
     "pageTitle": "About Me | Karen Zhu",
@@ -101,27 +101,14 @@
         "creativePostsHeading": "Creative Posts",
         "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
         "thriftHeading": "RCFG Thrift Finds",
-        "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.<br />759 Accounts Reached · 85.7% from followers · 14.3% from non-followers.",
-        "thriftImageAlts": [
-          "Exec Thrift Finds Cover",
-          "Exec Thrift Finds 1",
-          "Exec Thrift Finds 2",
-          "Exec Thrift Finds 3",
-          "Exec Thrift Finds 4",
-          "Exec Thrift Finds 5",
-          "Exec Thrift Finds 6",
-          "Exec Thrift Finds 7"
+        "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.",
+        "thriftStatsLines": [
+          "759 Accounts Reached",
+          "85.7% from followers",
+          "14.3% from non-followers"
         ],
-        "thriftImageSrcs": [
-          "/img/karen-zhu-EU2O/ExecThriftFinds.avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (1).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (2).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (3).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (4).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (5).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (6).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (7).avif"
-        ],
+        "thriftImageAlt": "Exec Thrift Finds Cover",
+        "thriftImageSrc": "/img/karen-zhu-EU2O/ExecThriftFinds.avif",
         
         "creativeReelsHeading": "Creative Reels",
         "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
