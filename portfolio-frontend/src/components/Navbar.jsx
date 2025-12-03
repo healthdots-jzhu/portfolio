@@ -38,7 +38,7 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <Link to={currentPersonId ? `/p/${currentPersonId}` : '/'} className="navbar-logo font-cursive">{t('common.siteName')}</Link>
+      <Link to={currentPersonId ? `/p/${currentPersonId}` : '/'} className="navbar-logo">{t('common.siteName')}</Link>
       <div className="navbar-controls">
         <div className="language-select-wrapper">
           <select

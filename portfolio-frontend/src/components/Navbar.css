@@ -9,15 +9,15 @@
 }
 
 .navbar-logo {
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 3rem;
+  font-weight: 400;
   color: #232946;
   letter-spacing: 0.5px;
   cursor: pointer;
   transition: transform 0.3s ease, letter-spacing 0.3s ease;
   text-decoration: none;
   display: inline-block;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Playball', cursive;
 }
 
 .navbar-logo:hover {

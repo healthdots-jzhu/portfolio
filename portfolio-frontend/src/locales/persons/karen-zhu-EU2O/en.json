@@ -3,8 +3,8 @@
     "siteName": "Karen Zhu",
     "baseTitle": "Karen Zhu",
     "nav": {
-      "about": "About Me",
-      "specialties": "Marketing"
+      "specialties": "Marketing",
+      "about": "About Me"
     },
     "languageLabel": "Language",
     "languages": {
