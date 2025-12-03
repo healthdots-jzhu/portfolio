@@ -12,7 +12,8 @@ h1 {
 }
 
 h2 {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   font-size: 1.8rem;
   color: #393e57;
 }
@@ -51,11 +52,42 @@ ul, p {
 }
 
 .leadership-roles > p {
-  margin-bottom: 1rem;
+  margin-top: 0.1rem;
+  margin-bottom: 0.1rem;
 }
 
-.role-card {
-  margin-top: 1rem;
+.leadership-roles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.leadership-roles > h2,
+.leadership-roles > p {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .leadership-roles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.role-card a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.role-card a:hover h3 {
+  text-decoration: underline;
+}
+
+.role-card a img {
+  transition: opacity 0.2s ease;
+}
+
+.role-card a:hover img {
+  opacity: 0.85;
 }
 
 .role-card-image {
@@ -64,6 +96,7 @@ ul, p {
   background: #f3f3f3;
   display: block;
   margin: 1.8rem 0 0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .artwork-design {

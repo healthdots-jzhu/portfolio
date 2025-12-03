@@ -4,8 +4,7 @@
     "baseTitle": "Karen Zhu",
     "nav": {
       "about": "À propos",
-      "engagements": "RCFG",
-      "marketing": "Marketing"
+      "specialties": "Marketing"
     },
     "languageLabel": "Langue",
     "languages": {
@@ -93,7 +92,7 @@
       }
     ]
   },
-  "marketing": {
+  "specialties": {
     "pageTitle": "Marketing des médias sociaux | Karen Zhu",
     "title": "Marketing des médias sociaux",
     "sectionTitle": "Rôles de leadership",
@@ -102,14 +101,15 @@
       {
         "title": "Directrice de contenu créatif",
         "organization": "Rotman Commerce Fashion Group",
-        "duration": "(2024 - 25)",
+        "duration": "(2024 - 2025)",
         "imageSrc": "/img/karen-zhu-EU2O/RCFG-headers.avif",
-        "imageAlt": "Directrice de contenu créatif - Rotman Commerce Fashion Group"
+        "imageAlt": "Directrice de contenu créatif - Rotman Commerce Fashion Group",
+        "link": "engagements#engagement-0"
       },
       {
         "title": "Directrice marketing et design",
         "organization": "Conseil des finances et du leadership de l'UofT",
-        "duration": "(2025 - 26)",
+        "duration": "(2025 - 2026)",
         "imageSrc": "/img/karen-zhu-EU2O/FLC-headers.avif",
         "imageAlt": "Directrice marketing et design - Conseil des finances et du leadership de l'UofT"
       }

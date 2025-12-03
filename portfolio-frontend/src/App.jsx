@@ -10,7 +10,7 @@ import AboutMe from './pages/AboutMe';
 import PersonProjects from './pages/PersonProjects';
 import PersonContact from './pages/PersonContact';
 import Engagements from './pages/Engagements';
-import Marketing from './pages/Marketing';
+import Specialties from './pages/Specialties';
 import './App.css';
 
 function PersonPortfolio() {
@@ -31,8 +31,8 @@ function PersonPortfolio() {
       routes.push(<Route key="engagements" path="engagements" element={<Engagements />} />);
     }
 
-    if (t('marketing.title')) {
-      routes.push(<Route key="marketing" path="marketing" element={<Marketing />} />);
+    if (t('specialties.title')) {
+      routes.push(<Route key="specialties" path="specialties" element={<Specialties />} />);
     }
 
     if (t('projects.title')) {
@@ -59,6 +59,26 @@ function PersonPortfolio() {
   );
 }
 
+function PersonLoader() {
+  const { personId } = useParams();
+
+  if (!personExists(personId)) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h1>Portfolio Not Found</h1>
+        <p>The portfolio for "{personId}" could not be found.</p>
+        {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
+      </div>
+    );
+  }
+
+  return (
+    <LanguageProvider personId={personId}>
+      <PersonPortfolio />
+    </LanguageProvider>
+  );
+}
+
 function App() {
   return (
     <Router>
@@ -80,26 +100,6 @@ function App() {
         } />
       </Routes>
     </Router>
-  );
-}
-
-function PersonLoader() {
-  const { personId } = useParams();
-
-  if (!personExists(personId)) {
-    return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <h1>Portfolio Not Found</h1>
-        <p>The portfolio for "{personId}" could not be found.</p>
-        {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
-      </div>
-    );
-  }
-
-  return (
-    <LanguageProvider personId={personId}>
-      <PersonPortfolio />
-    </LanguageProvider>
   );
 }
 

@@ -98,7 +98,7 @@ const Engagements = () => {
   return (
     <main className="engagements-page-wrapper">
       {items.map((item, itemIdx) => (
-        <div className="engagements-page" key={itemIdx}>
+        <div className="engagements-page" id={`engagement-${itemIdx}`} key={itemIdx}>
           <div className="engagements-header">
             <img 
               src={item.logoSrc} 
