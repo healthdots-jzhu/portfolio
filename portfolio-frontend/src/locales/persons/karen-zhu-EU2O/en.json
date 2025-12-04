@@ -14,6 +14,65 @@
     "toggleNavMenu": "Toggle navigation menu",
     "footer": "© 2025 by Karen Zhu | Social Media Marketing"
   },
+  "home": {
+    "hero": {
+      "subtitle": "Student | Designer | Marketer | Artist",
+      "intro": "A third year <color:#7fb685>business student</color> with a <color:#7fb685>passion for art and design</color>, interested in finding innovative solutions to <color:#7fb685>complex problems</color>! Welcome to my creative portfolio with samples of UX design work, website design, digital marketing, and passion projects!"
+    },
+    "features": {
+      "title": "Explore My Interests",
+      "items": [
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_about.avif",
+          "title": "About Me",
+          "path": "about"
+        },
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_marketing.avif",
+          "title": "Social Media Marketing",
+          "path": "specialties"
+        },
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_design.avif",
+          "title": "Design",
+          "path": "engagements#engagement-0"
+        },
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_art.avif",
+          "title": "Art",
+          "path": "engagements#engagement-0"
+        },
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_photography.avif",
+          "title": "Photography",
+          "path": "engagements#engagement-0"
+        }
+      ]
+    },
+    "topEngagements": [
+      {
+        "heading": "Cherish Integrated Services",
+        "title": "Event and Donations Website Design",
+        "cta_label": "Learn More",
+        "cta_path": "cherish",
+        "image": "/img/karen-zhu-EU2O/engagement_cherish.avif"
+      },
+      {
+        "heading": "Rotman Commerce Fashion Group",
+        "title": "Director of Creative Content",
+        "cta_label": "Learn More",
+        "cta_path": "engagements#engagement-0",
+        "image": "/img/karen-zhu-EU2O/engagement_rcfg.avif"
+      },
+      {
+        "heading": "RCIG x RCFTA Design Dash Finalist",
+        "title": "App Design for Financial Meal Budgeting",
+        "cta_label": "Learn More",
+        "cta_path": "simonSaves",
+        "image": "/img/karen-zhu-EU2O/engagement_simonSaves.avif"
+      }
+    ]
+  },
   "about": {
     "pageTitle": "About Me | Karen Zhu",
     "title": "Karen Zhu",

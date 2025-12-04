@@ -1,0 +1,75 @@
+# Web Page Design Template
+page:
+  title: "Home Page"
+  description: "Main landing page"
+  layout: "default"
+  instructions:
+    - "Always make the implementation responsive and mobile-friendly."
+    - "Always support both English and French languages. There should be no hard coded texts."
+    - "Bracketed text should be considered a variable. The first :: is used to separate the variable name/json path and the example text value that is to be used in Karen's locale file. The whole thing should be replaced with actual values in locale file, e.g. {common.siteName::Karen Zhu} shows 'Karen Zhu' or 'Peter Sol' on the page eventually depending on the person."
+    - "If a text variable does not exist, add the key/value pair to the locale file with best guess."
+    - "Nested tags are supported. The inner tag takes precedence. A text may include some tags like <color:#7fb685>...</color> to indicate color or other style. These tags should be parsed and rendered accordingly. If there are other tags outside of a tag, the inner tag prevails. Simple example: <color:#7fb685>green text</color> with normal text. Nested example: in <color:#994122>a <color:#7fb685>business student</color> with a <color:#7fb685>passion for art and design</color>, interested in finding innovative solutions to <color:#7fb685>complex problems</color>!</color>, the color #7fb685 should be applied to 'business student', 'passion for art and design' and 'complex problems' only instead of color #994122."
+    - "[use_existing_pattern] indicates searching for the existing design pattern or component used in other pages. If this property does not exist, follow other properties for the design."
+    - "If a property refers to a path like /images/..., it indicates an image asset to be used. The path with the variable should be set in the locale file. If the path includes {person_id}, the actual path should be replaced with the id of the actual person when the page is rendered."
+    - "Typical image file path uses the path in the folder /img/{person_id}/... to store the image assets for a person. The navigation path is usually prefixed with /p/{person_id} for person-specific routes."
+    - "if there are no ordering instructions, the sections should be rendered in the order they appear in this file."
+    - "if a property value starts with ##, it indicates an instruction in natural language for AI to build the corresponding content following existing design patterns."
+    - "when no specific CSS style is provided for size, spacing etc., follow the existing design patterns used in other pages."
+    - "Assume all image paths exist in public/img/{person_id}/"
+    - "Assume all internal links correspond to valid routes"
+    - "Assume all locale keys exist or will be added to the locale file"
+    - "Arrays in locale files indicate multiple items of the same type to be rendered in a list or grid. It could be 1 or multiple. If the layout is restricted to x columns per row, render additional row(s) accordingly."
+    - "If the array is empty, no item should be rendered."
+    - "Follow the existing design patterns and naming conventions for buttons, headings, text styles, class names etc. used in other pages."
+    - "Add ARIA label requirements for clickable icons and images for accessibility."
+
+header:
+  use_existing_pattern: true
+hero:
+  instruction: "## Display hero content centered with title at top, subtitle below, and intro paragraph at bottom. Parse and apply color tags as specified in the intro text."
+  title: "{common.siteName::Karen Zhu}"
+  subtitle: "{home.hero.subtitle::Student | Designer | Marketer | Artist}"
+  intro: "{home.hero.intro::A third year <color:#7fb685>business student</color> with a <color:#7fb685>passion for art and design</color>, interested in finding innovative solutions to <color:#7fb685>complex problems</color>! Welcome to my creative portfolio with samples of UX design work, website design, digital marketing, and passion projects!}"
+   
+sections:
+  - id: "features"
+    type: "grid"
+    title: "{home.features.title::Explore My Interests}"
+    instruction: "## Show all icon images (5 icons) in a single row on larger screens. On smaller screens, adjust the number of icons per row accordingly to ensure optimal display (e.g., 3 per row on tablets, 2 per row on mobile). Each icon should have a title below it. Each icon should be clickable and link to the corresponding section of the website (per the path property) that provides more details about that interest."
+    items:
+      - icon: "{home.features.items[0].icon::/img/{person_id}/interest_about.avif}"
+        title: "{home.features.items[0].title::About Me}"
+        path: "/p/{person_id}/about"
+      - icon: "{home.features.items[1].icon::/img/{person_id}/interest_marketing.avif}"
+        title: "{home.features.items[1].title::Social Media Marketing}"
+        path: "/p/{person_id}/specialties"
+      - icon: "{home.features.items[2].icon::/img/{person_id}/interest_design.avif}"
+        title: "{home.features.items[2].title::Design}"
+        path: "/p/{person_id}/engagements#engagement-0"
+      - icon: "{home.features.items[3].icon::/img/{person_id}/interest_art.avif}"
+        title: "{home.features.items[3].title::Art}"
+        path: "/p/{person_id}/engagements#engagement-0"
+      - icon: "{home.features.items[4].icon::/img/{person_id}/interest_photography.avif}"
+        title: "{home.features.items[4].title::Photography}"
+        path: "/p/{person_id}/engagements#engagement-0"
+  - id: "topEngagements"
+    instruction: "## This section displays a vertical list of top engagements (based on the locale file) with their titles, promotional images, and call-to-action buttons. On larger screens: show the heading, title and cta button in the left column while the image shows in the right column. On mobile: stack vertically with content (heading, title, button) on top and image below. Use <h4> for heading text, <h2> for title. Use existing 'Learn More' button style from other pages."
+    items:
+      - heading: "{home.topEngagements[0].heading::Cherish Integrated Services}"
+        title: "{home.topEngagements[0].title::Event and Donations Website Design}"        
+        cta_label: "{home.topEngagements[0].cta_label::Learn More}"
+        cta_path: "/p/{person_id}/cherish"
+        image: "{home.topEngagements[0].image::/img/{person_id}/engagement_cherish.avif}"
+      - heading: "{home.topEngagements[1].heading::Rotman Commerce Fashion Group}"
+        title: "{home.topEngagements[1].title::Director of Creative Content}"
+        cta_label: "{home.topEngagements[1].cta_label::Learn More}"
+        cta_path: "/p/{person_id}/engagements#engagement-0"
+        image: "{home.topEngagements[1].image::/img/{person_id}/engagement_rcfg.avif}"
+      - heading: "{home.topEngagements[2].heading::RCIG x RCFTA Design Dash Finalist}"
+        title: "{home.topEngagements[2].title::App Design for Financial Meal Budgeting}"
+        cta_label: "{home.topEngagements[2].cta_label::Learn More}"
+        cta_path: "/p/{person_id}/simonSaves"
+        image: "{home.topEngagements[2].image::/img/{person_id}/engagement_simonSaves.avif}"
+
+footer:
+  use_existing_pattern: true

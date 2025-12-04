@@ -14,6 +14,65 @@
     "toggleNavMenu": "Basculer le menu de navigation",
     "footer": "© 2025 Karen Zhu | Marketing des médias sociaux"
   },
+  "home": {
+    "hero": {
+      "subtitle": "Étudiante | Designer | Marketeur | Artiste",
+      "intro": "Une étudiante en commerce de troisième année avec une <color:#7fb685>passion pour l'art et le design</color>, intéressée à trouver des solutions innovantes à des <color:#7fb685>problèmes complexes</color>! Bienvenue sur mon portfolio créatif avec des échantillons de travaux de conception UX, de conception de sites Web, de marketing numérique et de projets personnels!"
+    },
+    "features": {
+      "title": "Explorez mes intérêts",
+      "items": [
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_about.avif",
+          "title": "À propos de moi",
+          "path": "about"
+        },
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_marketing.avif",
+          "title": "Marketing des médias sociaux",
+          "path": "specialties"
+        },
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_design.avif",
+          "title": "Design",
+          "path": "engagements#engagement-0"
+        },
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_art.avif",
+          "title": "Art",
+          "path": "engagements#engagement-0"
+        },
+        {
+          "icon": "/img/karen-zhu-EU2O/interest_photography.avif",
+          "title": "Photographie",
+          "path": "engagements#engagement-0"
+        }
+      ]
+    },
+    "topEngagements": [
+      {
+        "heading": "Services intégrés Cherish",
+        "title": "Conception de site Web pour événements et dons",
+        "cta_label": "En savoir plus",
+        "cta_path": "cherish",
+        "image": "/img/karen-zhu-EU2O/engagement_cherish.avif"
+      },
+      {
+        "heading": "Rotman Commerce Fashion Group",
+        "title": "Directrice de contenu créatif",
+        "cta_label": "En savoir plus",
+        "cta_path": "engagements#engagement-0",
+        "image": "/img/karen-zhu-EU2O/engagement_rcfg.avif"
+      },
+      {
+        "heading": "Finaliste RCIG x RCFTA Design Dash",
+        "title": "Conception d'application pour la budgétisation des repas",
+        "cta_label": "En savoir plus",
+        "cta_path": "simonSaves",
+        "image": "/img/karen-zhu-EU2O/engagement_simonSaves.avif"
+      }
+    ]
+  },
   "about": {
     "pageTitle": "À propos | Karen Zhu",
     "title": "Karen Zhu",
