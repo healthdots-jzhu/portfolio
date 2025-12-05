@@ -39,7 +39,8 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <Link to={currentPersonId ? `/p/${currentPersonId}` : '/'} className="navbar-logo">{t('common.siteName')}</Link>
-      <div className="navbar-controls">
+      <div className="navbar-controls"></div>
+      <div className="navbar-right">
         <div className="language-select-wrapper">
           <select
             id="language-select"
@@ -55,6 +56,13 @@ const Navbar = () => {
             ))}
           </select>
         </div>
+        <ul className={`navbar-links ${isOpen ? 'show' : ''}`}>
+          {navItems.map(({ key, label, path }) => (
+            <li key={key}>
+              <Link to={path} onClick={closeMenu}>{label}</Link>
+            </li>
+          ))}
+        </ul>
         <button
           className={`hamburger ${isOpen ? 'open' : ''}`}
           onClick={toggleMenu}
@@ -65,13 +73,6 @@ const Navbar = () => {
           <span />
         </button>
       </div>
-      <ul className={`navbar-links ${isOpen ? 'show' : ''}`}>
-        {navItems.map(({ key, label, path }) => (
-          <li key={key}>
-            <Link to={path} onClick={closeMenu}>{label}</Link>
-          </li>
-        ))}
-      </ul>
     </nav>
   );
 };

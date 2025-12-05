@@ -100,54 +100,87 @@
         "title": "Groupe de mode Rotman Commerce",
         "taglineFirst": "Des esprits créatifs,",
         "taglineSecond": "Façonnés ensemble",
-        "aboutHeading": "À propos",
-    "aboutBody": "Un club d'affaires de mode dirigé par des étudiants de l'Université de Toronto qui tourne autour des valeurs fondamentales d'éducation, de communauté et de réseautage dans l'industrie de la mode. Le but du RCFG est de fournir aux étudiants de Rotman Commerce l'opportunité de se connecter sur des sujets de mode et de beauté tels que les tendances mondiales, les conseils de style, les carrières en mode et la mode d'affaires.",
-    "journeyHeading": "Mon parcours",
-    "journeyBody": "Directrice de contenu créatif fév 2024 - Présent<br/>Gestionnaire de contenu créatif fév 2023 - fév 2024",
-    "impactHeading": "Impact",
-    "impactItems": [
-      "450+ participants aux événements étudiants",
-      "10 000+ audiences engagées",
-      "1 140 abonnés Instagram"
-    ],
-    "artworkHeading": "Conception de marchandise",
-    "artworkBody": "L'équipe de contenu créatif était responsable de la conception artistique pour l'équipe de cette année. Voici quelques idées et itérations après avoir reçu des retours :",
-    "artworkImageAlts": [
-      "karen - 1 (1).png",
-      "karen - 2 (1).png",
-      "Untitled50_20240716182107.png"
-    ],
-    "artworkImageSrcs": [
-      "/img/{person_id}/karen-1-1.avif",
-      "/img/{person_id}/karen-2-1.avif",
-      "/img/{person_id}/Untitled50_20240716182107.avif"
-    ],
-    "creativePostsHeading": "Publications créatives",
-    "creativePostsIntro": "Notre équipe pense à des moyens créatifs de promouvoir les événements du club et, lorsqu'il n'y a pas d'événements à venir, exécute de grands projets créatifs tels que des interviews de rue et des reprises Instagram pour divertir notre audience et maintenir des téléchargements cohérents.",
-    "thriftHeading": "Trouvailles de seconde main RCFG",
-    "thriftStats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour présenter les trouvailles de seconde main de l'équipe exécutive.",
-    "thriftStatsLines": [
-      "759 comptes atteints",
-      "85,7% des abonnés",
-      "14,3% des non-abonnés"
-    ],
-    "thriftImageAlt": "Couverture des trouvailles de seconde main Exec",
-    "thriftImageSrc": "/img/{person_id}/ExecThriftFinds.avif",
-    
-    "creativeReelsHeading": "Bobines créatives",
-    "creativeReelsBody": "Résumés d'événements, Journée dans la vie, et plus bientôt...",
-    "showcaseHeading": "Directrice de contenu créatif",
-    "showcaseSubtitle": "fév. 2024 - Présent",
-    "showcaseCards": [
-      { "title": "Leadership", "description": "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements." },
-      { "title": "Coordination", "description": "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement." },
-      { "title": "Exécution", "description": "Encouragé la génération d'idées lors des réunions et délégué les tâches aux membres du comité en fonction de leurs forces uniques." },
-      { "title": "Analyse de marché", "description": "Resté au courant des tendances Instagram et TikTok et exécuté des publications de contenu créatif en mode." }
-    ],
-    "connectHeading": "Connectez-vous avec nous",
-    "connectInstagramLabel": "Instagram",
-    "connectInstagramHandle": "@rcfashiongroup",
-    "connectWebsiteLabel": "www.rcfashiongroup.com"
+        "cards": [
+          {
+            "id": "about",
+            "title": "À propos",
+            "logoSrc": "",
+            "bodyLines": [
+              "Un club d'affaires de mode dirigé par des étudiants de l'Université de Toronto qui tourne autour des valeurs fondamentales d'éducation, de communauté et de réseautage dans l'industrie de la mode.",
+              "Le but du RCFG est de fournir aux étudiants de Rotman Commerce l'opportunité de se connecter sur des sujets de mode et de beauté tels que les tendances mondiales, les conseils de style, les carrières en mode et la mode d'affaires.",
+              "Nous organisons des événements engageants et créons une communauté dans le monde de la mode.",
+              "Rejoignez-nous pour élargir votre réseau et votre passion pour l'industrie."
+            ]
+          },
+          {
+            "id": "journey",
+            "title": "Mon parcours",
+            "logoSrc": "",
+            "bodyLines": [
+              "Directrice de contenu créatif fév 2024 - Présent",
+              "Gestionnaire de contenu créatif fév 2023 - fév 2024"
+            ]
+          },
+          {
+            "id": "impact",
+            "title": "Impact",
+            "logoSrc": "",
+            "bodyLines": [
+              "450+ participants aux événements étudiants",
+              "10 000+ audiences engagées",
+              "1 140 abonnés Instagram"
+            ]
+          },
+          {
+            "id": "connect",
+            "title": "Connectez-vous avec nous",
+            "logoSrc": "",
+            "bodyLines": [],
+            "isConnectCard": true,
+            "connectInstagramLabel": "Instagram",
+            "connectInstagramHandle": "@rcfashiongroup",
+            "connectInstagramUrl": "https://www.instagram.com/rcfashiongroup",
+            "connectWebsiteLabel": "www.rcfashiongroup.com",
+            "connectWebsiteUrl": "https://www.rcfashiongroup.com"
+          }
+        ],
+        "artworkHeading": "Conception de marchandise",
+        "artworkBody": "L'équipe de contenu créatif était responsable de la conception artistique pour l'équipe de cette année. Voici quelques idées et itérations après avoir reçu des retours :",
+        "artworkImageAlts": [
+          "karen - 1 (1).png",
+          "karen - 2 (1).png",
+          "Untitled50_20240716182107.png"
+        ],
+        "artworkImageSrcs": [
+          "/img/{person_id}/karen-1-1.avif",
+          "/img/{person_id}/karen-2-1.avif",
+          "/img/{person_id}/Untitled50_20240716182107.avif"
+        ],
+        "creativePostsHeading": "Publications créatives",
+        "creativePostsIntro": "Notre équipe pense à des moyens créatifs de promouvoir les événements du club et, lorsqu'il n'y a pas d'événements à venir, exécute de grands projets créatifs tels que des interviews de rue et des reprises Instagram pour divertir notre audience et maintenir des téléchargements cohérents.",
+        "thriftHeading": "Trouvailles de seconde main RCFG",
+        "thriftStats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour présenter les trouvailles de seconde main de l'équipe exécutive.",
+        "thriftStatsLines": [
+          "759 comptes atteints",
+          "85,7% des abonnés",
+          "14,3% des non-abonnés"
+        ],
+        "thriftImageAlt": "Couverture des trouvailles de seconde main Exec",
+        "thriftImageSrc": "/img/{person_id}/ExecThriftFinds.avif",
+        "creativeReelsHeading": "Bobines créatives",
+        "creativeReelsBody": "Résumés d'événements, Journée dans la vie, et plus bientôt...",
+        "showcaseHeading": "Directrice de contenu créatif",
+        "showcaseSubtitle": "fév. 2024 - Présent",
+        "showcaseCards": [
+          { "title": "Leadership", "description": "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements." },
+          { "title": "Coordination", "description": "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement." },
+          { "title": "Exécution", "description": "Encouragé la génération d'idées et délégué les tâches aux membres du comité en fonction de leurs forces uniques." },
+          { "title": "Analyse de marché", "description": "Resté au courant des tendances Instagram et TikTok et exécuté des publications de contenu créatif en mode." }
+        ],
+        "connectHeading": "Connectez-vous avec nous",
+        "connectInstagramLabel": "Instagram",
+        "connectInstagramHandle": "@rcfashiongroup",
+        "connectWebsiteLabel": "www.rcfashiongroup.com"
       }
     ]
   },
@@ -200,7 +233,7 @@
     },
     "features": {
       "centerVideo": "/img/{person_id}/cherish_demo.mp4",
-      "centerVideoPoster": "/img/{person_id}/cherish_center_graphic.avif",
+      "centerVideoPoster": "/img/{person_id}/cherish_features.avif",
       "centerVideoAlt": "Démo du site Web Cherish Love Gala",
       "leftItems": [
         {
@@ -230,12 +263,12 @@
       },
       "middleImages": [
         {
-          "src": "/img/{person_id}/cherish_homepage.avif",
-          "alt": "Capture d'écran de la page d'accueil du Love Gala"
-        },
-        {
           "src": "/img/{person_id}/cherish_donation.avif",
           "alt": "Capture d'écran de la page de promesse de don"
+        },
+        {
+          "src": "/img/{person_id}/cherish_donation2.avif",
+          "alt": "Capture d'écran de la page de promesse de don 2"
         }
       ],
       "rightImage": {

@@ -1,0 +1,341 @@
+.engagements-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.engagements-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.engagements-logo {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  margin-bottom: 1.5rem;
+}
+
+.engagements-header h1 {
+  margin-bottom: 1rem;
+}
+
+.engagements-tagline {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+  line-height: 1.4;
+}
+
+.engagements-tagline p {
+  margin: 0.25rem 0;
+}
+
+.engagements-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.engagements-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #f6f3f0; /* slightly darker tint */
+  padding: 1.6rem; /* increased top padding so icon doesn't overlap content */
+  border-radius: 12px;
+  border: 1px solid #dfe8ff; /* stronger border */
+  box-shadow: 0 10px 30px rgba(32,36,64,0.08); /* deeper shadow */
+  min-height: 220px; /* increased base card height */
+}
+
+.engagements-card-icon {
+  width: 32px;
+  height: 32px;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent; /* no box/circle/background */
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+.engagements-card-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.engagements-card h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.engagements-card p {
+  margin: 0;
+  line-height: 1.6;
+  display: -webkit-box;
+  line-clamp: 6; /* show more content before expand */
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.engagements-card.expanded p {
+  display: block;
+  line-clamp: unset;
+  -webkit-line-clamp: unset;
+}
+
+.engagements-card-expand-btn {
+  background: none;
+  border: none;
+  color: #504E70;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Showcase section */
+.showcase {
+  margin-top: 1rem;
+  text-align: center; /* center heading and subtitle */
+}
+
+.showcase-subtitle {
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+  color: #555a71;
+  text-align: center;
+  font-size: larger;
+}
+
+.showcase h2 {
+  text-align: center;
+}
+
+.showcase .engagements-card {
+  min-height: 0; /* remove fixed height to reduce empty space */
+  padding: 1.2rem;
+  text-align: center;
+}
+
+/* images placed inside card (e.g., merch) */
+.engagements-card-image {
+  width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+/* do not affect card text alignment when centering the section */
+.showcase .engagements-cards {
+  text-align: initial;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  max-width: 100%;
+}
+
+@media (min-width: 769px) {
+  .showcase .engagements-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.showcase .engagements-card h3 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.showcase .engagements-card p {
+  line-clamp: 5; /* show more lines before cut-off */
+  -webkit-line-clamp: 5;
+}
+
+.showcase .engagements-card-expand-btn {
+  display: inline-block; /* ensure button is visible */
+}
+
+.engagements-card-expand-btn:hover {
+  text-decoration: underline;
+}
+
+.engagements-card a {
+  color: #504E70;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.engagements-card a:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 1024px) {
+  .engagements-page {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 3rem;
+    align-items: stretch;
+  }
+
+  .engagements-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0;
+  }
+
+  .engagements-cards {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  /* Showcase grid columns are set dynamically via inline style from React */
+
+  /* On desktop, left-align card content to match boxed card layout */
+  .engagements-card {
+    align-items: flex-start;
+    text-align: left;
+  }
+  /* But center titles/content inside showcase cards specifically */
+  .showcase .engagements-card {
+    align-items: center;
+    text-align: center;
+  }
+  /* icon is absolute positioned; remove previous margin rule */
+
+  /* Ensure subsequent sections span full width below header/cards */
+  .artwork-design,
+  .creative-posts,
+  .leadership,
+  .creative-reels,
+  .showcase {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .engagements-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .showcase .engagements-card {
+    min-height: 0; /* remove fixed height to reduce empty space */
+    padding: 1.4rem;
+  }
+}
+
+.artwork-design {
+  text-align: center;
+}
+
+.artwork-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2.5rem;
+  margin: 2rem 0;
+  width: 100%;
+}
+
+.artwork-card {
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artwork-card img {
+  max-width: 100%;
+  height: auto;
+}
+
+.thrift-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.thrift-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.thrift-stats h3 {
+  margin: 0;
+}
+
+.thrift-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.thrift-gallery {
+  display: flex;
+  justify-content: center;
+}
+
+.thrift-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 10px #dadee966;
+  background: #f5f5f8;
+  max-width: 100%;
+}
+
+.thrift-more-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  background: transparent;
+  color: #000;
+  text-decoration: none;
+  border-radius: 0;
+  font-weight: 400;
+  font-size: 16px;
+  transition: all 0.4s ease;
+  border: 1px solid #000;
+  cursor: pointer;
+  text-align: center;
+}
+
+.thrift-more-btn:hover {
+  background: #000;
+  color: #fff;
+}
+
+.thrift-more-btn span {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .thrift-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .thrift-stats {
+    flex: 0 0 auto;
+    max-width: 350px;
+  }
+
+  .thrift-image-container {
+    flex: 1;
+  }
+}

@@ -37,9 +37,10 @@ hero:
 
 features:
   type: "feature_split_layout"
-  instruction: "## Display features in a 3-column horizontal layout on desktop: Left column shows first 2 features, center column shows a graphic/image, right column shows last 2 features. Each feature has title (h3) and description. On mobile/tablet, stack vertically: features first 2, then image, then features last 2. If there are more than 4 features defined in the locale file, show the rest in the same way as the first 4 (2 left, image, 2 right) in subsequent rows having the center image area blank."
-  center_image: "{cherish.features.centerImage::/img/{person_id}/cherish_features.avif}"
-  center_image_alt: "{cherish.features.centerImageAlt::Cherish Love Gala website mockup}"
+  instruction: "## Display features in a 3-column horizontal layout on desktop: Left column shows first 2 features, center column shows a video with play/pause controls in a laptop frame mockup, right column shows last 2 features. Each feature has title (h3) and description with Show More/Show Less buttons for expandable text. On mobile/tablet, stack vertically: features first 2, then video, then features last 2. If a feature description is clipped (text overflows), display a 'Show More' button that expands the text to full height."
+  center_video: "{cherish.features.centerVideo::/img/{person_id}/cherish_demo.mp4}"
+  center_video_poster: "{cherish.features.centerVideoPoster::/img/{person_id}/cherish_features.avif}"
+  center_video_alt: "{cherish.features.centerVideoAlt::Cherish Love Gala website demo}"
   left_items:
     - title: "{cherish.features.items[0].title::Performer Profiles}"
       description: "{cherish.features.items[0].description::Creating an introductory and donation page for each performer where supporters can pledge their donations to.}"
@@ -77,10 +78,10 @@ gallery:
     src: "{cherish.gallery.leftImage.src::/img/{person_id}/cherish_performers.avif}"
     alt: "{cherish.gallery.leftImage.alt::Love Gala Performers page screenshot}"
   middle_images:
-    - src: "{cherish.gallery.middleImages[0].src::/img/{person_id}/cherish_homepage.avif}"
-      alt: "{cherish.gallery.middleImages[0].alt::Love Gala Homepage screenshot}"
-    - src: "{cherish.gallery.middleImages[1].src::/img/{person_id}/cherish_donation.avif}"
-      alt: "{cherish.gallery.middleImages[1].alt::Pledge donation page screenshot}"
+    - src: "{cherish.gallery.middleImages[0].src::/img/{person_id}/cherish_donation.avif}"
+      alt: "{cherish.gallery.middleImages[0].alt::Pledge donation page screenshot}"
+    - src: "{cherish.gallery.middleImages[1].src::/img/{person_id}/cherish_donation2.avif}"
+      alt: "{cherish.gallery.middleImages[1].alt::Pledge donation page screenshot 2}"
   right_image:
     src: "{cherish.gallery.rightImage.src::/img/{person_id}/cherish_about.avif}"
     alt: "{cherish.gallery.rightImage.alt::What is Cherish Love Gala page screenshot}"

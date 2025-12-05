@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslations } from '../context/LanguageContext';
+import './Engagements.css';
 
 const Engagements = () => {
   const { t, resolvePath } = useTranslations();

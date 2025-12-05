@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslations } from '../context/LanguageContext';
 import { parseColorTags } from '../utils/textParser';
+import './PersonHome.css';
 
 const PersonHome = () => {
   const { t, resolvePath } = useTranslations();
