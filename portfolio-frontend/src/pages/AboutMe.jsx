@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useTranslations } from '../context/LanguageContext';
 
 const AboutMe = () => {
-  const { t } = useTranslations();
+  const { t, resolvePath } = useTranslations();
   const pageTitle = t('about.pageTitle');
   const aboutParagraphs = t('about.aboutParagraphs') || [];
   const funFacts = t('about.funFacts') || [];
@@ -15,7 +15,7 @@ const AboutMe = () => {
     <main className="home-page">
       <div className="home-avatar-wrapper">
         <img
-          src={t('about.avatarSrc')}
+          src={resolvePath(t('about.avatarSrc'))}
           alt={t('about.avatarAlt')}
           className="home-avatar"
         />

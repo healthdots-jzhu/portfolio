@@ -3,9 +3,8 @@
     "siteName": "Karen Zhu",
     "baseTitle": "Karen Zhu",
     "nav": {
-      "about": "About Me",
-      "engagements": "RCFG",
-      "marketing": "Marketing"
+      "specialties": "Marketing",
+      "about": "About Me"
     },
     "languageLabel": "Language",
     "languages": {
@@ -13,14 +12,73 @@
       "fr": "Français"
     },
     "toggleNavMenu": "Toggle navigation menu",
-    "footer": "© 2024 by Karen Zhu | Social Media Marketing"
+    "footer": "© 2025 by Karen Zhu | Social Media Marketing"
+  },
+  "home": {
+    "hero": {
+      "subtitle": "Student | Designer | Marketer | Artist",
+      "intro": "A third year <color:#7fb685>business student</color> with a <color:#7fb685>passion for art and design</color>, interested in finding innovative solutions to <color:#7fb685>complex problems</color>! Welcome to my creative portfolio with samples of UX design work, website design, digital marketing, and passion projects!"
+    },
+    "features": {
+      "title": "Explore My Interests",
+      "items": [
+        {
+          "icon": "/img/{person_id}/interest_about.avif",
+          "title": "About Me",
+          "path": "about"
+        },
+        {
+          "icon": "/img/{person_id}/interest_marketing.avif",
+          "title": "Social Media Marketing",
+          "path": "specialties"
+        },
+        {
+          "icon": "/img/{person_id}/interest_design.avif",
+          "title": "Design",
+          "path": "engagements#engagement-0"
+        },
+        {
+          "icon": "/img/{person_id}/interest_art.avif",
+          "title": "Art",
+          "path": "engagements#engagement-0"
+        },
+        {
+          "icon": "/img/{person_id}/interest_photography.avif",
+          "title": "Photography",
+          "path": "engagements#engagement-0"
+        }
+      ]
+    },
+    "topEngagements": [
+      {
+        "heading": "Cherish Integrated Services",
+        "title": "Event and Donations Website Design",
+        "cta_label": "Learn More",
+        "cta_path": "cherish",
+        "image": "/img/{person_id}/engagement_cherish.avif"
+      },
+      {
+        "heading": "Rotman Commerce Fashion Group",
+        "title": "Director of Creative Content",
+        "cta_label": "Learn More",
+        "cta_path": "engagements#engagement-0",
+        "image": "/img/{person_id}/engagement_rcfg.avif"
+      },
+      {
+        "heading": "RCIG x RCFTA Design Dash Finalist",
+        "title": "App Design for Financial Meal Budgeting",
+        "cta_label": "Learn More",
+        "cta_path": "simonSaves",
+        "image": "/img/{person_id}/engagement_simonSaves.avif"
+      }
+    ]
   },
   "about": {
     "pageTitle": "About Me | Karen Zhu",
     "title": "Karen Zhu",
     "subtitle": "About Me",
     "avatarAlt": "Personal character illustration",
-    "avatarSrc": "/img/karen-zhu-EU2O/Personal-Character.avif",
+    "avatarSrc": "/img/{person_id}/Personal-Character.avif",
     "aboutParagraphs": [
       "I'm a business student with a strong passion for design. Growing up taking art classes, I always enjoyed expressing my creativity in visual forms and found that I had a talent for it.",
       "I decided to pursue business as a degree because of the flexibility of being able to mould my interests with work and school. Like art, business requires thoughtful solutions that are both creative and practical. In my first year of classes at the University of Toronto, I particularly enjoyed my marketing classes because they heavily involved a creative components and offer opportunities to expand into design.",
@@ -37,7 +95,7 @@
     "items": [
       {
         "pageTitle": "Engagements | Karen Zhu",
-        "logoSrc": "/img/karen-zhu-EU2O/RCFG logo.avif",
+        "logoSrc": "/img/{person_id}/RCFG logo.avif",
         "logoAlt": "RCFG logo",
         "title": "Rotman Commerce Fashion Group",
         "taglineFirst": "Creative Minds,",
@@ -94,34 +152,21 @@
           "Untitled50_20240716182107.png"
         ],
         "artworkImageSrcs": [
-          "/img/karen-zhu-EU2O/karen-1-1.avif",
-          "/img/karen-zhu-EU2O/karen-2-1.avif",
-          "/img/karen-zhu-EU2O/Untitled50_20240716182107.avif"
+          "/img/{person_id}/karen-1-1.avif",
+          "/img/{person_id}/karen-2-1.avif",
+          "/img/{person_id}/Untitled50_20240716182107.avif"
         ],
         "creativePostsHeading": "Creative Posts",
         "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
         "thriftHeading": "RCFG Thrift Finds",
-        "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.<br />759 Accounts Reached · 85.7% from followers · 14.3% from non-followers.",
-        "thriftImageAlts": [
-          "Exec Thrift Finds Cover",
-          "Exec Thrift Finds 1",
-          "Exec Thrift Finds 2",
-          "Exec Thrift Finds 3",
-          "Exec Thrift Finds 4",
-          "Exec Thrift Finds 5",
-          "Exec Thrift Finds 6",
-          "Exec Thrift Finds 7"
+        "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.",
+        "thriftStatsLines": [
+          "759 Accounts Reached",
+          "85.7% from followers",
+          "14.3% from non-followers"
         ],
-        "thriftImageSrcs": [
-          "/img/karen-zhu-EU2O/ExecThriftFinds.avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (1).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (2).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (3).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (4).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (5).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (6).avif",
-          "/img/karen-zhu-EU2O/Exec Thrift Finds (7).avif"
-        ],
+        "thriftImageAlt": "Exec Thrift Finds Cover",
+        "thriftImageSrc": "/img/{person_id}/ExecThriftFinds.avif",
         
         "creativeReelsHeading": "Creative Reels",
         "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
@@ -140,7 +185,7 @@
           }
     ]
   },
-  "marketing": {
+  "specialties": {
     "pageTitle": "Social Media Marketing | Karen Zhu",
     "title": "Social Media Marketing",
     "sectionTitle": "Leadership Roles",
@@ -149,17 +194,89 @@
       {
         "title": "Director of Creative Content",
         "organization": "Rotman Commerce Fashion Group",
-        "duration": "(2024 - 25)",
-        "imageSrc": "/img/karen-zhu-EU2O/RCFG-headers.avif",
-        "imageAlt": "Director of Creative Content - Rotman Commerce Fashion Group"
+        "duration": "(2024 - 2025)",
+        "imageSrc": "/img/{person_id}/RCFG-headers.avif",
+        "imageAlt": "Director of Creative Content - Rotman Commerce Fashion Group",
+        "link": "engagements#engagement-0"
       },
       {
         "title": "Director of Marketing & Design",
         "organization": "UofT Finance & Leadership Council",
-        "duration": "(2025 - 26)",
-        "imageSrc": "/img/karen-zhu-EU2O/FLC-headers.avif",
+        "duration": "(2025 - 2026)",
+        "imageSrc": "/img/{person_id}/FLC-headers.avif",
         "imageAlt": "Director of Marketing & Design - UofT Finance & Leadership Council"
       }
     ]
+  },
+  "cherish": {
+    "browserTabName": "Cherish Integrated Services - Karen Zhu",
+    "hero": {
+      "title": "Cherish Integrated Services",
+      "subtitle": "Designing a Charity Event Website and Donation Platform",
+      "cta_label": "Visit Site",
+      "cta_url": "https://cherish-love-gala-2024.raiselysite.com/"
+    },
+    "organization": {
+      "heading": "Organization Background",
+      "body": [
+        "Cherish Integrated Services (CHIS) is a non-profit organization and registered charity that serves individuals with developmental disabilities in the Greater Toronto Area. They offer a variety of programs for each age group to aid in vocational training, job venture, and or daily living.",
+        "CHIS hosts an annual Love Gala to raise funds to further expand their services and facilities. This year, proceeds will go towards developping their new Vocational Training Centre. This new facility will help more developped trainees work in a real cafe environemnt and learn employable skills."
+      ]
+    },
+    "role": {
+      "heading": "My Role",
+      "title": "Digital Marketing Coordinator",
+      "dates": "Jun 2024 - Aug 2024",
+      "body": [
+        "As the sole designer during my term, I developped an website for the 2024 Cherish Love Gala charity event using the platform Raisley. I ensured to include important details regarding the event and managed incoming donations and ticket sales.",
+        "In addition to the design aspect, I heavily participated in developping the sponsorship package and communicating with local businesses and media outlets in regards to the event."
+      ]
+    },
+    "features": {
+      "centerVideo": "/img/{person_id}/cherish_demo.mp4",
+      "centerVideoPoster": "/img/{person_id}/cherish_features.avif",
+      "centerVideoAlt": "Cherish Love Gala website demo",
+      "leftItems": [
+        {
+          "title": "Performer Profiles",
+          "description": "Creating an introductory and donation page for each performer where supporters can pledge their donations to."
+        },
+        {
+          "title": "Ticket Sales & Donations",
+          "description": "Linking Powr.io for ticket sales and food cost deductions in tax receipts."
+        }
+      ],
+      "rightItems": [
+        {
+          "title": "Event Details",
+          "description": "Informing guests on the location, date, time, and ticket inclusions. Describing the cause in which all proceeds will go towards."
+        },
+        {
+          "title": "Sponsors",
+          "description": "List all supporters, event sponsors, and prize (raffle and silent auction) sponsors in the footer with linkbacks to their website."
+        }
+      ]
+    },
+    "gallery": {
+      "leftImage": {
+        "src": "/img/{person_id}/cherish_performers.avif",
+        "alt": "Love Gala Performers page screenshot"
+      },
+      "middleImages": [
+        {
+          "src": "/img/{person_id}/cherish_donation.avif",
+          "alt": "Pledge donation page screenshot"
+        },
+        {
+          "src": "/img/{person_id}/cherish_donation2.avif",
+          "alt": "Pledge donation page screenshot2"
+        }
+      ],
+      "rightImage": {
+        "src": "/img/{person_id}/cherish_about.avif",
+        "alt": "What is Cherish Love Gala page screenshot"
+      }
+    }
   }
 }
+

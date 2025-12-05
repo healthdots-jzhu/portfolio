@@ -72,26 +72,8 @@
     "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
     "thriftHeading": "Engagements Thrift Finds",
     "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.<br />759 Accounts Reached · 85.7% from followers · 14.3% from non-followers.",
-    "thriftImageAlts": [
-      "Exec Thrift Finds Cover",
-      "Exec Thrift Finds 1",
-      "Exec Thrift Finds 2",
-      "Exec Thrift Finds 3",
-      "Exec Thrift Finds 4",
-      "Exec Thrift Finds 5",
-      "Exec Thrift Finds 6",
-      "Exec Thrift Finds 7"
-    ],
-    "thriftImageSrcs": [
-      "/img/peter-sol-L2UP/thrift-cover.avif",
-      "/img/peter-sol-L2UP/thrift-1.avif",
-      "/img/peter-sol-L2UP/thrift-2.avif",
-      "/img/peter-sol-L2UP/thrift-3.avif",
-      "/img/peter-sol-L2UP/thrift-4.avif",
-      "/img/peter-sol-L2UP/thrift-5.avif",
-      "/img/peter-sol-L2UP/thrift-6.avif",
-      "/img/peter-sol-L2UP/thrift-7.avif"
-    ],
+    "thriftImageAlt": "Exec Thrift Finds Cover",
+    "thriftImageSrc": "/img/peter-sol-L2UP/thrift-cover.avif",
     "leadershipHeading": "Director of Creative Content (Feb. 2024 - Present)",
     "leadershipBullets": [
       "Directed a group of 5 committee members to increase engagement and maximize event attendance.",

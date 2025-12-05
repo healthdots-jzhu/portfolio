@@ -10,7 +10,8 @@ import AboutMe from './pages/AboutMe';
 import PersonProjects from './pages/PersonProjects';
 import PersonContact from './pages/PersonContact';
 import Engagements from './pages/Engagements';
-import Marketing from './pages/Marketing';
+import Specialties from './pages/Specialties';
+import Cherish from './pages/Cherish';
 import './App.css';
 
 function PersonPortfolio() {
@@ -31,8 +32,8 @@ function PersonPortfolio() {
       routes.push(<Route key="engagements" path="engagements" element={<Engagements />} />);
     }
 
-    if (t('marketing.title')) {
-      routes.push(<Route key="marketing" path="marketing" element={<Marketing />} />);
+    if (t('specialties.title')) {
+      routes.push(<Route key="specialties" path="specialties" element={<Specialties />} />);
     }
 
     if (t('projects.title')) {
@@ -41,6 +42,11 @@ function PersonPortfolio() {
 
     if (t('contact.title')) {
       routes.push(<Route key="contact" path="contact" element={<PersonContact />} />);
+    }
+
+    // Project-specific pages
+    if (t('cherish.hero.title')) {
+      routes.push(<Route key="cherish" path="cherish" element={<Cherish />} />);
     }
 
     return routes;
@@ -56,6 +62,26 @@ function PersonPortfolio() {
       </div>
       <Footer />
     </>
+  );
+}
+
+function PersonLoader() {
+  const { personId } = useParams();
+
+  if (!personExists(personId)) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h1>Portfolio Not Found</h1>
+        <p>The portfolio for "{personId}" could not be found.</p>
+        {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
+      </div>
+    );
+  }
+
+  return (
+    <LanguageProvider personId={personId}>
+      <PersonPortfolio />
+    </LanguageProvider>
   );
 }
 
@@ -80,26 +106,6 @@ function App() {
         } />
       </Routes>
     </Router>
-  );
-}
-
-function PersonLoader() {
-  const { personId } = useParams();
-
-  if (!personExists(personId)) {
-    return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <h1>Portfolio Not Found</h1>
-        <p>The portfolio for "{personId}" could not be found.</p>
-        {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
-      </div>
-    );
-  }
-
-  return (
-    <LanguageProvider personId={personId}>
-      <PersonPortfolio />
-    </LanguageProvider>
   );
 }
 

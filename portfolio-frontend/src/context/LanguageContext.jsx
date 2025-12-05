@@ -30,6 +30,13 @@ export const LanguageProvider = ({ children, personId }) => {
         const result = getNestedValue(translations, path);
         return result !== undefined ? result : path;
       },
+      // Resolve paths containing {person_id} placeholder
+      // Example: "/img/{person_id}/photo.jpg" becomes "/img/karen-zhu-EU2O/photo.jpg"
+      // This allows locale files to use a dynamic placeholder instead of hardcoded person IDs
+      resolvePath: (path) => {
+        if (!path || typeof path !== 'string') return path;
+        return path.replace(/{person_id}/g, personId || 'karen-zhu-EU2O');
+      },
     };
   }, [personId, language, translations]);
 

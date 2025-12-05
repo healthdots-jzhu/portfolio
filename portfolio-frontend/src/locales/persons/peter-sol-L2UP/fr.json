@@ -71,26 +71,8 @@
     "creativePostsIntro": "Notre équipe pense à des moyens créatifs de promouvoir les événements du club et, quand il n'y a pas d'événements à venir, exécute de grands projets créatifs tels que des interviews de rue et des prises de contrôle d'Instagram pour divertir notre audience et maintenir des téléchargements constants.",
     "thriftHeading": "Trouvailles Thrift RCFG",
     "thriftStats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour mettre en valeur les trouvailles thrift de l'équipe exécutive.<br />759 Comptes touchés · 85,7% de followers · 14,3% de non-followers.",
-    "thriftImageAlts": [
-      "Couverture des trouvailles thrift",
-      "Trouvaille thrift 1",
-      "Trouvaille thrift 2",
-      "Trouvaille thrift 3",
-      "Trouvaille thrift 4",
-      "Trouvaille thrift 5",
-      "Trouvaille thrift 6",
-      "Trouvaille thrift 7"
-    ],
-    "thriftImageSrcs": [
-      "/img/peter-sol-L2UP/thrift-cover.avif",
-      "/img/peter-sol-L2UP/thrift-1.avif",
-      "/img/peter-sol-L2UP/thrift-2.avif",
-      "/img/peter-sol-L2UP/thrift-3.avif",
-      "/img/peter-sol-L2UP/thrift-4.avif",
-      "/img/peter-sol-L2UP/thrift-5.avif",
-      "/img/peter-sol-L2UP/thrift-6.avif",
-      "/img/peter-sol-L2UP/thrift-7.avif"
-    ],
+    "thriftImageAlt": "Couverture des trouvailles thrift",
+    "thriftImageSrc": "/img/peter-sol-L2UP/thrift-cover.avif",
     "leadershipHeading": "Directeur du contenu créatif (Feb. 2024 - Présent)",
     "leadershipBullets": [
       "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements.",

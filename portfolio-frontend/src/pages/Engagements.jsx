@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslations } from '../context/LanguageContext';
+import './Engagements.css';
 
 const Engagements = () => {
-  const { t } = useTranslations();
+  const { t, resolvePath } = useTranslations();
   const [expandedCards, setExpandedCards] = useState({});
   const contentRefs = useRef({});
   const [isClipped, setIsClipped] = useState({});
   // Support multiple engagements (array) while remaining backwards-compatible
   const engagementsRoot = t('engagements') || {};
+  const thriftImageSrc = engagementsRoot.thriftImageSrc;
   const items = Array.isArray(engagementsRoot.items)
     ? engagementsRoot.items
     : [
@@ -27,6 +29,7 @@ const Engagements = () => {
           creativePostsIntro: engagementsRoot.creativePostsIntro,
           thriftHeading: engagementsRoot.thriftHeading,
           thriftStats: engagementsRoot.thriftStats,
+          thriftStatsLines: engagementsRoot.thriftStatsLines || [],
           thriftImageSrcs: engagementsRoot.thriftImageSrcs || [],
           thriftImageAlts: engagementsRoot.thriftImageAlts || [],
           leadershipHeading: engagementsRoot.leadershipHeading,
@@ -54,7 +57,6 @@ const Engagements = () => {
   }, [items]);
 
   // Measure whether card paragraphs are visually clipped (due to CSS clamp)
-  // Measure whether card paragraphs are visually clipped (due to CSS clamp)
   useEffect(() => {
     const measure = () => {
       const next = {};
@@ -62,6 +64,18 @@ const Engagements = () => {
         const cards = Array.isArray(item.cards) ? item.cards : [];
         cards.forEach((card, cidx) => {
           const id = `${itemIdx}-${card.id || `card-${cidx}`}`;
+          const el = contentRefs.current[id];
+          if (!el) return;
+          if (expandedCards[id]) {
+            next[id] = false;
+          } else {
+            next[id] = el.scrollHeight > el.clientHeight + 1;
+          }
+        });
+        // Also check showcase cards
+        const showcaseCards = Array.isArray(item.showcaseCards) ? item.showcaseCards : [];
+        showcaseCards.forEach((card, sidx) => {
+          const id = `${itemIdx}-showcase-${sidx}`;
           const el = contentRefs.current[id];
           if (!el) return;
           if (expandedCards[id]) {
@@ -85,10 +99,10 @@ const Engagements = () => {
   return (
     <main className="engagements-page-wrapper">
       {items.map((item, itemIdx) => (
-        <div className="engagements-page" key={itemIdx}>
+        <div className="engagements-page" id={`engagement-${itemIdx}`} key={itemIdx}>
           <div className="engagements-header">
             <img 
-              src={item.logoSrc} 
+              src={resolvePath(item.logoSrc)} 
               alt={item.logoAlt}
               className="engagements-logo"
             />
@@ -105,21 +119,17 @@ const Engagements = () => {
                 const id = `${itemIdx}-${card.id || `card-${cidx}`}`;
                 const title = card.title || card.heading || `Card ${cidx + 1}`;
                 const logo = card.logoSrc || card.logo || '';
-                const bodyLines = Array.isArray(card.bodyLines)
-                  ? card.bodyLines
-                  : (card.body ? [card.body] : []);
+                const bodyLines = Array.isArray(card.bodyLines) ? card.bodyLines : (card.body ? [card.body] : []);
                 const bodyHtml = bodyLines.join('<br/>');
                 const expanded = !!expandedCards[id];
-                // determine whether to show the expand control: either measured clipped OR long array
                 const showMore = !!isClipped[id] || bodyLines.length >= 4;
 
                 return (
                   <div className={`engagements-card ${expanded ? 'expanded' : ''}`} key={id}>
                     <div className="engagements-card-icon">
                       {logo ? (
-                        <img src={logo} alt={`${title} icon`} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
+                        <img src={resolvePath(logo)} alt={`${title} icon`} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
                       ) : (
-                        // fallback svg - render different icons based on card id
                         card.id === 'about' ? (
                           <svg viewBox="29.5 30 141 140" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                             <path d="M170.5 73.581c0-11.647-4.569-22.596-12.866-30.831-17.127-17-44.992-16.999-62.119 0L50.623 87.306a3.959 3.959 0 0 0-1.172 2.809v54.463l-18.779 18.64a3.954 3.954 0 0 0-.001 5.618A4.001 4.001 0 0 0 33.5 170a4.004 4.004 0 0 0 2.828-1.163l18.78-18.64h54.873c1.062 0 2.081-.42 2.832-1.167l26.152-26.035c.314-.233.592-.508.825-.822l17.843-17.763c8.298-8.234 12.867-19.183 12.867-30.829zm-62.179 68.672H63.112l18.598-18.46h45.154l-18.543 18.46zm43.653-43.457l-17.129 17.053h-45.13l39.722-39.426a3.954 3.954 0 0 0 .001-5.618 4.02 4.02 0 0 0-5.657-.001l-66.328 65.835V91.761l43.72-43.393c14.008-13.905 36.801-13.905 50.807 0 6.786 6.734 10.522 15.688 10.522 25.212 0 9.523-3.736 18.477-10.522 25.211l-.006.005z" fill="#504E70"/>
@@ -189,16 +199,26 @@ const Engagements = () => {
               {item.showcaseSubtitle && (
                 <p className="showcase-subtitle">{item.showcaseSubtitle}</p>
               )}
-              <section
-                className="engagements-cards"
-                style={{ gridTemplateColumns: `repeat(${Math.min((item.showcaseCards || []).length || 1, 4)}, 1fr)` }}
-              >
-                {(item.showcaseCards || []).map((sc, sidx) => (
-                  <div className="engagements-card" key={sidx}>
-                    <h3>{sc.title}</h3>
-                    <p>{sc.description}</p>
-                  </div>
-                ))}
+              <section className="engagements-cards">
+                {(item.showcaseCards || []).map((sc, sidx) => {
+                  const cardId = `${itemIdx}-showcase-${sidx}`;
+                  const isExpanded = expandedCards[cardId];
+                  const needsExpand = isClipped[cardId];
+                  return (
+                    <div className={`engagements-card ${isExpanded ? 'expanded' : ''}`} key={sidx}>
+                      <h3>{sc.title}</h3>
+                      <p ref={(el) => (contentRefs.current[cardId] = el)}>{sc.description}</p>
+                      {needsExpand && (
+                        <button
+                          className="engagements-card-expand-btn"
+                          onClick={() => toggleExpand(cardId)}
+                        >
+                          {isExpanded ? 'Less' : 'More'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </section>
             </section>
           )}
@@ -210,15 +230,13 @@ const Engagements = () => {
                 <p className="showcase-subtitle">{item.artworkBody}</p>
               )}
               <section
-                className="engagements-cards"
-                style={{ gridTemplateColumns: `repeat(${Math.min((item.artworkImageSrcs || []).length || 1, 4)}, 1fr)` }}
+                className="artwork-grid"
               >
                 {(item.artworkImageSrcs || []).map((src, index) => (
-                  <div className="engagements-card" key={src}>
+                  <div className="artwork-card" key={src}>
                     <img
-                      src={src}
+                      src={resolvePath(src)}
                       alt={(item.artworkImageAlts || [])[index] || ''}
-                      className="engagements-card-image"
                     />
                   </div>
                 ))}
@@ -232,15 +250,35 @@ const Engagements = () => {
               <p>{item.creativePostsIntro}</p>
               <h3>{item.thriftHeading}</h3>
               <p>{item.thriftStats}</p>
-              <div className="thrift-gallery">
-                {(item.thriftImageSrcs || []).map((src, index) => (
-                  <img
-                    key={src}
-                    src={src}
-                    alt={(item.thriftImageAlts || [])[index] || ''}
-                    className="thrift-card"
-                  />
-                ))}
+              <div className="thrift-content">
+                <div className="thrift-stats">
+                  {(item.thriftStatsLines || []).map((line, idx) => {
+                    const [num, ...rest] = String(line).split(' ');
+                    return (
+                      <h3 key={idx}>
+                        <strong>{num}</strong> {rest.join(' ')}
+                      </h3>
+                    );
+                  })}
+                </div>
+                <div className="thrift-image-container">
+                  <div className="thrift-gallery">
+                    <img
+                      src={resolvePath(item.thriftImageSrc)}
+                      alt={item.thriftImageAlt || ''}
+                      className="thrift-card"
+                    />
+                  </div>
+                  <a 
+                    href="https://www.instagram.com/rcfashiongroup/?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw%3D%3D#" 
+                    target="_blank" 
+                    rel="noreferrer noopener" 
+                    className="thrift-more-btn"
+                    aria-label="More Posts"
+                  >
+                    <span>More Posts</span>
+                  </a>
+                </div>
               </div>
             </section>
           )}
