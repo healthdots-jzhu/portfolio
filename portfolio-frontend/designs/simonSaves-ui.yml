@@ -1,0 +1,96 @@
+# Web Page Design Template
+page:
+  title: "SimonSaves"
+  description: "App Design for Financial Meal Budgeting project page"
+  layout: "default"
+  instructions:
+    - "Always make the implementation responsive and mobile-friendly."
+    - "Always support both English and French languages. There should be no hard coded texts."
+    - "Bracketed text should be considered a variable. The first :: is used to separate the variable name/json path and the example text value that is to be used in Karen's locale file. The whole thing should be replaced with actual values in locale file, e.g. {common.siteName::Karen Zhu} shows 'Karen Zhu' or 'Peter Sol' on the page eventually depending on the person."
+    - "If a text variable does not exist, add the key/value pair to the locale file with best guess."
+    - "Nested tags are supported. The inner tag takes precedence. A text may include some tags like <color:#7fb685>...</color> to indicate color or other style. These tags should be parsed and rendered accordingly. If there are other tags outside of a tag, the inner tag prevails. Simple example: <color:#7fb685>green text</color> with normal text. Nested example: in <color:#994122>a <color:#7fb685>business student</color> with a <color:#7fb685>passion for art and design</color>, interested in finding innovative solutions to <color:#7fb685>complex problems</color>!</color>, the color #7fb685 should be applied to 'business student', 'passion for art and design' and 'complex problems' only instead of color #994122."
+    - "[use_existing_pattern] indicates searching for the existing design pattern or component used in other pages. If this property does not exist, follow other properties for the design."
+    - "If a property refers to a path like /images/..., it indicates an image asset to be used. The path with the variable should be set in the locale file. If the path includes {person_id}, the actual path should be replaced with the id of the actual person when the page is rendered."
+    - "Typical image file path uses the path in the folder /img/{person_id}/... to store the image assets for a person. The navigation path is usually prefixed with /p/{person_id} for person-specific routes."
+    - "if there are no ordering instructions, the sections should be rendered in the order they appear in this file."
+    - "if a property value starts with ##, it indicates an instruction in natural language for AI to build the corresponding content following existing design patterns."
+    - "when no specific CSS style is provided for size, spacing etc., follow the existing design patterns used in other pages."
+    - "Assume all image paths exist in public/img/{person_id}/"
+    - "Assume all internal links correspond to valid routes"
+    - "Assume all locale keys exist or will be added to the locale file"
+    - "Arrays in locale files indicate multiple items of the same type to be rendered in a list or grid. It could be 1 or multiple. If the layout is restricted to x columns per row, render additional row(s) accordingly."
+    - "If the array is empty, no item should be rendered."
+    - "Follow the existing design patterns and naming conventions for buttons, headings, text styles, class names etc. used in other pages."
+    - "Add ARIA label requirements for clickable icons and images for accessibility."
+    - "Repeatable sections may have different types of layouts like text, grid, list, gallery, etc. Follow the instructions for each section accordingly."
+
+browser_tab_name: "{simonSaves.browserTabName::SimonSaves - Karen Zhu}"
+
+header:
+  use_existing_pattern: true
+
+hero:
+  instruction: "## Display project hero with title, subtitle, and 'View Prototype' button. Center-align content."
+  title: "{simonSaves.hero.title::SimonSaves}"
+  subtitle: "{simonSaves.hero.subtitle::App Design for Financial Meal Budgeting}"
+  cta_label: "{simonSaves.hero.cta_label::View Prototype}"
+  cta_url: "{simonSaves.hero.cta_url::https://www.figma.com/proto/xw4hyc3g8zxUA3be71XRB2/Recipe-Book-App-Prototype?type=design&node-id=1-2&t=hYJdCZQe1uISo0eg-1&scaling=scale-down&page-id=0%3A1&starting-point-node-id=180%3A223}"
+
+sections:
+  - id: "overview"
+    type: "text"
+    heading: "{simonSaves.overview.heading::Overview}"
+    instruction: "## Display heading followed by multiple paragraphs of body text. Use standard paragraph spacing."
+    body:
+      - "{simonSaves.overview.body[0]::Our group of 4 placed in the <color:#7fb685>Top 3</color> for a case competition that challenged us to design a solution to solve an issue in the financial technology sector. Our solution introduced an app that uses <color:#7fb685>machine learning</color> to recommend recipes and spending on meals based on users' budgets and dietary restrictions and preferences.}"
+
+  - id: "key_features"
+    type: "grid"
+    title: "{simonSaves.keyFeatures.title::Key Features}"
+    instruction: "## Display features as a grid. On larger screens, show 2 columns. On mobile, show 1 column per row. Each feature has a bullet point icon/symbol followed by the feature text."
+    items:
+      - text: "{simonSaves.keyFeatures.items[0]::Filtered recipe and grocery search based on dietary restrictions and recommendations}"
+      - text: "{simonSaves.keyFeatures.items[1]::Financial food budgeting summary on homepage}"
+      - text: "{simonSaves.keyFeatures.items[2]::Information Cards providing tips and facts on different ingredients}"
+      - text: "{simonSaves.keyFeatures.items[3]::Online community to chat with other app users and ask questions}"
+      - text: "{simonSaves.keyFeatures.items[4]::Scrolling advertisement banners on homepage to promote ongoing discounts and sales}"
+
+  - id: "my_role"
+    type: "text"
+    heading: "{simonSaves.role.heading::My Role}"
+    instruction: "## Display role title with dates on the same line, followed by body paragraphs."
+    role_title: "{simonSaves.role.title::UX Designer and Logo Creator}"
+    role_dates: "{simonSaves.role.dates::2024}"
+    body:
+      - "{simonSaves.role.body[0]::Due to my experience using Figma through Google's online UX Design course, with another team member, we took on the task of developing a user friendly app for financial budgeting and food education. The diverse skills of our team enabled me to lead the design process and guide my team mate through the basic functions of Figma.}"
+      - "{simonSaves.role.body[1]::Together, we worked on paper wireframes to brainstorm ideas, followed by creating mockups for each page on the app. I then took on the sole responsibility of the prototype stage, ensuring seamless interactions for all buttons.}"
+      - "{simonSaves.role.body[2]::Because of my extensive visual arts background, I also took on the task of creating a personalized mascot and logo for our brand. Our intended brand image was educational and friendly, thus leading to the creation of <color:#7fb685>Simon the Persimmon.</color> As a group, we decided on the name as we believed that consumers would immediately associate the unique fruit to our brand because of its rhyming name and uncommon use.}"
+
+  - id: "results"
+    type: "text"
+    heading: "{simonSaves.results.heading::Results}"
+    instruction: "## Display heading followed by paragraphs of body text."
+    body:
+      - "{simonSaves.results.body[0]::Our group made it to the final presentation round where we got the opportunity to pitch our idea to a panel of experienced UX and Product designers. The final presentation included 10 minutes for pitch delivery and 5 minutes for panelists' questions.}"
+
+  - id: "gallery"
+    type: "gallery"
+    instruction: "## Display project mockups and logo in a custom layout on desktop: Center image showing app mockup above, with brand mascot (Simon the Persimmon) logo below. On mobile/tablet, stack vertically."
+    main_image:
+      src: "{simonSaves.gallery.mainImage.src::/img/{person_id}/simonSavesMockup.avif}"
+      alt: "{simonSaves.gallery.mainImage.alt::SimonSaves app mockup screenshot}"
+    mascot_image:
+      src: "{simonSaves.gallery.mascotImage.src::/img/{person_id}/simonMascot.avif}"
+      alt: "{simonSaves.gallery.mascotImage.alt::Simon the Persimmon mascot logo}"
+
+  - id: "learnings"
+    type: "list"
+    title: "{simonSaves.learnings.title::Learnings}"
+    instruction: "## Display learnings as a vertical list with bullet points."
+    items:
+      - "{simonSaves.learnings.items[0]::The Design Process is a continual cycle}"
+      - "{simonSaves.learnings.items[1]::Background knowledge in technology is crucial}"
+      - "{simonSaves.learnings.items[2]::Utilize diverse team member skills with task delegation, but ensure all members have a say in each aspect of the project to maximize potential}"
+
+footer:
+  use_existing_pattern: true

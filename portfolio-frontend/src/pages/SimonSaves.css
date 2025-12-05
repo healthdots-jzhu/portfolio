@@ -1,0 +1,202 @@
+.simon-saves-page {
+  padding: 0.5rem 0.5rem;
+}
+
+/* Main Content Grid for Desktop Layout */
+@media (min-width: 1024px) {
+  .simon-saves-page {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  /* Full width sections */
+  .simon-saves-hero {
+    grid-column: 1 / -1;
+  }
+
+  /* Gallery shares row with My Role */
+  .simon-saves-section:nth-child(4) {
+    /* This is My Role section - keep it in default position */
+  }
+}
+
+/* Hero Section */
+.simon-saves-hero {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 1rem 0;
+}
+
+.simon-saves-hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #2d3142;
+}
+
+.simon-saves-hero-subtitle {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.simon-saves-hero-cta {
+  display: inline-block;
+  padding: 12px 32px;
+  background: transparent;
+  color: #2d3142;
+  text-decoration: none;
+  border: 2px solid #2d3142;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.simon-saves-hero-cta:hover {
+  background: #2d3142;
+  color: #fff;
+}
+
+/* Text Sections */
+.simon-saves-section {
+  margin-bottom: 1.5rem;
+}
+
+.simon-saves-section h2 {
+  margin-bottom: 0.75rem;
+  color: #2d3142;
+}
+
+.simon-saves-section p {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.simon-saves-role-title {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 0.75rem;
+}
+
+/* Key Features Grid */
+.simon-saves-features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.2rem;
+}
+
+.simon-saves-feature-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 0.4rem 0;
+}
+
+.simon-saves-feature-bullet {
+  font-size: 1.5rem;
+  color: #7fb685;
+  font-weight: bold;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.simon-saves-feature-item p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Gallery */
+.simon-saves-gallery {
+  margin-bottom: 1.5rem;
+}
+
+.simon-saves-gallery-container {
+  display: flex;
+  justify-content: center;
+}
+
+.simon-saves-gallery-main {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.simon-saves-gallery-image {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: block;
+}
+
+.simon-saves-gallery-image:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.simon-saves-gallery-mascot-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 70%;
+  aspect-ratio: 1;
+}
+
+.simon-saves-gallery-mascot-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
+
+/* Learnings List */
+.simon-saves-learnings-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.simon-saves-learnings-list li {
+  padding: 0.4rem 0;
+  padding-left: 2rem;
+  position: relative;
+  line-height: 1.4;
+}
+
+.simon-saves-learnings-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0.5rem;
+  color: #7fb685;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+/* Tablet layout */
+@media (min-width: 768px) {
+  .simon-saves-gallery-main {
+    max-width: 700px;
+  }
+
+  .simon-saves-gallery-mascot-overlay {
+    width: 60%;
+  }
+}
+
+/* Desktop layout */
+@media (min-width: 1024px) {
+  .simon-saves-hero h1 {
+    font-size: 3rem;
+  }
+
+  .simon-saves-hero-subtitle {
+    font-size: 1.5rem;
+  }
+
+  .simon-saves-features-grid {
+    gap: 0.4rem;
+  }
+}

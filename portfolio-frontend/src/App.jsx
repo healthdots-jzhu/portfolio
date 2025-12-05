@@ -12,6 +12,7 @@ import PersonContact from './pages/PersonContact';
 import Engagements from './pages/Engagements';
 import Specialties from './pages/Specialties';
 import Cherish from './pages/Cherish';
+import SimonSaves from './pages/SimonSaves';
 import './App.css';
 
 function PersonPortfolio() {
@@ -47,6 +48,10 @@ function PersonPortfolio() {
     // Project-specific pages
     if (t('cherish.hero.title')) {
       routes.push(<Route key="cherish" path="cherish" element={<Cherish />} />);
+    }
+
+    if (t('simonSaves.hero.title')) {
+      routes.push(<Route key="simonSaves" path="simonSaves" element={<SimonSaves />} />);
     }
 
     return routes;

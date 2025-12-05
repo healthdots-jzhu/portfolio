@@ -276,6 +276,65 @@
         "alt": "Capture d'écran de la page Qu'est-ce que le Cherish Love Gala"
       }
     }
+  },
+  "simonSaves": {
+    "browserTabName": "SimonSaves - Karen Zhu",
+    "hero": {
+      "title": "SimonSaves",
+      "subtitle": "Conception d'application pour la budgétisation des repas",
+      "cta_label": "Voir le prototype",
+      "cta_url": "https://www.figma.com/proto/xw4hyc3g8zxUA3be71XRB2/Recipe-Book-App-Prototype?type=design&node-id=1-2&t=hYJdCZQe1uISo0eg-1&scaling=scale-down&page-id=0%3A1&starting-point-node-id=180%3A223"
+    },
+    "overview": {
+      "heading": "Aperçu",
+      "body": [
+        "Notre groupe de 4 personnes s'est classé dans les 3 premiers pour une compétition d'études de cas qui nous a défié de concevoir une solution pour résoudre un problème dans le secteur de la technologie financière. Notre solution a présenté une application qui utilise l'apprentissage automatique pour recommander des recettes et des dépenses alimentaires en fonction des budgets des utilisateurs et de leurs restrictions et préférences alimentaires."
+      ]
+    },
+    "keyFeatures": {
+      "title": "Caractéristiques principales",
+      "items": [
+        "Recherche de recettes et d'épicerie filtrée en fonction des restrictions alimentaires et des recommandations",
+        "Résumé de budgétisation alimentaire financière sur la page d'accueil",
+        "Cartes d'information fournissant des conseils et des faits sur différents ingrédients",
+        "Communauté en ligne pour discuter avec d'autres utilisateurs de l'application et poser des questions",
+        "Bannières publicitaires avec défilement sur la page d'accueil pour promouvoir les réductions et les ventes en cours"
+      ]
+    },
+    "role": {
+      "heading": "Mon rôle",
+      "title": "Designer UX et créatrice de logo",
+      "dates": "2023",
+      "body": [
+        "Grâce à mon expérience avec Figma grâce au cours Google UX Design en ligne, avec un autre membre de l'équipe, nous avons entrepris de développer une application conviviale pour la budgétisation financière et l'éducation alimentaire. Les compétences diverses de notre équipe m'ont permis de diriger le processus de conception et de guider mon coéquipier dans les fonctions de base de Figma.",
+        "Ensemble, nous avons travaillé sur des wireframes papier pour trouver des idées, suivi de la création de maquettes pour chaque page de l'application. J'ai ensuite assumé la responsabilité exclusive de l'étape de prototype, en veillant à des interactions transparentes pour tous les boutons.",
+        "Grâce à mes antécédents importants en arts visuels, j'ai également entrepris de créer une mascotte et un logo personnalisés pour notre marque. Notre image de marque prétendue était éducative et conviviale, ce qui a conduit à la création de Simon le Persimmon. En tant que groupe, nous avons décidé du nom car nous croyions que les consommateurs s'associeraient immédiatement au fruit unique de notre marque en raison de son nom rimé et de son utilisation peu commune."
+      ]
+    },
+    "results": {
+      "heading": "Résultats",
+      "body": [
+        "Notre groupe s'est qualifié pour le tour de présentation finale où nous avons eu l'occasion de présenter notre idée à un panel de designers UX et produit expérimentés. La présentation finale comprenait 10 minutes de présentation et 5 minutes de questions des panélistes."
+      ]
+    },
+    "learnings": {
+      "title": "Apprentissages",
+      "items": [
+        "Le processus de conception est un cycle continu",
+        "Les connaissances de base en technologie sont cruciales",
+        "Utilisez les compétences diversifiées des membres de l'équipe avec la délégation des tâches, mais assurez-vous que tous les membres ont voix au chapitre dans chaque aspect du projet pour maximiser le potentiel"
+      ]
+    },
+    "gallery": {
+      "mainImage": {
+        "src": "/img/{person_id}/simonSavesMockup.avif",
+        "alt": "Capture d'écran de la maquette de l'application SimonSaves"
+      },
+      "mascotImage": {
+        "src": "/img/{person_id}/simonMascot.avif",
+        "alt": "Logo de la mascotte Simon le Persimmon"
+      }
+    }
   }
 }
 
