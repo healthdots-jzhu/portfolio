@@ -4,7 +4,7 @@ import { useTranslations } from '../context/LanguageContext';
 import { parseColorTags } from '../utils/textParser';
 
 const PersonHome = () => {
-  const { t } = useTranslations();
+  const { t, resolvePath } = useTranslations();
   const location = useLocation();
 
   // Extract the base path (e.g., /p/karen-zhu-EU2O)
@@ -55,7 +55,7 @@ const PersonHome = () => {
                   className="home-feature-item"
                   aria-label={item.title}
                 >
-                  <img src={item.icon} alt={item.title} className="home-feature-icon" />
+                  <img src={resolvePath(item.icon)} alt={item.title} className="home-feature-icon" />
                   <h3>{item.title}</h3>
                 </Link>
               );
@@ -79,7 +79,7 @@ const PersonHome = () => {
                   </Link>
                 </div>
                 <div className="home-engagement-image">
-                  <img src={engagement.image} alt={engagement.title} />
+                  <img src={resolvePath(engagement.image)} alt={engagement.title} />
                 </div>
               </div>
             );

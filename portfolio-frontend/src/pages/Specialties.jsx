@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslations } from '../context/LanguageContext';
 
 const Specialties = () => {
-  const { t } = useTranslations();
+  const { t, resolvePath } = useTranslations();
   const location = useLocation();
   const pageTitle = t('specialties.pageTitle');
   const roles = t('specialties.roles') || [];
@@ -37,14 +37,14 @@ const Specialties = () => {
               {resolvedLink ? (
                 <Link to={resolvedLink}>
                   <img
-                    src={role.imageSrc}
+                    src={resolvePath(role.imageSrc)}
                     alt={role.imageAlt}
                     className="role-card-image"
                   />
                 </Link>
               ) : (
                 <img
-                  src={role.imageSrc}
+                  src={resolvePath(role.imageSrc)}
                   alt={role.imageAlt}
                   className="role-card-image"
                 />

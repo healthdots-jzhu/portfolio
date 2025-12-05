@@ -11,6 +11,7 @@ import PersonProjects from './pages/PersonProjects';
 import PersonContact from './pages/PersonContact';
 import Engagements from './pages/Engagements';
 import Specialties from './pages/Specialties';
+import Cherish from './pages/Cherish';
 import './App.css';
 
 function PersonPortfolio() {
@@ -41,6 +42,11 @@ function PersonPortfolio() {
 
     if (t('contact.title')) {
       routes.push(<Route key="contact" path="contact" element={<PersonContact />} />);
+    }
+
+    // Project-specific pages
+    if (t('cherish.hero.title')) {
+      routes.push(<Route key="cherish" path="cherish" element={<Cherish />} />);
     }
 
     return routes;

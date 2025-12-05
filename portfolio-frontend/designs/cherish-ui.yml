@@ -1,0 +1,89 @@
+# Web Page Design Template
+page:
+  title: "Cherish Integrated Services"
+  description: "Charity Event Website and Donation Platform project page"
+  layout: "default"
+  instructions:
+    - "Always make the implementation responsive and mobile-friendly."
+    - "Always support both English and French languages. There should be no hard coded texts."
+    - "Bracketed text should be considered a variable. The first :: is used to separate the variable name/json path and the example text value that is to be used in Karen's locale file. The whole thing should be replaced with actual values in locale file, e.g. {common.siteName::Karen Zhu} shows 'Karen Zhu' or 'Peter Sol' on the page eventually depending on the person."
+    - "If a text variable does not exist, add the key/value pair to the locale file with best guess."
+    - "Nested tags are supported. The inner tag takes precedence. A text may include some tags like <color:#7fb685>...</color> to indicate color or other style. These tags should be parsed and rendered accordingly. If there are other tags outside of a tag, the inner tag prevails. Simple example: <color:#7fb685>green text</color> with normal text. Nested example: in <color:#994122>a <color:#7fb685>business student</color> with a <color:#7fb685>passion for art and design</color>, interested in finding innovative solutions to <color:#7fb685>complex problems</color>!</color>, the color #7fb685 should be applied to 'business student', 'passion for art and design' and 'complex problems' only instead of color #994122."
+    - "[use_existing_pattern] indicates searching for the existing design pattern or component used in other pages. If this property does not exist, follow other properties for the design."
+    - "If a property refers to a path like /images/..., it indicates an image asset to be used. The path with the variable should be set in the locale file. If the path includes {person_id}, the actual path should be replaced with the id of the actual person when the page is rendered."
+    - "Typical image file path uses the path in the folder /img/{person_id}/... to store the image assets for a person. The navigation path is usually prefixed with /p/{person_id} for person-specific routes."
+    - "if there are no ordering instructions, the sections should be rendered in the order they appear in this file."
+    - "if a property value starts with ##, it indicates an instruction in natural language for AI to build the corresponding content following existing design patterns."
+    - "when no specific CSS style is provided for size, spacing etc., follow the existing design patterns used in other pages."
+    - "Assume all image paths exist in public/img/{person_id}/"
+    - "Assume all internal links correspond to valid routes"
+    - "Assume all locale keys exist or will be added to the locale file"
+    - "Arrays in locale files indicate multiple items of the same type to be rendered in a list or grid. It could be 1 or multiple. If the layout is restricted to x columns per row, render additional row(s) accordingly."
+    - "If the array is empty, no item should be rendered."
+    - "Follow the existing design patterns and naming conventions for buttons, headings, text styles, class names etc. used in other pages."
+    - "Add ARIA label requirements for clickable icons and images for accessibility."
+
+browser_tab_name: "{cherish.browserTabName::Cherish Integrated Services - Karen Zhu}"
+
+header:
+  use_existing_pattern: true
+
+hero:
+  instruction: "## Display project hero with title, subtitle, and 'Visit Site' button. Center-align content."
+  title: "{cherish.hero.title::Cherish Integrated Services}"
+  subtitle: "{cherish.hero.subtitle::Designing a Charity Event Website and Donation Platform}"
+  cta_label: "{cherish.hero.cta_label::Visit Site}"
+  cta_url: "{cherish.hero.cta_url::https://cherish-love-gala-2024.raiselysite.com/}"
+
+features:
+  type: "feature_split_layout"
+  instruction: "## Display features in a 3-column horizontal layout on desktop: Left column shows first 2 features, center column shows a graphic/image, right column shows last 2 features. Each feature has title (h3) and description. On mobile/tablet, stack vertically: features first 2, then image, then features last 2. If there are more than 4 features defined in the locale file, show the rest in the same way as the first 4 (2 left, image, 2 right) in subsequent rows having the center image area blank."
+  center_image: "{cherish.features.centerImage::/img/{person_id}/cherish_features.avif}"
+  center_image_alt: "{cherish.features.centerImageAlt::Cherish Love Gala website mockup}"
+  left_items:
+    - title: "{cherish.features.items[0].title::Performer Profiles}"
+      description: "{cherish.features.items[0].description::Creating an introductory and donation page for each performer where supporters can pledge their donations to.}"
+    - title: "{cherish.features.items[1].title::Ticket Sales & Donations}"
+      description: "{cherish.features.items[1].description::Linking Powr.io for ticket sales and food cost deductions in tax receipts.}"
+  right_items:
+    - title: "{cherish.features.items[2].title::Event Details}"
+      description: "{cherish.features.items[2].description::Informing guests on the location, date, time, and ticket inclusions. Describing the cause in which all proceeds will go towards.}"
+    - title: "{cherish.features.items[3].title::Sponsors}"
+      description: "{cherish.features.items[3].description::List all supporters, event sponsors, and prize (raffle and silent auction) sponsors in the footer with linkbacks to their website.}"
+
+sections:
+  - id: "organization_background"
+    type: "text"
+    heading: "{cherish.organization.heading::Organization Background}"
+    instruction: "## Display heading followed by multiple paragraphs of body text. Use standard paragraph spacing."
+    body:
+      - "{cherish.organization.body[0]::Cherish Integrated Services (CHIS) is a non-profit organization and registered charity that serves individuals with developmental disabilities in the Greater Toronto Area. They offer a variety of programs for each age group to aid in vocational training, job venture, and or daily living.}"
+      - "{cherish.organization.body[1]::CHIS hosts an annual Love Gala to raise funds to further expand their services and facilities. This year, proceeds will go towards developping their new Vocational Training Centre. This new facility will help more developped trainees work in a real cafe environemnt and learn employable skills.}"
+
+  - id: "my_role"
+    type: "text"
+    heading: "{cherish.role.heading::My Role}"
+    instruction: "## Display role title with dates, followed by body paragraphs."
+    role_title: "{cherish.role.title::Digital Marketing Coordinator}"
+    role_dates: "{cherish.role.dates::Jun 2024 - Aug 2024}"
+    body:
+      - "{cherish.role.body[0]::As the sole designer during my term, I developped an website for the 2024 Cherish Love Gala charity event using the platform Raisley. I ensured to include important details regarding the event and managed incoming donations and ticket sales.}"
+      - "{cherish.role.body[1]::In addition to the design aspect, I heavily participated in developping the sponsorship package and communicating with local businesses and media outlets in regards to the event.}"
+
+gallery:
+  type: "custom_layout"
+  instruction: "## Display project screenshots in a custom 3-column layout on desktop: Left column shows 1 large image (tall), middle column shows 2 smaller images stacked vertically, right column shows 1 large image (tall). All images should have consistent styling and subtle hover effects. On mobile/tablet, stack all images vertically in order."
+  left_image:
+    src: "{cherish.gallery.leftImage.src::/img/{person_id}/cherish_performers.avif}"
+    alt: "{cherish.gallery.leftImage.alt::Love Gala Performers page screenshot}"
+  middle_images:
+    - src: "{cherish.gallery.middleImages[0].src::/img/{person_id}/cherish_homepage.avif}"
+      alt: "{cherish.gallery.middleImages[0].alt::Love Gala Homepage screenshot}"
+    - src: "{cherish.gallery.middleImages[1].src::/img/{person_id}/cherish_donation.avif}"
+      alt: "{cherish.gallery.middleImages[1].alt::Pledge donation page screenshot}"
+  right_image:
+    src: "{cherish.gallery.rightImage.src::/img/{person_id}/cherish_about.avif}"
+    alt: "{cherish.gallery.rightImage.alt::What is Cherish Love Gala page screenshot}"
+
+footer:
+  use_existing_pattern: true

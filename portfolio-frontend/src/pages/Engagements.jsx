@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useTranslations } from '../context/LanguageContext';
 
 const Engagements = () => {
-  const { t } = useTranslations();
+  const { t, resolvePath } = useTranslations();
   const [expandedCards, setExpandedCards] = useState({});
   const contentRefs = useRef({});
   const [isClipped, setIsClipped] = useState({});
@@ -101,7 +101,7 @@ const Engagements = () => {
         <div className="engagements-page" id={`engagement-${itemIdx}`} key={itemIdx}>
           <div className="engagements-header">
             <img 
-              src={item.logoSrc} 
+              src={resolvePath(item.logoSrc)} 
               alt={item.logoAlt}
               className="engagements-logo"
             />
@@ -127,7 +127,7 @@ const Engagements = () => {
                   <div className={`engagements-card ${expanded ? 'expanded' : ''}`} key={id}>
                     <div className="engagements-card-icon">
                       {logo ? (
-                        <img src={logo} alt={`${title} icon`} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
+                        <img src={resolvePath(logo)} alt={`${title} icon`} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
                       ) : (
                         card.id === 'about' ? (
                           <svg viewBox="29.5 30 141 140" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -234,7 +234,7 @@ const Engagements = () => {
                 {(item.artworkImageSrcs || []).map((src, index) => (
                   <div className="artwork-card" key={src}>
                     <img
-                      src={src}
+                      src={resolvePath(src)}
                       alt={(item.artworkImageAlts || [])[index] || ''}
                     />
                   </div>
@@ -263,7 +263,7 @@ const Engagements = () => {
                 <div className="thrift-image-container">
                   <div className="thrift-gallery">
                     <img
-                      src={item.thriftImageSrc}
+                      src={resolvePath(item.thriftImageSrc)}
                       alt={item.thriftImageAlt || ''}
                       className="thrift-card"
                     />
