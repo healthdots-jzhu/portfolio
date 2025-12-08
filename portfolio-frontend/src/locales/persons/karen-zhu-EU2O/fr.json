@@ -79,6 +79,7 @@
     "subtitle": "À propos de moi",
     "avatarAlt": "Illustration de personnage personnel",
     "avatarSrc": "/img/{person_id}/Personal-Character.avif",
+    "hobbiesImageSrc": "/img/{person_id}/aboutMe_hobbies.png",
     "aboutParagraphs": [
       "Je suis étudiante en commerce avec une forte passion pour le design. En grandissant en prenant des cours d'art, j'ai toujours apprécié exprimer ma créativité sous des formes visuelles et j'ai trouvé que j'avais un talent pour cela.",
       "J'ai décidé de poursuivre les affaires comme diplôme en raison de la flexibilité pour façonner mes intérêts avec le travail et l'école. Comme l'art, les affaires exigent des solutions réfléchies qui sont à la fois créatives et pratiques. Dans ma première année de cours à l'Université de Toronto, j'ai particulièrement apprécié mes cours de marketing car ils impliquaient fortement des composants créatifs et offrent des opportunités d'expansion dans le design.",

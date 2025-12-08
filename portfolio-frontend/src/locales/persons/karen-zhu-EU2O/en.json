@@ -79,6 +79,7 @@
     "subtitle": "About Me",
     "avatarAlt": "Personal character illustration",
     "avatarSrc": "/img/{person_id}/Personal-Character.avif",
+    "hobbiesImageSrc": "/img/{person_id}/aboutMe_hobbies.png",
     "aboutParagraphs": [
       "I'm a business student with a strong passion for design. Growing up taking art classes, I always enjoyed expressing my creativity in visual forms and found that I had a talent for it.",
       "I decided to pursue business as a degree because of the flexibility of being able to mould my interests with work and school. Like art, business requires thoughtful solutions that are both creative and practical. In my first year of classes at the University of Toronto, I particularly enjoyed my marketing classes because they heavily involved a creative components and offer opportunities to expand into design.",
