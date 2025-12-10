@@ -107,8 +107,7 @@
             "title": "About",
             "logoSrc": "",
             "bodyLines": [
-              "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry.",
-              "The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
+              "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry. The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
               "We host engaging events and create community within the world of fashion.",
               "Join us to expand your network and passion for the industry."
             ]
@@ -138,11 +137,18 @@
             "logoSrc": "",
             "bodyLines": [],
             "isConnectCard": true,
-            "connectInstagramLabel": "Instagram",
-            "connectInstagramHandle": "@rcfashiongroup",
-            "connectInstagramUrl": "https://www.instagram.com/rcfashiongroup",
-            "connectWebsiteLabel": "www.rcfashiongroup.com",
-            "connectWebsiteUrl": "https://www.rcfashiongroup.com"
+            "links": [
+              {
+                "label": "Instagram",
+                "handle": "@rcfashiongroup",
+                "url": "https://www.instagram.com/rcfashiongroup"
+              },
+              {
+                "label": "",
+                "handle": "www.rcfashiongroup.com",
+                "url": "https://www.rcfashiongroup.com"
+              }
+            ]
           }
         ],
         "artworkHeading": "Merch Design",
@@ -178,11 +184,7 @@
           { "title": "Coordination", "description": "Worked closely with Marketing Directors to organize a content calendar and upload schedule." },
           { "title": "Execusion", "description": "Encouraged idea generation and delegated tasks to committee members based on their strengths." },
           { "title": "Market Analysis", "description": "Kept up with Instagram/TikTok trends and executed creative fashion content posts." }
-        ],
-        "connectHeading": "Connect with Us",
-        "connectInstagramLabel": "Instagram",
-        "connectInstagramHandle": "@rcfashiongroup",
-        "connectWebsiteLabel": "www.rcfashiongroup.com"
+        ]
           }
     ]
   },

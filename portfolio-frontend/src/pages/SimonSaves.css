@@ -17,7 +17,7 @@
 
   /* Gallery shares row with My Role */
   .simon-saves-section:nth-child(4) {
-    /* This is My Role section - keep it in default position */
+    grid-column: 1 / 2;
   }
 }
 

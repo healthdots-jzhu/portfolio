@@ -138,11 +138,18 @@
             "logoSrc": "",
             "bodyLines": [],
             "isConnectCard": true,
-            "connectInstagramLabel": "Instagram",
-            "connectInstagramHandle": "@rcfashiongroup",
-            "connectInstagramUrl": "https://www.instagram.com/rcfashiongroup",
-            "connectWebsiteLabel": "www.rcfashiongroup.com",
-            "connectWebsiteUrl": "https://www.rcfashiongroup.com"
+            "links": [
+              {
+                "label": "Instagram",
+                "handle": "@rcfashiongroup",
+                "url": "https://www.instagram.com/rcfashiongroup"
+              },
+              {
+                "label": "",
+                "handle": "www.rcfashiongroup.com",
+                "url": "https://www.rcfashiongroup.com"
+              }
+            ]
           }
         ],
         "artworkHeading": "Conception de marchandise",
@@ -177,11 +184,7 @@
           { "title": "Coordination", "description": "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement." },
           { "title": "Exécution", "description": "Encouragé la génération d'idées et délégué les tâches aux membres du comité en fonction de leurs forces uniques." },
           { "title": "Analyse de marché", "description": "Resté au courant des tendances Instagram et TikTok et exécuté des publications de contenu créatif en mode." }
-        ],
-        "connectHeading": "Connectez-vous avec nous",
-        "connectInstagramLabel": "Instagram",
-        "connectInstagramHandle": "@rcfashiongroup",
-        "connectWebsiteLabel": "www.rcfashiongroup.com"
+        ]
       }
     ]
   },

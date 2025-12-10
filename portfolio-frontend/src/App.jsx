@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useLocation } from 'react-router-dom';
 import { LanguageProvider, useTranslations } from './context/LanguageContext';
 import { personExists, getAvailablePersons } from './locales';
 import Navbar from './components/Navbar';
@@ -14,6 +14,29 @@ import Specialties from './pages/Specialties';
 import Cherish from './pages/Cherish';
 import SimonSaves from './pages/SimonSaves';
 import './App.css';
+
+// Subdomain to person ID mapping
+const SUBDOMAIN_MAP = {
+  'karen': 'karen-zhu-EU2O',
+  'jason': 'jason-zhu-EU1O'
+};
+
+function SubdomainRedirect() {
+  const location = useLocation();
+  const hostname = window.location.hostname;
+  
+  // Extract subdomain (e.g., "karen" from "karen.healthdots.net")
+  const subdomain = hostname.split('.')[0];
+  
+  // Check if we have a mapping for this subdomain and if path doesn't start with /p/
+  if (SUBDOMAIN_MAP[subdomain] && !location.pathname.startsWith('/p/')) {
+    const personId = SUBDOMAIN_MAP[subdomain];
+    const newPath = `/p/${personId}${location.pathname === '/' ? '' : location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={newPath} replace />;
+  }
+  
+  return null;
+}
 
 function PersonPortfolio() {
   const { t } = useTranslations();
@@ -94,23 +117,38 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Default landing page - no person ID required */}
-        <Route path="/" element={<Landing />} />
-
-        {/* Person-specific portfolios */}
-        <Route path="/p/:personId" element={<PersonLoader />} />
-        <Route path="/p/:personId/*" element={<PersonLoader />} />
-
-        {/* 404 fallback */}
-        <Route path="*" element={
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <h1>Portfolio Not Found</h1>
-            <p>Please check the URL and try again.</p>
-            {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
-          </div>
-        } />
+        {/* Subdomain redirect - must be first to catch root and non-/p/ paths */}
+        <Route path="*" element={<SubdomainRedirectWrapper />} />
       </Routes>
     </Router>
+  );
+}
+
+function SubdomainRedirectWrapper() {
+  const redirect = SubdomainRedirect();
+  
+  if (redirect) {
+    return redirect;
+  }
+  
+  return (
+    <Routes>
+      {/* Default landing page - no person ID required */}
+      <Route path="/" element={<Landing />} />
+
+      {/* Person-specific portfolios */}
+      <Route path="/p/:personId" element={<PersonLoader />} />
+      <Route path="/p/:personId/*" element={<PersonLoader />} />
+
+      {/* 404 fallback */}
+      <Route path="*" element={
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <h1>Portfolio Not Found</h1>
+          <p>Please check the URL and try again.</p>
+          {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
+        </div>
+      } />
+    </Routes>
   );
 }
 

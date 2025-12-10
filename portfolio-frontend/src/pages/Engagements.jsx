@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslations } from '../context/LanguageContext';
+import { parseIconSyntax } from '../utils/parseIconSyntax';
 import './Engagements.css';
 
 const Engagements = () => {
@@ -156,17 +157,39 @@ const Engagements = () => {
                     <h3>{title}</h3>
                     {card.isConnectCard ? (
                       <p ref={el => { contentRefs.current[id] = el; }}>
-                        {card.connectInstagramLabel}:&nbsp;
-                        <a href={card.connectInstagramUrl} target="_blank" rel="noopener noreferrer">
-                          {card.connectInstagramHandle}
-                        </a>
-                        <br/>
-                        <a href={card.connectWebsiteUrl} target="_blank" rel="noopener noreferrer">
-                          {card.connectWebsiteLabel}
-                        </a>
+                        {Array.isArray(card.links) && card.links.length > 0 ? (
+                          card.links.map((link, linkIdx) => (
+                            <React.Fragment key={linkIdx}>
+                              {link.label && <>{link.label}:&nbsp;</>}
+                              <a href={link.url} target="_blank" rel="noopener noreferrer">
+                                {link.handle || link.url}
+                              </a>
+                              {linkIdx < card.links.length - 1 && <br/>}
+                            </React.Fragment>
+                          ))
+                        ) : (
+                          // Fallback to old structure for backwards compatibility
+                          <>
+                            {card.connectInstagramLabel}:&nbsp;
+                            <a href={card.connectInstagramUrl} target="_blank" rel="noopener noreferrer">
+                              {card.connectInstagramHandle}
+                            </a>
+                            <br/>
+                            <a href={card.connectWebsiteUrl} target="_blank" rel="noopener noreferrer">
+                              {card.connectWebsiteLabel}
+                            </a>
+                          </>
+                        )}
                       </p>
                     ) : (
-                      <p ref={el => { contentRefs.current[id] = el; }} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+                      <p ref={el => { contentRefs.current[id] = el; }}>
+                        {bodyLines.map((line, lineIdx) => (
+                          <React.Fragment key={lineIdx}>
+                            {parseIconSyntax(line)}
+                            {lineIdx < bodyLines.length - 1 && <br/>}
+                          </React.Fragment>
+                        ))}
+                      </p>
                     )}
                     {showMore && !expanded && (
                       <button className="engagements-card-expand-btn" onClick={() => toggleExpand(id)}>Show More</button>
