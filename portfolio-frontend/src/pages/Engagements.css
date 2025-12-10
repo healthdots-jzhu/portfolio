@@ -266,43 +266,44 @@
   height: auto;
 }
 
-.thrift-content {
+.event-content {
   display: flex;
   flex-direction: column;
   gap: 2rem;
   margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.thrift-stats {
+.event-stats {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.thrift-stats h3 {
+.event-stats h3 {
   margin: 0;
 }
 
-.thrift-image-container {
+.event-image-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1rem;
 }
 
-.thrift-gallery {
+.event-gallery {
   display: flex;
   justify-content: center;
 }
 
-.thrift-card {
+.event-card {
   border-radius: 12px;
   box-shadow: 0 2px 10px #dadee966;
   background: #f5f5f8;
   max-width: 100%;
 }
 
-.thrift-more-btn {
+.event-more-btn {
   display: inline-block;
   padding: 10px 24px;
   background: transparent;
@@ -317,28 +318,28 @@
   text-align: center;
 }
 
-.thrift-more-btn:hover {
+.event-more-btn:hover {
   background: #000;
   color: #fff;
 }
 
-.thrift-more-btn span {
+.event-more-btn span {
   display: block;
 }
 
 @media (min-width: 768px) {
-  .thrift-content {
+  .event-content {
     flex-direction: row;
     align-items: center;
     gap: 3rem;
   }
 
-  .thrift-stats {
+  .event-stats {
     flex: 0 0 auto;
     max-width: 350px;
   }
 
-  .thrift-image-container {
+  .event-image-container {
     flex: 1;
   }
 }

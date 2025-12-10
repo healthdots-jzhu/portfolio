@@ -10,7 +10,6 @@ const Engagements = () => {
   const [isClipped, setIsClipped] = useState({});
   // Support multiple engagements (array) while remaining backwards-compatible
   const engagementsRoot = t('engagements') || {};
-  const thriftImageSrc = engagementsRoot.thriftImageSrc;
   const items = Array.isArray(engagementsRoot.items)
     ? engagementsRoot.items
     : [
@@ -28,11 +27,7 @@ const Engagements = () => {
           artworkImageAlts: engagementsRoot.artworkImageAlts || engagementsRoot.merchImageAlts || [],
           creativePostsHeading: engagementsRoot.creativePostsHeading,
           creativePostsIntro: engagementsRoot.creativePostsIntro,
-          thriftHeading: engagementsRoot.thriftHeading,
-          thriftStats: engagementsRoot.thriftStats,
-          thriftStatsLines: engagementsRoot.thriftStatsLines || [],
-          thriftImageSrcs: engagementsRoot.thriftImageSrcs || [],
-          thriftImageAlts: engagementsRoot.thriftImageAlts || [],
+          events: engagementsRoot.events || [],
           leadershipHeading: engagementsRoot.leadershipHeading,
           leadershipBullets: engagementsRoot.leadershipBullets || [],
           creativeReelsHeading: engagementsRoot.creativeReelsHeading,
@@ -271,38 +266,42 @@ const Engagements = () => {
             <section className="creative-posts">
               <h2>{item.creativePostsHeading}</h2>
               <p>{item.creativePostsIntro}</p>
-              <h3>{item.thriftHeading}</h3>
-              <p>{item.thriftStats}</p>
-              <div className="thrift-content">
-                <div className="thrift-stats">
-                  {(item.thriftStatsLines || []).map((line, idx) => {
-                    const [num, ...rest] = String(line).split(' ');
-                    return (
-                      <h3 key={idx}>
-                        <strong>{num}</strong> {rest.join(' ')}
-                      </h3>
-                    );
-                  })}
-                </div>
-                <div className="thrift-image-container">
-                  <div className="thrift-gallery">
-                    <img
-                      src={resolvePath(item.thriftImageSrc)}
-                      alt={item.thriftImageAlt || ''}
-                      className="thrift-card"
-                    />
+              {(item.events || []).map((event, eventIdx) => (
+                <div key={eventIdx} className="event-section">
+                  <h3>{event.heading}</h3>
+                  <p>{event.stats}</p>
+                  <div className="event-content">
+                    <div className="event-stats">
+                      {(event.statsLines || []).map((line, idx) => {
+                        const [num, ...rest] = String(line).split(' ');
+                        return (
+                          <h3 key={idx}>
+                            <strong>{num}</strong> {rest.join(' ')}
+                          </h3>
+                        );
+                      })}
+                    </div>
+                    <div className="event-image-container">
+                      <div className="event-gallery">
+                        <img
+                          src={resolvePath(event.imageSrc)}
+                          alt={event.imageAlt || ''}
+                          className="event-card"
+                        />
+                      </div>
+                      <a 
+                        href="https://www.instagram.com/rcfashiongroup/?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw%3D%3D#" 
+                        target="_blank" 
+                        rel="noreferrer noopener" 
+                        className="event-more-btn"
+                        aria-label="More Posts"
+                      >
+                        <span>More Posts</span>
+                      </a>
+                    </div>
                   </div>
-                  <a 
-                    href="https://www.instagram.com/rcfashiongroup/?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw%3D%3D#" 
-                    target="_blank" 
-                    rel="noreferrer noopener" 
-                    className="thrift-more-btn"
-                    aria-label="More Posts"
-                  >
-                    <span>More Posts</span>
-                  </a>
                 </div>
-              </div>
+              ))}
             </section>
           )}
 

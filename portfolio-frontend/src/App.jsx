@@ -137,7 +137,6 @@ function SubdomainRedirectWrapper() {
       <Route path="/" element={<Landing />} />
 
       {/* Person-specific portfolios */}
-      <Route path="/p/:personId" element={<PersonLoader />} />
       <Route path="/p/:personId/*" element={<PersonLoader />} />
 
       {/* 404 fallback */}

@@ -139,34 +139,17 @@
             ]
           }
         ],
-        "artworkHeading": "Merch Design",
-        "artworkBody": "The Creative Content team was responsible for designing artwork for this year's team. Below are some rough ideas and iterations upon receiving feedback:",
-        "artworkImageAlts": [
-          "Jason - 1 (1).png",
-          "Jason - 2 (1).png",
-          "Untitled50_20240716182107.png"
-        ],
-        "artworkImageSrcs": [
-          "/img/{person_id}/Jason-1-1.avif",
-          "/img/{person_id}/Jason-2-1.avif",
-          "/img/{person_id}/Untitled50_20240716182107.avif"
-        ],
-        "creativePostsHeading": "Creative Posts",
-        "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
-        "thriftHeading": "RCFG Thrift Finds",
-        "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.",
-        "thriftStatsLines": [
-          "759 Accounts Reached",
-          "85.7% from followers",
-          "14.3% from non-followers"
-        ],
-        "thriftImageAlt": "Exec Thrift Finds Cover",
-        "thriftImageSrc": "/img/{person_id}/ExecThriftFinds.avif",
-        
-        "creativeReelsHeading": "Creative Reels",
-        "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
-        "showcaseHeading": "Director of Creative Content",
-        "showcaseSubtitle": "Feb. 2024 - Present",
+        "artworkHeading": "",
+        "artworkBody": "",
+        "artworkImageAlts": [],
+        "artworkImageSrcs": [],
+        "creativePostsHeading": "",
+        "creativePostsIntro": "",
+        "events": [],        
+        "creativeReelsHeading": "",
+        "creativeReelsBody": "",
+        "showcaseHeading": "Director of Software Engineering",
+        "showcaseSubtitle": "May. 2018 - Present at TELUS",
         "showcaseCards": [
           { "title": "Leadership", "description": "Directed a group of 5 committee members to increase engagement and maximize event attendance." },
           { "title": "Coordination", "description": "Worked closely with Marketing Directors to organize a content calendar and upload schedule." },

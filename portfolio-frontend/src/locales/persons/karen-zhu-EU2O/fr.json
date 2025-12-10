@@ -166,15 +166,19 @@
         ],
         "creativePostsHeading": "Publications créatives",
         "creativePostsIntro": "Notre équipe pense à des moyens créatifs de promouvoir les événements du club et, lorsqu'il n'y a pas d'événements à venir, exécute de grands projets créatifs tels que des interviews de rue et des reprises Instagram pour divertir notre audience et maintenir des téléchargements cohérents.",
-        "thriftHeading": "Trouvailles de seconde main RCFG",
-        "thriftStats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour présenter les trouvailles de seconde main de l'équipe exécutive.",
-        "thriftStatsLines": [
-          "759 comptes atteints",
-          "85,7% des abonnés",
-          "14,3% des non-abonnés"
+        "events": [
+          {
+            "heading": "Trouvailles de seconde main RCFG",
+            "stats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour présenter les trouvailles de seconde main de l'équipe exécutive.",
+            "statsLines": [
+              "759 comptes atteints",
+              "85,7% des abonnés",
+              "14,3% des non-abonnés"
+            ],
+            "imageAlt": "Couverture des trouvailles de seconde main Exec",
+            "imageSrc": "/img/{person_id}/ExecThriftFinds.avif"
+          }
         ],
-        "thriftImageAlt": "Couverture des trouvailles de seconde main Exec",
-        "thriftImageSrc": "/img/{person_id}/ExecThriftFinds.avif",
         "creativeReelsHeading": "Bobines créatives",
         "creativeReelsBody": "Résumés d'événements, Journée dans la vie, et plus bientôt...",
         "showcaseHeading": "Directrice de contenu créatif",
