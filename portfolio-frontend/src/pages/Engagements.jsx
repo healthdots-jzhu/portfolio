@@ -32,10 +32,18 @@ const Engagements = () => {
           leadershipBullets: engagementsRoot.leadershipBullets || [],
           creativeReelsHeading: engagementsRoot.creativeReelsHeading,
           creativeReelsBody: engagementsRoot.creativeReelsBody,
-          // new optional showcase section
-          showcaseHeading: engagementsRoot.showcaseHeading,
-          showcaseSubtitle: engagementsRoot.showcaseSubtitle,
-          showcaseCards: engagementsRoot.showcaseCards || [],
+          // optional showcases; fallback to single showcase fields for backward compatibility
+          showcases: Array.isArray(engagementsRoot.showcases)
+            ? engagementsRoot.showcases
+            : engagementsRoot.showcaseHeading
+              ? [
+                  {
+                    heading: engagementsRoot.showcaseHeading,
+                    subtitle: engagementsRoot.showcaseSubtitle,
+                    cards: engagementsRoot.showcaseCards || [],
+                  },
+                ]
+              : [],
         },
       ];
 
@@ -68,17 +76,30 @@ const Engagements = () => {
             next[id] = el.scrollHeight > el.clientHeight + 1;
           }
         });
-        // Also check showcase cards
-        const showcaseCards = Array.isArray(item.showcaseCards) ? item.showcaseCards : [];
-        showcaseCards.forEach((card, sidx) => {
-          const id = `${itemIdx}-showcase-${sidx}`;
-          const el = contentRefs.current[id];
-          if (!el) return;
-          if (expandedCards[id]) {
-            next[id] = false;
-          } else {
-            next[id] = el.scrollHeight > el.clientHeight + 1;
-          }
+        // Also check showcase cards (supports multiple showcase sections)
+        const showcases = Array.isArray(item.showcases)
+          ? item.showcases
+          : item.showcaseHeading
+            ? [
+                {
+                  heading: item.showcaseHeading,
+                  subtitle: item.showcaseSubtitle,
+                  cards: item.showcaseCards || [],
+                },
+              ]
+            : [];
+        showcases.forEach((showcase, sIdx) => {
+          const cards = Array.isArray(showcase.cards) ? showcase.cards : [];
+          cards.forEach((card, cIdx) => {
+            const id = `${itemIdx}-showcase-${sIdx}-${cIdx}`;
+            const el = contentRefs.current[id];
+            if (!el) return;
+            if (expandedCards[id]) {
+              next[id] = false;
+            } else {
+              next[id] = el.scrollHeight > el.clientHeight + 1;
+            }
+          });
         });
       });
       setIsClipped(prev => ({ ...prev, ...next }));
@@ -210,36 +231,50 @@ const Engagements = () => {
             </section>
           )}
 
-          {/* New optional showcase section (heading, subtitle, responsive cards) */}
-          {item.showcaseHeading && (
-            <section className="showcase">
-              <h2>{item.showcaseHeading}</h2>
-              {item.showcaseSubtitle && (
-                <p className="showcase-subtitle">{item.showcaseSubtitle}</p>
-              )}
-              <section className="engagements-cards">
-                {(item.showcaseCards || []).map((sc, sidx) => {
-                  const cardId = `${itemIdx}-showcase-${sidx}`;
-                  const isExpanded = expandedCards[cardId];
-                  const needsExpand = isClipped[cardId];
-                  return (
-                    <div className={`engagements-card ${isExpanded ? 'expanded' : ''}`} key={sidx}>
-                      <h3>{sc.title}</h3>
-                      <p ref={(el) => (contentRefs.current[cardId] = el)}>{sc.description}</p>
-                      {needsExpand && (
-                        <button
-                          className="engagements-card-expand-btn"
-                          onClick={() => toggleExpand(cardId)}
-                        >
-                          {isExpanded ? 'Less' : 'More'}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+          {/* Showcase sections (supports multiple sections; falls back to single legacy config) */}
+          {(() => {
+            const showcases = Array.isArray(item.showcases)
+              ? item.showcases
+              : item.showcaseHeading
+                ? [
+                    {
+                      heading: item.showcaseHeading,
+                      subtitle: item.showcaseSubtitle,
+                      cards: item.showcaseCards || [],
+                    },
+                  ]
+                : [];
+            if (!showcases.length) return null;
+            return showcases.map((showcase, sIdx) => (
+              <section className="showcase" key={`showcase-${sIdx}`}>
+                <h2>{showcase.heading}</h2>
+                {showcase.subtitle && (
+                  <p className="showcase-subtitle">{showcase.subtitle}</p>
+                )}
+                <section className="engagements-cards">
+                  {(showcase.cards || []).map((sc, cIdx) => {
+                    const cardId = `${itemIdx}-showcase-${sIdx}-${cIdx}`;
+                    const isExpanded = expandedCards[cardId];
+                    const needsExpand = isClipped[cardId];
+                    return (
+                      <div className={`engagements-card ${isExpanded ? 'expanded' : ''}`} key={cIdx}>
+                        <h3>{sc.title}</h3>
+                        <p ref={(el) => (contentRefs.current[cardId] = el)}>{sc.description}</p>
+                        {(needsExpand || isExpanded) && (
+                          <button
+                            className="engagements-card-expand-btn"
+                            onClick={() => toggleExpand(cardId)}
+                          >
+                            {isExpanded ? 'Show Less' : 'Show More'}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </section>
               </section>
-            </section>
-          )}
+            ));
+          })()}
 
           {item.artworkHeading && (
             <section className="showcase">

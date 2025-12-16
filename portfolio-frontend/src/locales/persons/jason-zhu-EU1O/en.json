@@ -56,7 +56,7 @@
     "title": "Jason Zhu",
     "subtitle": "About Me",
     "avatarAlt": "Personal character illustration",
-    "avatarSrc": "/img/{person_id}/Personal-Character.avif",
+    "avatarSrc": "/img/{person_id}/Personal-Character-Jason.png",
     "hobbiesImageSrc": "/img/{person_id}/aboutMe_hobbies.png",
     "aboutParagraphs": [
       "I’m a technology leader with 25+ years of experience building and scaling enterprise software platforms across healthcare, insurance, and group benefits. My work sits at the intersection of technology strategy, software engineering, and people leadership. I’ve led large-scale modernization initiatives—cloud migration, legacy re-architecture, and API-driven platforms—while delivering highly reliable systems that process millions of transactions annually. Whether defining a long-term technology roadmap or guiding teams through complex delivery challenges, I focus on creating solutions that are scalable, resilient, and closely aligned with business outcomes.",
@@ -145,39 +145,53 @@
         "artworkImageSrcs": [],
         "creativePostsHeading": "",
         "creativePostsIntro": "",
-        "events": [],        
+        "events": [],
         "creativeReelsHeading": "",
         "creativeReelsBody": "",
-        "showcaseHeading": "Director of Software Engineering",
-        "showcaseSubtitle": "May. 2018 - Present at TELUS",
-        "showcaseCards": [
-          { "title": "Leadership", "description": "Directed a group of 5 committee members to increase engagement and maximize event attendance." },
-          { "title": "Coordination", "description": "Worked closely with Marketing Directors to organize a content calendar and upload schedule." },
-          { "title": "Execusion", "description": "Encouraged idea generation and delegated tasks to committee members based on their strengths." },
-          { "title": "Market Analysis", "description": "Kept up with Instagram/TikTok trends and executed creative fashion content posts." }
+        "showcases": [
+          {
+            "heading": "Director of Software Engineering",
+            "subtitle": "May 2018 - Present at TELUS",
+            "cards": [
+              { "title": "Leadership", "description": "Built and scaled a 50+ member cross-functional engineering team, achieving 60% improvement in delivery velocity through agile transformation, DevOps practices, and hands-on coaching." },
+              { "title": "Growth", "description": "Created a high-performance culture fostering collaboration, technical excellence, and career development across globally distributed teams. Drove 4x revenue growth through strategic client onboarding and successful service expansion post-acquisition." },
+              { "title": "Execution", "description": "Led enterprise-scale modernization initiatives including on-premises to AWS cloud migration, transforming to microservices architecture and complete UI rebuild with Angular—all delivered on time and within scope." },
+              { "title": "Compliance", "description": "Established robust security and privacy practices, ensuring SOC 2 Type II compliance. Partnered with KPMG for annual audits, maintaining world-class standards for healthcare and insurance data protection." }
+            ]
+          },
+          {
+            "heading": "VP of Software Development",
+            "subtitle": "June 2004 - May 2018 at Symbility Health (Acquired by TELUS)",
+            "cards": [
+              { "title": "Insurance Expertise", "description": "Progressed from developer to senior leader, mastering full-stack software development while building deep domain expertise in Group Insurance Administration and Health Claims Adjudication." },
+              { "title": "Innovation", "description": "Spearheaded development of Specialty Pharmacy Management (Biometrx) and Patient Support platforms, expanding footprint into pharmaceutical and specialty care sectors." },
+              { "title": "Process Excellence", "description": "Introduced Agile Scrum framework and drove continuous process improvements, including CI/CD pipelines and test automation, significantly enhancing team productivity and release quality." },
+              { "title": "Compliance", "description": "Supported Symbility's ISO 27001 certification by implementing and validating required security controls and information security management practices." }
+            ]
+          }
         ]
       }
     ]
   },
   "specialties": {
-    "pageTitle": "Social Media Marketing | Jason Zhu",
-    "title": "Social Media Marketing",
-    "sectionTitle": "Leadership Roles",
-    "intro": "Through my student leadership roles, I created promotional graphics and reels to promote events and increase engagement.",
+    "pageTitle": "Specialties | Jason Zhu",
+    "title": "Health Insurance Engineering",
+    "sectionTitle": "Emerging Technologies transforming Insurance industry",
+    "intro": "Plan members and healthcare providers expect seamless digital experiences when accessing their insurance information, submitting claims, and receiving payments. To meet these expectations, insurers and third-party administrators (TPAs) must leverage emerging technologies to modernize their legacy systems and processes. Key technologies such as AI-assisted development, cloud computing, microservices architecture, and API-driven platforms are revolutionizing how insurance solutions are designed, built, and delivered. By embracing these innovations, insurers can enhance operational efficiency, improve customer satisfaction, and drive business growth in a competitive market.",
     "roles": [
       {
-        "title": "Director of Creative Content",
-        "organization": "Rotman Commerce Fashion Group",
-        "duration": "(2024 - 2025)",
-        "imageSrc": "/img/{person_id}/RCFG-headers.avif",
-        "imageAlt": "Director of Creative Content - Rotman Commerce Fashion Group",
+        "title": "Strategic Technology Leader with Health Insurance Domain Expertise",
+        "organization": "Driving Scalable Health Benefit Management and Claim Adjudication Platforms",
+        "duration": "(2012 - 2025)",
+        "imageSrc": "/img/{person_id}/specialty_claims_solution.png",
+        "imageAlt": "Strategic Technology Leader - Health Benefit Management and Adjudication Systems",
         "link": "engagements#engagement-0"
       },
       {
-        "title": "Director of Marketing & Design",
-        "organization": "UofT Finance & Leadership Council",
-        "duration": "(2025 - 2026)",
-        "imageSrc": "/img/{person_id}/FLC-headers.avif",
+        "title": "From Programmer to Principal Engineer",
+        "organization": "Full-stack engineering experience in architecture, design, coding, testing, maintenance and DevOps",
+        "duration": "(1998 - 2025)",
+        "imageSrc": "/img/{person_id}/specialty_technology_evolution.png",
         "imageAlt": "Director of Marketing & Design - UofT Finance & Leadership Council"
       }
     ]

@@ -181,13 +181,17 @@
         ],
         "creativeReelsHeading": "Bobines créatives",
         "creativeReelsBody": "Résumés d'événements, Journée dans la vie, et plus bientôt...",
-        "showcaseHeading": "Directrice de contenu créatif",
-        "showcaseSubtitle": "fév. 2024 - Présent",
-        "showcaseCards": [
-          { "title": "Leadership", "description": "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements." },
-          { "title": "Coordination", "description": "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement." },
-          { "title": "Exécution", "description": "Encouragé la génération d'idées et délégué les tâches aux membres du comité en fonction de leurs forces uniques." },
-          { "title": "Analyse de marché", "description": "Resté au courant des tendances Instagram et TikTok et exécuté des publications de contenu créatif en mode." }
+        "showcases": [
+          {
+            "heading": "Directrice de contenu créatif",
+            "subtitle": "fév. 2024 - Présent",
+            "cards": [
+              { "title": "Leadership", "description": "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements." },
+              { "title": "Coordination", "description": "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement." },
+              { "title": "Exécution", "description": "Encouragé la génération d'idées et délégué les tâches aux membres du comité en fonction de leurs forces uniques." },
+              { "title": "Analyse de marché", "description": "Resté au courant des tendances Instagram et TikTok et exécuté des publications de contenu créatif en mode." }
+            ]
+          }
         ]
       }
     ]

@@ -178,16 +178,19 @@
             "imageSrc": "/img/{person_id}/ExecThriftFinds.avif"
           }
         ],
-        
         "creativeReelsHeading": "Creative Reels",
         "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
-        "showcaseHeading": "Director of Creative Content",
-        "showcaseSubtitle": "Feb. 2024 - Present",
-        "showcaseCards": [
-          { "title": "Leadership", "description": "Directed a group of 5 committee members to increase engagement and maximize event attendance." },
-          { "title": "Coordination", "description": "Worked closely with Marketing Directors to organize a content calendar and upload schedule." },
-          { "title": "Execusion", "description": "Encouraged idea generation and delegated tasks to committee members based on their strengths." },
-          { "title": "Market Analysis", "description": "Kept up with Instagram/TikTok trends and executed creative fashion content posts." }
+        "showcases": [
+          {
+            "heading": "Director of Creative Content",
+            "subtitle": "Feb. 2024 - Present",
+            "cards": [
+              { "title": "Leadership", "description": "Directed a group of 5 committee members to increase engagement and maximize event attendance." },
+              { "title": "Coordination", "description": "Worked closely with Marketing Directors to organize a content calendar and upload schedule." },
+              { "title": "Execusion", "description": "Encouraged idea generation and delegated tasks to committee members based on their strengths." },
+              { "title": "Market Analysis", "description": "Kept up with Instagram/TikTok trends and executed creative fashion content posts." }
+            ]
+          }
         ]
           }
     ]
