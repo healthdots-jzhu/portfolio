@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useLocation } from 'react-router-dom';
 import { LanguageProvider, useTranslations } from './context/LanguageContext';
 import { personExists, getAvailablePersons } from './locales';
+import { applyFontFamily } from './utils/fontLoader';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Landing from './pages/Landing';
@@ -41,10 +42,10 @@ function SubdomainRedirect() {
 function PersonPortfolio() {
   const { t, fontFamily } = useTranslations();
 
-  // Apply font family to document root
+  // Apply font family dynamically when it changes
   useEffect(() => {
     if (fontFamily) {
-      document.documentElement.style.setProperty('--font-primary', fontFamily);
+      applyFontFamily(fontFamily);
     }
   }, [fontFamily]);
 
