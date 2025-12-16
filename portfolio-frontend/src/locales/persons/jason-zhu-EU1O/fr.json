@@ -3,8 +3,8 @@
     "siteName": "Jason Zhu",
     "baseTitle": "Jason Zhu",
     "nav": {
-      "specialties": "Marketing",
-      "about": "À propos"
+      "specialties": "Réalisations",
+      "about": "À propos de moi"
     },
     "languageLabel": "Langue",
     "languages": {
@@ -12,114 +12,91 @@
       "fr": "Français"
     },
     "toggleNavMenu": "Basculer le menu de navigation",
-    "footer": "© 2025 Jason Zhu | Marketing des médias sociaux"
+    "footer": "© 2025 par Jason Zhu | Leader en ingénierie logicielle senior"
   },
   "home": {
     "hero": {
-      "subtitle": "Étudiante | Designer | Marketeur | Artiste",
-      "intro": "Une étudiante en commerce de troisième année avec une <color:#7fb685>passion pour l'art et le design</color>, intéressée à trouver des solutions innovantes à des <color:#7fb685>problèmes complexes</color>! Bienvenue sur mon portfolio créatif avec des échantillons de travaux de conception UX, de conception de sites Web, de marketing numérique et de projets personnels!"
+      "subtitle": "Gestion technologique | Ingénierie logicielle | Constructeur d'équipes et de plateformes",
+      "intro": "Leader technologique senior avec plus de 25 ans d'expérience dans la direction d'initiatives d'architecture logicielle, de développement et de transformation dans les secteurs de la santé, de l'assurance et des avantages sociaux collectifs. Expert en automatisation alimentée par l'IA, plateformes d'entreprise évolutives, cloud et livraison agile. Reconnu pour favoriser l'innovation, l'efficacité opérationnelle et des résultats commerciaux mesurables."
     },
     "features": {
-      "title": "Explorez mes intérêts",
+      "title": "Explorez mes spécialités",
       "items": [
         {
-          "icon": "/img/{person_id}/interest_about.avif",
-          "title": "À propos de moi",
-          "path": "about"
-        },
-        {
-          "icon": "/img/{person_id}/interest_marketing.avif",
-          "title": "Marketing des médias sociaux",
+          "icon": "/img/{person_id}/home_architecture.png",
+          "title": "Architecture et stratégie",
           "path": "specialties"
         },
         {
-          "icon": "/img/{person_id}/interest_design.avif",
-          "title": "Design",
-          "path": "engagements#engagement-0"
+          "icon": "/img/{person_id}/home_agile.png",
+          "title": "Méthodologies agiles",
+          "path": "specialties"
         },
         {
-          "icon": "/img/{person_id}/interest_art.avif",
-          "title": "Art",
-          "path": "engagements#engagement-0"
+          "icon": "/img/{person_id}/home_ai_dev.png",
+          "title": "Développement assisté par l'IA",
+          "path": "specialties"
         },
         {
-          "icon": "/img/{person_id}/interest_photography.avif",
-          "title": "Photographie",
-          "path": "engagements#engagement-0"
+          "icon": "/img/{person_id}/home_architecture.png",
+          "title": "Innovation et transformation",
+          "path": "specialties"
+        },
+        {
+          "icon": "/img/{person_id}/home_architecture.png",
+          "title": "Assurance santé",
+          "path": "specialties"
         }
       ]
     },
-    "topEngagements": [
-      {
-        "heading": "Services intégrés Cherish",
-        "title": "Conception de site Web pour événements et dons",
-        "cta_label": "En savoir plus",
-        "cta_path": "cherish",
-        "image": "/img/{person_id}/engagement_cherish.avif"
-      },
-      {
-        "heading": "Rotman Commerce Fashion Group",
-        "title": "Directrice de contenu créatif",
-        "cta_label": "En savoir plus",
-        "cta_path": "engagements#engagement-0",
-        "image": "/img/{person_id}/engagement_rcfg.avif"
-      },
-      {
-        "heading": "Finaliste RCIG x RCFTA Design Dash",
-        "title": "Conception d'application pour la budgétisation des repas",
-        "cta_label": "En savoir plus",
-        "cta_path": "simonSaves",
-        "image": "/img/{person_id}/engagement_simonSaves.avif"
-      }
-    ]
+    "topEngagements": []
   },
   "about": {
-    "pageTitle": "À propos | Jason Zhu",
+    "pageTitle": "À propos de moi | Jason Zhu",
     "title": "Jason Zhu",
     "subtitle": "À propos de moi",
     "avatarAlt": "Illustration de personnage personnel",
-    "avatarSrc": "/img/{person_id}/Personal-Character.avif",
+    "avatarSrc": "/img/{person_id}/Personal-Character-Jason.png",
     "hobbiesImageSrc": "/img/{person_id}/aboutMe_hobbies.png",
     "aboutParagraphs": [
-      "Je suis étudiante en commerce avec une forte passion pour le design. En grandissant en prenant des cours d'art, j'ai toujours apprécié exprimer ma créativité sous des formes visuelles et j'ai trouvé que j'avais un talent pour cela.",
-      "J'ai décidé de poursuivre les affaires comme diplôme en raison de la flexibilité pour façonner mes intérêts avec le travail et l'école. Comme l'art, les affaires exigent des solutions réfléchies qui sont à la fois créatives et pratiques. Dans ma première année de cours à l'Université de Toronto, j'ai particulièrement apprécié mes cours de marketing car ils impliquaient fortement des composants créatifs et offrent des opportunités d'expansion dans le design.",
-      "Pour explorer davantage cet intérêt, en juillet 2024, j'ai terminé le cours Google UX Design et j'ai appris à développer des wireframes et des maquettes sur Figma. De plus, j'ai terminé dans la finale de la compétition Design Dash 2024 organisée par Rotman Commerce en appliquant ces compétences. Cette expérience a révélé un fort intérêt à continuer à poursuivre des opportunités créatives car non seulement je les aimais, mais j'avais aussi un talent pour cela.",
-      "Je m'efforce d'utiliser le design et la stratégie commerciale pour créer des expériences utilisateur innovantes et accessibles. Veuillez me contacter pour en savoir plus sur moi !"
+      "Je suis un leader technologique avec plus de 25 ans d'expérience dans la construction et la mise à l'échelle de plateformes logicielles d'entreprise dans les secteurs de la santé, de l'assurance et des avantages sociaux collectifs. Mon travail se situe à l'intersection de la stratégie technologique, de l'ingénierie logicielle et du leadership humain. J'ai dirigé des initiatives de modernisation à grande échelle — migration vers le cloud, refonte d'architecture héritée et plateformes basées sur des API — tout en livrant des systèmes hautement fiables qui traitent des millions de transactions annuellement. Que ce soit pour définir une feuille de route technologique à long terme ou guider des équipes à travers des défis de livraison complexes, je me concentre sur la création de solutions évolutives, résilientes et étroitement alignées avec les objectifs commerciaux.",
+      "Je suis profondément passionné par la construction d'équipes d'ingénierie solides et de cultures de livraison saines. Au fil des ans, j'ai développé et dirigé des équipes interfonctionnelles de plus de 50 ingénieurs, améliorant la vitesse de livraison, la qualité et l'engagement grâce aux pratiques agiles, DevOps et Team Topologies. Je reste impliqué sur le terrain par choix — continuant à coder, prototyper et expérimenter — en particulier dans des domaines comme le développement assisté par l'IA et l'automatisation. Je crois qu'un excellent leadership technologique consiste à multiplier l'impact : autonomiser les gens, simplifier la complexité et transformer l'innovation en valeur mesurable."
     ],
     "funFactsTitle": "Quelques faits amusants",
     "funFacts": [
-      "J'aime faire différentes boissons de style café ! Mes préférées : lattes au matcha, brouillards londoniens à la lavande, thé au lait de Hong Kong, thé au yuzu. J'aime visiter les cafés locaux et noter leurs boissons spéciales pour m'inspirer.",
-      "J'ai une passion pour la mode - c'est une autre forme d'expression créative et je crois en m'habiller pour réussir. J'admire aussi le marketing créatif de l'industrie de la mode."
+      "Passionné de sport : Que ce soit la finesse du badminton, la précision du snooker ou le frisson du soccer (surtout un but à la dernière minute !), je suis toujours prêt pour la compétition et la stratégie.",
+      "Amateur de voyages : Je profite au maximum de mes vacances en explorant de nouvelles cultures, paysages et cuisines. Chaque voyage ajoute une nouvelle dimension à ma vision du monde — et inspire parfois ma prochaine expérience technologique."
     ]
   },
   "engagements": {
     "items": [
       {
-        "pageTitle": "Engagements | Jason Zhu",
-        "logoSrc": "/img/{person_id}/RCFG logo.avif",
-        "logoAlt": "Logo RCFG",
-        "title": "Groupe de mode Rotman Commerce",
-        "taglineFirst": "Des esprits créatifs,",
-        "taglineSecond": "Façonnés ensemble",
+        "pageTitle": "Réalisations | Jason Zhu",
+        "logoSrc": "/img/{person_id}/engagements_adjudicare.png",
+        "logoAlt": "TELUS AdjudiCare",
+        "title": "TELUS AdjudiCare",
+        "taglineFirst": "Flux de traitement des demandes de remboursement,",
+        "taglineSecond": "Processus de paiement automatisé",
         "cards": [
           {
             "id": "about",
             "title": "À propos",
             "logoSrc": "",
             "bodyLines": [
-              "Un club d'affaires de mode dirigé par des étudiants de l'Université de Toronto qui tourne autour des valeurs fondamentales d'éducation, de communauté et de réseautage dans l'industrie de la mode.",
-              "Le but du RCFG est de fournir aux étudiants de Rotman Commerce l'opportunité de se connecter sur des sujets de mode et de beauté tels que les tendances mondiales, les conseils de style, les carrières en mode et la mode d'affaires.",
-              "Nous organisons des événements engageants et créons une communauté dans le monde de la mode.",
-              "Rejoignez-nous pour élargir votre réseau et votre passion pour l'industrie."
+              "Une solution d'adjudication et de paiement de demandes de remboursement d'assurance santé hébergée sur AWS avec un niveau mondial de résilience, d'évolutivité et de sécurité.",
+              "Des règles de configuration robustes permettent aux TPA et aux assureurs de personnaliser efficacement les flux de traitement des demandes de remboursement et de paiement.",
+              "L'architecture basée sur les API permet une intégration transparente avec des systèmes tiers pour l'échange de données d'admissibilité et de demandes de remboursement."
             ]
           },
           {
             "id": "journey",
-            "title": "Mon parcours",
+            "title": "Parcours de la demande",
             "logoSrc": "",
             "bodyLines": [
-              "Directrice de contenu créatif fév 2024 - Présent",
-              "Gestionnaire de contenu créatif fév 2023 - fév 2024"
+              "<Icon icon='arrowRightToBracket' /> Demande reçue électroniquement ou importée par lot par les utilisateurs",
+              "<Icon icon='personCircleQuestion' /> Demande en attente d'examen manuel",
+              "<Icon icon='gears' /> Demande adjugée selon la conception du régime et les règles de configuration",
+              "<Icon icon='moneyCheckDollar' /> Paiement traité automatiquement via TED ou génération de chèque"
             ]
           },
           {
@@ -127,99 +104,95 @@
             "title": "Impact",
             "logoSrc": "",
             "bodyLines": [
-              "450+ participants aux événements étudiants",
-              "10 000+ audiences engagées",
-              "1 140 abonnés Instagram"
+              "<Icon icon='peopleLine' /> Des centaines de milliers de certificats intégrés facilement et équipés d'un accès mobile",
+              "<Icon icon='hospitalUser' /> Fournisseurs de soins de santé enregistrés à travers le Canada habilités pour la soumission électronique de demandes",
+              "<Icon icon='handHoldingDollar' /> Économies opérationnelles et de coûts d'avantages significatives pour les assureurs, les TPA et les promoteurs de régimes grâce à l'automatisation et à la détection de fraude."
             ]
           },
           {
             "id": "connect",
-            "title": "Connectez-vous avec nous",
+            "title": "Applications",
             "logoSrc": "",
             "bodyLines": [],
             "isConnectCard": true,
             "links": [
               {
-                "label": "Instagram",
-                "handle": "@rcfashiongroup",
-                "url": "https://www.instagram.com/rcfashiongroup"
+                "label": "Site Web TPA",
+                "handle": "www.adjudicare.net",
+                "url": "https://www.adjudicare.net"
               },
               {
                 "label": "",
-                "handle": "www.rcfashiongroup.com",
-                "url": "https://www.rcfashiongroup.com"
+                "handle": "Portail Web des membres",
+                "url": "https://www.onlineclaimsaccess.net"
+              },
+              {
+                "label": "",
+                "handle": "Application iOS des membres",
+                "url": "https://apps.apple.com/ca/app/my-health-benefits/id671060840"
+              },
+              {
+                "label": "",
+                "handle": "Application Android des membres",
+                "url": "https://play.google.com/store/apps/details?id=ca.symbilityhealth.mobileclaims&pli=1"
               }
             ]
           }
         ],
-        "artworkHeading": "Conception de marchandise",
-        "artworkBody": "L'équipe de contenu créatif était responsable de la conception artistique pour l'équipe de cette année. Voici quelques idées et itérations après avoir reçu des retours :",
-        "artworkImageAlts": [
-          "Jason - 1 (1).png",
-          "Jason - 2 (1).png",
-          "Untitled50_20240716182107.png"
-        ],
-        "artworkImageSrcs": [
-          "/img/{person_id}/Jason-1-1.avif",
-          "/img/{person_id}/Jason-2-1.avif",
-          "/img/{person_id}/Untitled50_20240716182107.avif"
-        ],
-        "creativePostsHeading": "Publications créatives",
-        "creativePostsIntro": "Notre équipe pense à des moyens créatifs de promouvoir les événements du club et, lorsqu'il n'y a pas d'événements à venir, exécute de grands projets créatifs tels que des interviews de rue et des reprises Instagram pour divertir notre audience et maintenir des téléchargements cohérents.",
-        "events": [
-          {
-            "heading": "Trouvailles de seconde main RCFG",
-            "stats": "Ce septembre, pour promouvoir notre événement Thrifting à Toronto, nous avons créé une publication de style scrapbook pour présenter les trouvailles de seconde main de l'équipe exécutive.",
-            "statsLines": [
-              "759 comptes atteints",
-              "85,7% des abonnés",
-              "14,3% des non-abonnés"
-            ],
-            "imageAlt": "Couverture des trouvailles de seconde main Exec",
-            "imageSrc": "/img/{person_id}/ExecThriftFinds.avif"
-          }
-        ],
-        "creativeReelsHeading": "Bobines créatives",
-        "creativeReelsBody": "Résumés d'événements, Journée dans la vie, et plus bientôt...",
+        "artworkHeading": "",
+        "artworkBody": "",
+        "artworkImageAlts": [],
+        "artworkImageSrcs": [],
+        "creativePostsHeading": "",
+        "creativePostsIntro": "",
+        "events": [],
+        "creativeReelsHeading": "",
+        "creativeReelsBody": "",
         "showcases": [
           {
-            "heading": "Directrice de contenu créatif",
-            "subtitle": "fév. 2024 - Présent",
+            "heading": "Directeur de l'ingénierie logicielle",
+            "subtitle": "Mai 2018 - Présent chez TELUS",
             "cards": [
-              { "title": "Leadership", "description": "Dirigé un groupe de 5 membres du comité pour augmenter l'engagement et maximiser la participation aux événements." },
-              { "title": "Coordination", "description": "Travaillé en étroite collaboration avec les directeurs marketing pour organiser un calendrier de contenu et un calendrier de téléchargement." },
-              { "title": "Exécution", "description": "Encouragé la génération d'idées et délégué les tâches aux membres du comité en fonction de leurs forces uniques." },
-              { "title": "Analyse de marché", "description": "Resté au courant des tendances Instagram et TikTok et exécuté des publications de contenu créatif en mode." }
+              { "title": "Leadership", "description": "Construit et mis à l'échelle une équipe d'ingénierie interfonctionnelle de plus de 50 membres, atteignant une amélioration de 60% de la vélocité de livraison grâce à la transformation agile, aux pratiques DevOps et au coaching pratique." },
+              { "title": "Croissance", "description": "Créé une culture de haute performance favorisant la collaboration, l'excellence technique et le développement de carrière au sein d'équipes distribuées mondialement. Stimulé une croissance des revenus de 4x grâce à l'intégration stratégique de clients et à l'expansion réussie des services après l'acquisition." },
+              { "title": "Exécution", "description": "Dirigé des initiatives de modernisation à l'échelle de l'entreprise, y compris la migration sur site vers le cloud AWS, la transformation vers une architecture de microservices et la reconstruction complète de l'interface utilisateur avec Angular — tout livré dans les délais et dans les limites du périmètre." },
+              { "title": "Conformité", "description": "Établi des pratiques robustes de sécurité et de confidentialité, assurant la conformité SOC 2 Type II. Partenariat avec KPMG pour les audits annuels, maintenant des normes de classe mondiale pour la protection des données de santé et d'assurance." }
+            ]
+          },
+          {
+            "heading": "VP du développement logiciel",
+            "subtitle": "Juin 2004 - Mai 2018 chez Symbility Health (Acquis par TELUS)",
+            "cards": [
+              { "title": "Expertise en assurance", "description": "Progression de carrière de développeur à leader senior, maîtrisant le développement logiciel full-stack tout en développant une expertise approfondie du domaine dans l'administration des assurances collectives et l'adjudication des demandes de remboursement santé." },
+              { "title": "Innovation", "description": "Dirigé le développement de plateformes de gestion de pharmacie spécialisée (Biometrx) et de soutien aux patients, élargissant notre présence dans les secteurs pharmaceutique et des soins spécialisés." },
+              { "title": "Excellence des processus", "description": "Introduit le cadre Agile Scrum et favorisé l'amélioration continue des processus, y compris les pipelines CI/CD et l'automatisation des tests, améliorant considérablement la productivité de l'équipe et la qualité des versions." },
+              { "title": "Conformité", "description": "Soutenu la certification ISO 27001 de Symbility en mettant en œuvre et en validant les contrôles de sécurité requis et les pratiques de gestion de la sécurité de l'information." }
             ]
           }
-        ],
-        "connectHeading": "Connectez-vous avec nous",
-        "connectInstagramLabel": "Instagram",
-        "connectInstagramHandle": "@rcfashiongroup",
-        "connectWebsiteLabel": "www.rcfashiongroup.com"
+        ]
       }
     ]
   },
   "specialties": {
-    "pageTitle": "Marketing des médias sociaux | Jason Zhu",
-    "title": "Marketing des médias sociaux",
-    "sectionTitle": "Rôles de leadership",
-    "intro": "À travers mes rôles de leadership étudiant, j'ai créé des graphiques promotionnels et des bobines pour promouvoir les événements et augmenter l'engagement.",
+    "pageTitle": "Spécialités | Jason Zhu",
+    "title": "Ingénierie de l'assurance santé",
+    "sectionTitle": "Technologies émergentes transformant l'industrie de l'assurance",
+    "intro": "Les membres du régime et les fournisseurs de soins de santé s'attendent à des expériences numériques transparentes lors de l'accès à leurs informations d'assurance, de la soumission de demandes de remboursement et de la réception de paiements. Pour répondre à ces attentes, les assureurs et les administrateurs tiers (TPA) doivent tirer parti des technologies émergentes pour moderniser leurs systèmes et processus hérités. Les technologies clés telles que le développement assisté par l'IA, le cloud computing, l'architecture de microservices et les plateformes basées sur les API révolutionnent la façon dont les solutions d'assurance sont conçues, construites et livrées. En adoptant ces innovations, les assureurs peuvent améliorer l'efficacité opérationnelle, améliorer la satisfaction client et stimuler la croissance commerciale dans un marché concurrentiel.",
     "roles": [
       {
-        "title": "Directrice de contenu créatif",
-        "organization": "Rotman Commerce Fashion Group",
-        "duration": "(2024 - 2025)",
-        "imageSrc": "/img/{person_id}/RCFG-headers.avif",
-        "imageAlt": "Directrice de contenu créatif - Rotman Commerce Fashion Group",
+        "title": "Leader technologique stratégique avec expertise du domaine de l'assurance santé",
+        "organization": "Conduire des plateformes évolutives de gestion des avantages santé et d'adjudication des demandes",
+        "duration": "(2012 - 2025)",
+        "imageSrc": "/img/{person_id}/specialty_claims_solution.png",
+        "imageAlt": "Leader technologique stratégique - Gestion des avantages santé et systèmes d'adjudication",
         "link": "engagements#engagement-0"
       },
       {
-        "title": "Directrice marketing et design",
-        "organization": "Conseil des finances et du leadership de l'UofT",
-        "duration": "(2025 - 2026)",
-        "imageSrc": "/img/{person_id}/FLC-headers.avif",
-        "imageAlt": "Directrice marketing et design - Conseil des finances et du leadership de l'UofT"
+        "title": "De programmeur à ingénieur principal",
+        "organization": "Expérience d'ingénierie full-stack en architecture, conception, codage, tests, maintenance et DevOps",
+        "duration": "(1998 - 2025)",
+        "imageSrc": "/img/{person_id}/specialty_technology_evolution.png",
+        "imageAlt": "Directeur marketing et design - Conseil des finances et du leadership de l'UofT"
       }
     ]
   },
@@ -297,7 +270,7 @@
     "browserTabName": "SimonSaves - Jason Zhu",
     "hero": {
       "title": "SimonSaves",
-      "subtitle": "Conception d'application pour la budgétisation des repas",
+      "subtitle": "Finaliste du Design Dash du Rotman Commerce Innovation Group x Rotman Commerce Fintech Association",
       "cta_label": "Voir le prototype",
       "cta_url": "https://www.figma.com/proto/xw4hyc3g8zxUA3be71XRB2/Recipe-Book-App-Prototype?type=design&node-id=1-2&t=hYJdCZQe1uISo0eg-1&scaling=scale-down&page-id=0%3A1&starting-point-node-id=180%3A223"
     },
@@ -319,7 +292,7 @@
     },
     "role": {
       "heading": "Mon rôle",
-      "title": "Designer UX et créatrice de logo",
+      "title": "Designer UX et créateur de logo",
       "dates": "2023",
       "body": [
         "Grâce à mon expérience avec Figma grâce au cours Google UX Design en ligne, avec un autre membre de l'équipe, nous avons entrepris de développer une application conviviale pour la budgétisation financière et l'éducation alimentaire. Les compétences diverses de notre équipe m'ont permis de diriger le processus de conception et de guider mon coéquipier dans les fonctions de base de Figma.",
@@ -343,11 +316,11 @@
     },
     "gallery": {
       "mainImage": {
-        "src": "/img/{person_id}/simonSavesMockup.avif",
+        "src": "/img/{person_id}/SimonSaves_Mockup.avif",
         "alt": "Capture d'écran de la maquette de l'application SimonSaves"
       },
       "mascotImage": {
-        "src": "/img/{person_id}/simonMascot.avif",
+        "src": "/img/{person_id}/SimonSaves_Logo.avif",
         "alt": "Logo de la mascotte Simon le Persimmon"
       }
     }
