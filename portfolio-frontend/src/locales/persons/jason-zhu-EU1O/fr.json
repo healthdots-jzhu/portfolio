@@ -9,7 +9,8 @@
     "languageLabel": "Langue",
     "languages": {
       "en": "English",
-      "fr": "Français"
+      "fr": "Français",
+      "zh": "中文"
     },
     "toggleNavMenu": "Basculer le menu de navigation",
     "footer": "© 2025 par Jason Zhu | Leader en ingénierie logicielle senior"
@@ -151,7 +152,7 @@
         "showcases": [
           {
             "heading": "Directeur de l'ingénierie logicielle",
-            "subtitle": "Mai 2018 - Présent chez TELUS",
+            "subtitle": "Mai 2018 - Novembre 2025 chez TELUS",
             "cards": [
               { "title": "Leadership", "description": "Construit et mis à l'échelle une équipe d'ingénierie interfonctionnelle de plus de 50 membres, atteignant une amélioration de 60% de la vélocité de livraison grâce à la transformation agile, aux pratiques DevOps et au coaching pratique." },
               { "title": "Croissance", "description": "Créé une culture de haute performance favorisant la collaboration, l'excellence technique et le développement de carrière au sein d'équipes distribuées mondialement. Stimulé une croissance des revenus de 4x grâce à l'intégration stratégique de clients et à l'expansion réussie des services après l'acquisition." },

@@ -23,7 +23,7 @@ export const LanguageProvider = ({ children, personId }) => {
     return {
       personId: personId || 'karen-zhu-EU2O', // Make current personId available
       language,
-      availableLanguages: getAvailableLanguages(),
+      availableLanguages: getAvailableLanguages(personId || 'karen-zhu-EU2O'),
       setLanguage,
       t: (path) => {
         if (!path) return '';
