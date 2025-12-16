@@ -14,6 +14,9 @@
     "toggleNavMenu": "Toggle navigation menu",
     "footer": "© 2025 by Karen Zhu | Social Media Marketing"
   },
+  "theme": {
+    "fontFamily": "Poppins"
+  },
   "home": {
     "hero": {
       "subtitle": "Student | Designer | Marketer | Artist",

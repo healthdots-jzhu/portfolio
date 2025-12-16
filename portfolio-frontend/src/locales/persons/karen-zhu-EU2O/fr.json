@@ -14,6 +14,9 @@
     "toggleNavMenu": "Basculer le menu de navigation",
     "footer": "© 2025 Karen Zhu | Marketing des médias sociaux"
   },
+  "theme": {
+    "fontFamily": "Poppins"
+  },
   "home": {
     "hero": {
       "subtitle": "Étudiante | Designer | Marketeur | Artiste",

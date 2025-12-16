@@ -39,7 +39,14 @@ function SubdomainRedirect() {
 }
 
 function PersonPortfolio() {
-  const { t } = useTranslations();
+  const { t, fontFamily } = useTranslations();
+
+  // Apply font family to document root
+  useEffect(() => {
+    if (fontFamily) {
+      document.documentElement.style.setProperty('--font-primary', fontFamily);
+    }
+  }, [fontFamily]);
 
   // Determine which components to render based on available sections
   const getRoutes = () => {

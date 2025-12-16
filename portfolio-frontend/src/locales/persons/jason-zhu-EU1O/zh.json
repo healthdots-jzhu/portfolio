@@ -15,6 +15,9 @@
     "toggleNavMenu": "切换导航菜单",
     "footer": "© 2025 Jason Zhu | 高级软件工程领导者"
   },
+  "theme": {
+    "fontFamily": "Comic Neue"
+  },
   "home": {
     "hero": {
       "subtitle": "技术管理 | 软件工程 | 团队与平台构建者",

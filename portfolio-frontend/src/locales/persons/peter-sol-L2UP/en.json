@@ -16,6 +16,9 @@
     "toggleNavMenu": "Toggle navigation menu",
     "footer": "© 2024 by Peter Sol | Software Developer"
   },
+  "theme": {
+    "fontFamily": "Inter"
+  },
   "about": {
     "pageTitle": "About Me | Peter Sol",
     "title": "Peter Sol",

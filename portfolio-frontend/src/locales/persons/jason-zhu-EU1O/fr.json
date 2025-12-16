@@ -15,6 +15,9 @@
     "toggleNavMenu": "Basculer le menu de navigation",
     "footer": "© 2025 par Jason Zhu | Leader en ingénierie logicielle senior"
   },
+  "theme": {
+    "fontFamily": "Comic Neue"
+  },
   "home": {
     "hero": {
       "subtitle": "Gestion technologique | Ingénierie logicielle | Constructeur d'équipes et de plateformes",
