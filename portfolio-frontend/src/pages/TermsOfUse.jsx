@@ -1,34 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import termsEn from '../locales/Terms.md?raw';
+import termsFr from '../locales/Terms.fr.md?raw';
 import './LegalPage.css';
 
 const TermsOfUse = () => {
-  const [content, setContent] = useState('');
   const [language, setLanguage] = useState('en');
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadContent = async () => {
-      setLoading(true);
-      try {
-        let contentModule;
-        if (language === 'fr') {
-          contentModule = await import('../locales/Terms.fr?raw');
-        } else {
-          contentModule = await import('../locales/Terms?raw');
-        }
-        setContent(contentModule.default);
-      } catch (error) {
-        console.error('Failed to load terms:', error);
-        setContent('# Terms of Use\n\nContent could not be loaded.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadContent();
-  }, [language]);
+  const content = language === 'fr' ? termsFr : termsEn;
 
   return (
     <div className="legal-page">
@@ -51,11 +31,7 @@ const TermsOfUse = () => {
       </nav>
 
       <main className="legal-content">
-        {loading ? (
-          <div className="loading">Loading...</div>
-        ) : (
-          <ReactMarkdown>{content}</ReactMarkdown>
-        )}
+        <ReactMarkdown>{content}</ReactMarkdown>
       </main>
 
       <footer className="legal-footer">

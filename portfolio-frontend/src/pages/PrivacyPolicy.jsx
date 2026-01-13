@@ -1,34 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import privacyPolicyEn from '../locales/privacy-policy.md?raw';
+import privacyPolicyFr from '../locales/privacy-policy.fr.md?raw';
 import './LegalPage.css';
 
 const PrivacyPolicy = () => {
-  const [content, setContent] = useState('');
   const [language, setLanguage] = useState('en');
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadContent = async () => {
-      setLoading(true);
-      try {
-        let contentModule;
-        if (language === 'fr') {
-          contentModule = await import('../locales/privacy-policy.fr?raw');
-        } else {
-          contentModule = await import('../locales/privacy-policy?raw');
-        }
-        setContent(contentModule.default);
-      } catch (error) {
-        console.error('Failed to load privacy policy:', error);
-        setContent('# Privacy Policy\n\nContent could not be loaded.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadContent();
-  }, [language]);
+  const content = language === 'fr' ? privacyPolicyFr : privacyPolicyEn;
 
   return (
     <div className="legal-page">
@@ -51,11 +31,7 @@ const PrivacyPolicy = () => {
       </nav>
 
       <main className="legal-content">
-        {loading ? (
-          <div className="loading">Loading...</div>
-        ) : (
-          <ReactMarkdown>{content}</ReactMarkdown>
-        )}
+        <ReactMarkdown>{content}</ReactMarkdown>
       </main>
 
       <footer className="legal-footer">
