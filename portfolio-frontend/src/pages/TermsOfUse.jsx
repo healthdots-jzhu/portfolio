@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import termsEn from '../locales/Terms?raw';
-import termsFr from '../locales/Terms.fr?raw';
+import termsEn from '../locales/Terms.md?raw';
+import termsFr from '../locales/Terms.fr.md?raw';
 import './LegalPage.css';
 
 const TermsOfUse = () => {
