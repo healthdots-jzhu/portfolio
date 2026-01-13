@@ -16,6 +16,9 @@
     "toggleNavMenu": "Basculer le menu de navigation",
     "footer": "© 2024 Peter Sol | Développeur logiciel"
   },
+  "theme": {
+    "fontFamily": "Inter"
+  },
   "about": {
     "pageTitle": "À propos | Peter Sol",
     "title": "Peter Sol",

@@ -1,6 +1,7 @@
 // Dynamic loading using Vite's import.meta.glob
 const personModules = import.meta.glob('./persons/*/en.json', { eager: true });
 const personModulesFr = import.meta.glob('./persons/*/fr.json', { eager: true });
+const personModulesZh = import.meta.glob('./persons/*/zh.json', { eager: true });
 
 // Build dynamic registry from scanned files
 const personRegistry = {};
@@ -11,7 +12,8 @@ Object.keys(personModules).forEach(path => {
     const personId = match[1];
     personRegistry[personId] = {
       en: personModules[path].default,
-      fr: personModulesFr[path.replace('en.json', 'fr.json')]?.default
+      fr: personModulesFr[path.replace('en.json', 'fr.json')]?.default,
+      zh: personModulesZh[path.replace('en.json', 'zh.json')]?.default
     };
   }
 });
@@ -57,7 +59,16 @@ export const loadTranslations = (personId, language) => {
   }
 };
 
-export const getAvailableLanguages = () => ['en', 'fr'];
+// Return available languages per person based on loaded locale files
+export const getAvailableLanguages = (personId) => {
+  const config = personRegistry[personId];
+  const langs = [];
+  if (config?.en) langs.push('en');
+  if (config?.fr) langs.push('fr');
+  if (config?.zh) langs.push('zh');
+  // Fallback to English if nothing found
+  return langs.length ? langs : ['en'];
+};
 
 export const getAvailablePersons = () => Object.keys(personRegistry);
 
@@ -70,10 +81,12 @@ export const personExists = (personId) => {
 const firstPerson = Object.keys(personRegistry)[0];
 const en = personRegistry[firstPerson]?.en;
 const fr = personRegistry[firstPerson]?.fr;
+const zh = personRegistry[firstPerson]?.zh;
 
 const translations = {
   en,
   fr,
+  zh,
 };
 
 export default translations;

@@ -51,7 +51,12 @@ const Landing = () => {
       </main>
 
       <footer className="landing-footer">
-        <p>&copy; 2024 HealthDots | Empower Your Portfolio</p>
+        <div className="footer-links">
+          <Link to="/privacy">Privacy Policy</Link>
+          <span>•</span>
+          <Link to="/terms">Terms of Use</Link>
+        </div>
+        <p>&copy; 2026 HealthDots | Empower Your Portfolio</p>
       </footer>
     </div>
   );

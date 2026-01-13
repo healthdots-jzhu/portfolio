@@ -20,11 +20,13 @@ export const LanguageProvider = ({ children, personId }) => {
   }, [personId, language]);
 
   const value = useMemo(() => {
+    const fontFamily = translations.theme?.fontFamily || 'Montserrat';
     return {
       personId: personId || 'karen-zhu-EU2O', // Make current personId available
       language,
-      availableLanguages: getAvailableLanguages(),
+      availableLanguages: getAvailableLanguages(personId || 'karen-zhu-EU2O'),
       setLanguage,
+      fontFamily,
       t: (path) => {
         if (!path) return '';
         const result = getNestedValue(translations, path);

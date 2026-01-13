@@ -14,6 +14,9 @@
     "toggleNavMenu": "Toggle navigation menu",
     "footer": "© 2025 by Karen Zhu | Social Media Marketing"
   },
+  "theme": {
+    "fontFamily": "Poppins"
+  },
   "home": {
     "hero": {
       "subtitle": "Student | Designer | Marketer | Artist",
@@ -79,6 +82,7 @@
     "subtitle": "About Me",
     "avatarAlt": "Personal character illustration",
     "avatarSrc": "/img/{person_id}/Personal-Character.avif",
+    "hobbiesImageSrc": "/img/{person_id}/aboutMe_hobbies.png",
     "aboutParagraphs": [
       "I'm a business student with a strong passion for design. Growing up taking art classes, I always enjoyed expressing my creativity in visual forms and found that I had a talent for it.",
       "I decided to pursue business as a degree because of the flexibility of being able to mould my interests with work and school. Like art, business requires thoughtful solutions that are both creative and practical. In my first year of classes at the University of Toronto, I particularly enjoyed my marketing classes because they heavily involved a creative components and offer opportunities to expand into design.",
@@ -106,8 +110,7 @@
             "title": "About",
             "logoSrc": "",
             "bodyLines": [
-              "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry.",
-              "The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
+              "A fashion business club run by University of Toronto students that revolves around core values of education, community, and networking in the fashion industry. The purpose of RCFG is to provide Rotman Commerce students the opportunity to connect on fashion and beauty topics such as global trends, styling advice, fashion careers, and business fashion.",
               "We host engaging events and create community within the world of fashion.",
               "Join us to expand your network and passion for the industry."
             ]
@@ -137,11 +140,18 @@
             "logoSrc": "",
             "bodyLines": [],
             "isConnectCard": true,
-            "connectInstagramLabel": "Instagram",
-            "connectInstagramHandle": "@rcfashiongroup",
-            "connectInstagramUrl": "https://www.instagram.com/rcfashiongroup",
-            "connectWebsiteLabel": "www.rcfashiongroup.com",
-            "connectWebsiteUrl": "https://www.rcfashiongroup.com"
+            "links": [
+              {
+                "label": "Instagram",
+                "handle": "@rcfashiongroup",
+                "url": "https://www.instagram.com/rcfashiongroup"
+              },
+              {
+                "label": "",
+                "handle": "www.rcfashiongroup.com",
+                "url": "https://www.rcfashiongroup.com"
+              }
+            ]
           }
         ],
         "artworkHeading": "Merch Design",
@@ -158,30 +168,33 @@
         ],
         "creativePostsHeading": "Creative Posts",
         "creativePostsIntro": "Our team thinks of creative ways to promote club events and, when there are no upcoming events, executes large creative projects such as street interviews and Instagram takeovers to keep our audience entertained and maintain consistent uploads.",
-        "thriftHeading": "RCFG Thrift Finds",
-        "thriftStats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.",
-        "thriftStatsLines": [
-          "759 Accounts Reached",
-          "85.7% from followers",
-          "14.3% from non-followers"
+        "events": [
+          {
+            "heading": "RCFG Thrift Finds",
+            "stats": "This September, to promote our Thrifting in Toronto event, we created a scrapbook style post to showcase executive team thrift finds.",
+            "statsLines": [
+              "759 Accounts Reached",
+              "85.7% from followers",
+              "14.3% from non-followers"
+            ],
+            "imageAlt": "Exec Thrift Finds Cover",
+            "imageSrc": "/img/{person_id}/ExecThriftFinds.avif"
+          }
         ],
-        "thriftImageAlt": "Exec Thrift Finds Cover",
-        "thriftImageSrc": "/img/{person_id}/ExecThriftFinds.avif",
-        
         "creativeReelsHeading": "Creative Reels",
         "creativeReelsBody": "Event Recaps, Day in the Life, and more coming soon...",
-        "showcaseHeading": "Director of Creative Content",
-        "showcaseSubtitle": "Feb. 2024 - Present",
-        "showcaseCards": [
-          { "title": "Leadership", "description": "Directed a group of 5 committee members to increase engagement and maximize event attendance." },
-          { "title": "Coordination", "description": "Worked closely with Marketing Directors to organize a content calendar and upload schedule." },
-          { "title": "Execusion", "description": "Encouraged idea generation and delegated tasks to committee members based on their strengths." },
-          { "title": "Market Analysis", "description": "Kept up with Instagram/TikTok trends and executed creative fashion content posts." }
-        ],
-        "connectHeading": "Connect with Us",
-        "connectInstagramLabel": "Instagram",
-        "connectInstagramHandle": "@rcfashiongroup",
-        "connectWebsiteLabel": "www.rcfashiongroup.com"
+        "showcases": [
+          {
+            "heading": "Director of Creative Content",
+            "subtitle": "Feb. 2024 - Present",
+            "cards": [
+              { "title": "Leadership", "description": "Directed a group of 5 committee members to increase engagement and maximize event attendance." },
+              { "title": "Coordination", "description": "Worked closely with Marketing Directors to organize a content calendar and upload schedule." },
+              { "title": "Execusion", "description": "Encouraged idea generation and delegated tasks to committee members based on their strengths." },
+              { "title": "Market Analysis", "description": "Kept up with Instagram/TikTok trends and executed creative fashion content posts." }
+            ]
+          }
+        ]
           }
     ]
   },
@@ -275,6 +288,65 @@
       "rightImage": {
         "src": "/img/{person_id}/cherish_about.avif",
         "alt": "What is Cherish Love Gala page screenshot"
+      }
+    }
+  },
+  "simonSaves": {
+    "browserTabName": "SimonSaves - Karen Zhu",
+    "hero": {
+      "title": "SimonSaves",
+      "subtitle": "Rotman Commerce Innovation Group x Rotman Commerce Fintech Association Design Dash Finalist",
+      "cta_label": "View Prototype",
+      "cta_url": "https://www.figma.com/proto/xw4hyc3g8zxUA3be71XRB2/Recipe-Book-App-Prototype?type=design&node-id=1-2&t=hYJdCZQe1uISo0eg-1&scaling=scale-down&page-id=0%3A1&starting-point-node-id=180%3A223"
+    },
+    "overview": {
+      "heading": "Overview",
+      "body": [
+        "Our group of 4 placed in the Top 3 for a case competition that challenged us to design a solution to solve an issue in the financial technology sector. Our solution introduced an app that uses machine learning to recommend recipes and spending on meals based on users' budgets and dietary restrictions and preferences."
+      ]
+    },
+    "keyFeatures": {
+      "title": "Key Features",
+      "items": [
+        "Filtered recipe and grocery search based on dietary restrictions and recommendations",
+        "Financial food budgeting summary on homepage",
+        "Information Cards providing tips and facts on different ingredients",
+        "Online community to chat with other app users and ask questions",
+        "Scrolling advertisement banners on homepage to promote ongoing discounts and sales"
+      ]
+    },
+    "role": {
+      "heading": "My Role",
+      "title": "UX Designer and Logo Creator",
+      "dates": "2023",
+      "body": [
+        "Due to my experience using Figma through Google's online UX Design course, with another team member, we took on the task of developing a user friendly app for financial budgeting and food education. The diverse skills of our team enabled me to lead the design process and guide my team mate through the basic functions of Figma.",
+        "Together, we worked on paper wireframes to brainstorm ideas, followed by creating mockups for each page on the app. I then took on the sole responsibility of the prototype stage, ensuring seamless interactions for all buttons.",
+        "Because of my extensive visual arts background, I also took on the task of creating a personalized mascot and logo for our brand. Our intended brand image was educational and friendly, thus leading to the creation of Simon the Persimmon. As a group, we decided on the name as we believed that consumers would immediately associate the unique fruit to our brand because of its rhyming name and uncommon use."
+      ]
+    },
+    "results": {
+      "heading": "Results",
+      "body": [
+        "Our group made it to the final presentation round where we got the opportunity to pitch our idea to a panel of experienced UX and Product designers. The final presentation included 10 minutes for pitch delivery and 5 minutes for panelists' questions."
+      ]
+    },
+    "learnings": {
+      "title": "Learnings",
+      "items": [
+        "The Design Process is a continual cycle",
+        "Background knowledge in technology is crucial",
+        "Utilize diverse team member skills with task delegation, but ensure all members have a say in each aspect of the project to maximize potential"
+      ]
+    },
+    "gallery": {
+      "mainImage": {
+        "src": "/img/{person_id}/SimonSaves_Mockup.avif",
+        "alt": "SimonSaves app mockup screenshot"
+      },
+      "mascotImage": {
+        "src": "/img/{person_id}/SimonSaves_Logo.avif",
+        "alt": "Simon the Persimmon mascot logo"
       }
     }
   }

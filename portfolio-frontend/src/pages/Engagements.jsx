@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslations } from '../context/LanguageContext';
+import { parseIconSyntax } from '../utils/parseIconSyntax';
 import './Engagements.css';
 
 const Engagements = () => {
@@ -9,7 +10,6 @@ const Engagements = () => {
   const [isClipped, setIsClipped] = useState({});
   // Support multiple engagements (array) while remaining backwards-compatible
   const engagementsRoot = t('engagements') || {};
-  const thriftImageSrc = engagementsRoot.thriftImageSrc;
   const items = Array.isArray(engagementsRoot.items)
     ? engagementsRoot.items
     : [
@@ -27,19 +27,23 @@ const Engagements = () => {
           artworkImageAlts: engagementsRoot.artworkImageAlts || engagementsRoot.merchImageAlts || [],
           creativePostsHeading: engagementsRoot.creativePostsHeading,
           creativePostsIntro: engagementsRoot.creativePostsIntro,
-          thriftHeading: engagementsRoot.thriftHeading,
-          thriftStats: engagementsRoot.thriftStats,
-          thriftStatsLines: engagementsRoot.thriftStatsLines || [],
-          thriftImageSrcs: engagementsRoot.thriftImageSrcs || [],
-          thriftImageAlts: engagementsRoot.thriftImageAlts || [],
+          events: engagementsRoot.events || [],
           leadershipHeading: engagementsRoot.leadershipHeading,
           leadershipBullets: engagementsRoot.leadershipBullets || [],
           creativeReelsHeading: engagementsRoot.creativeReelsHeading,
           creativeReelsBody: engagementsRoot.creativeReelsBody,
-          // new optional showcase section
-          showcaseHeading: engagementsRoot.showcaseHeading,
-          showcaseSubtitle: engagementsRoot.showcaseSubtitle,
-          showcaseCards: engagementsRoot.showcaseCards || [],
+          // optional showcases; fallback to single showcase fields for backward compatibility
+          showcases: Array.isArray(engagementsRoot.showcases)
+            ? engagementsRoot.showcases
+            : engagementsRoot.showcaseHeading
+              ? [
+                  {
+                    heading: engagementsRoot.showcaseHeading,
+                    subtitle: engagementsRoot.showcaseSubtitle,
+                    cards: engagementsRoot.showcaseCards || [],
+                  },
+                ]
+              : [],
         },
       ];
 
@@ -72,17 +76,30 @@ const Engagements = () => {
             next[id] = el.scrollHeight > el.clientHeight + 1;
           }
         });
-        // Also check showcase cards
-        const showcaseCards = Array.isArray(item.showcaseCards) ? item.showcaseCards : [];
-        showcaseCards.forEach((card, sidx) => {
-          const id = `${itemIdx}-showcase-${sidx}`;
-          const el = contentRefs.current[id];
-          if (!el) return;
-          if (expandedCards[id]) {
-            next[id] = false;
-          } else {
-            next[id] = el.scrollHeight > el.clientHeight + 1;
-          }
+        // Also check showcase cards (supports multiple showcase sections)
+        const showcases = Array.isArray(item.showcases)
+          ? item.showcases
+          : item.showcaseHeading
+            ? [
+                {
+                  heading: item.showcaseHeading,
+                  subtitle: item.showcaseSubtitle,
+                  cards: item.showcaseCards || [],
+                },
+              ]
+            : [];
+        showcases.forEach((showcase, sIdx) => {
+          const cards = Array.isArray(showcase.cards) ? showcase.cards : [];
+          cards.forEach((card, cIdx) => {
+            const id = `${itemIdx}-showcase-${sIdx}-${cIdx}`;
+            const el = contentRefs.current[id];
+            if (!el) return;
+            if (expandedCards[id]) {
+              next[id] = false;
+            } else {
+              next[id] = el.scrollHeight > el.clientHeight + 1;
+            }
+          });
         });
       });
       setIsClipped(prev => ({ ...prev, ...next }));
@@ -156,17 +173,39 @@ const Engagements = () => {
                     <h3>{title}</h3>
                     {card.isConnectCard ? (
                       <p ref={el => { contentRefs.current[id] = el; }}>
-                        {card.connectInstagramLabel}:&nbsp;
-                        <a href={card.connectInstagramUrl} target="_blank" rel="noopener noreferrer">
-                          {card.connectInstagramHandle}
-                        </a>
-                        <br/>
-                        <a href={card.connectWebsiteUrl} target="_blank" rel="noopener noreferrer">
-                          {card.connectWebsiteLabel}
-                        </a>
+                        {Array.isArray(card.links) && card.links.length > 0 ? (
+                          card.links.map((link, linkIdx) => (
+                            <React.Fragment key={linkIdx}>
+                              {link.label && <>{link.label}:&nbsp;</>}
+                              <a href={link.url} target="_blank" rel="noopener noreferrer">
+                                {link.handle || link.url}
+                              </a>
+                              {linkIdx < card.links.length - 1 && <br/>}
+                            </React.Fragment>
+                          ))
+                        ) : (
+                          // Fallback to old structure for backwards compatibility
+                          <>
+                            {card.connectInstagramLabel}:&nbsp;
+                            <a href={card.connectInstagramUrl} target="_blank" rel="noopener noreferrer">
+                              {card.connectInstagramHandle}
+                            </a>
+                            <br/>
+                            <a href={card.connectWebsiteUrl} target="_blank" rel="noopener noreferrer">
+                              {card.connectWebsiteLabel}
+                            </a>
+                          </>
+                        )}
                       </p>
                     ) : (
-                      <p ref={el => { contentRefs.current[id] = el; }} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+                      <p ref={el => { contentRefs.current[id] = el; }}>
+                        {bodyLines.map((line, lineIdx) => (
+                          <React.Fragment key={lineIdx}>
+                            {parseIconSyntax(line)}
+                            {lineIdx < bodyLines.length - 1 && <br/>}
+                          </React.Fragment>
+                        ))}
+                      </p>
                     )}
                     {showMore && !expanded && (
                       <button className="engagements-card-expand-btn" onClick={() => toggleExpand(id)}>Show More</button>
@@ -192,36 +231,50 @@ const Engagements = () => {
             </section>
           )}
 
-          {/* New optional showcase section (heading, subtitle, responsive cards) */}
-          {item.showcaseHeading && (
-            <section className="showcase">
-              <h2>{item.showcaseHeading}</h2>
-              {item.showcaseSubtitle && (
-                <p className="showcase-subtitle">{item.showcaseSubtitle}</p>
-              )}
-              <section className="engagements-cards">
-                {(item.showcaseCards || []).map((sc, sidx) => {
-                  const cardId = `${itemIdx}-showcase-${sidx}`;
-                  const isExpanded = expandedCards[cardId];
-                  const needsExpand = isClipped[cardId];
-                  return (
-                    <div className={`engagements-card ${isExpanded ? 'expanded' : ''}`} key={sidx}>
-                      <h3>{sc.title}</h3>
-                      <p ref={(el) => (contentRefs.current[cardId] = el)}>{sc.description}</p>
-                      {needsExpand && (
-                        <button
-                          className="engagements-card-expand-btn"
-                          onClick={() => toggleExpand(cardId)}
-                        >
-                          {isExpanded ? 'Less' : 'More'}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+          {/* Showcase sections (supports multiple sections; falls back to single legacy config) */}
+          {(() => {
+            const showcases = Array.isArray(item.showcases)
+              ? item.showcases
+              : item.showcaseHeading
+                ? [
+                    {
+                      heading: item.showcaseHeading,
+                      subtitle: item.showcaseSubtitle,
+                      cards: item.showcaseCards || [],
+                    },
+                  ]
+                : [];
+            if (!showcases.length) return null;
+            return showcases.map((showcase, sIdx) => (
+              <section className="showcase" key={`showcase-${sIdx}`}>
+                <h2>{showcase.heading}</h2>
+                {showcase.subtitle && (
+                  <p className="showcase-subtitle">{showcase.subtitle}</p>
+                )}
+                <section className="engagements-cards">
+                  {(showcase.cards || []).map((sc, cIdx) => {
+                    const cardId = `${itemIdx}-showcase-${sIdx}-${cIdx}`;
+                    const isExpanded = expandedCards[cardId];
+                    const needsExpand = isClipped[cardId];
+                    return (
+                      <div className={`engagements-card ${isExpanded ? 'expanded' : ''}`} key={cIdx}>
+                        <h3>{sc.title}</h3>
+                        <p ref={(el) => (contentRefs.current[cardId] = el)}>{sc.description}</p>
+                        {(needsExpand || isExpanded) && (
+                          <button
+                            className="engagements-card-expand-btn"
+                            onClick={() => toggleExpand(cardId)}
+                          >
+                            {isExpanded ? 'Show Less' : 'Show More'}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </section>
               </section>
-            </section>
-          )}
+            ));
+          })()}
 
           {item.artworkHeading && (
             <section className="showcase">
@@ -248,38 +301,42 @@ const Engagements = () => {
             <section className="creative-posts">
               <h2>{item.creativePostsHeading}</h2>
               <p>{item.creativePostsIntro}</p>
-              <h3>{item.thriftHeading}</h3>
-              <p>{item.thriftStats}</p>
-              <div className="thrift-content">
-                <div className="thrift-stats">
-                  {(item.thriftStatsLines || []).map((line, idx) => {
-                    const [num, ...rest] = String(line).split(' ');
-                    return (
-                      <h3 key={idx}>
-                        <strong>{num}</strong> {rest.join(' ')}
-                      </h3>
-                    );
-                  })}
-                </div>
-                <div className="thrift-image-container">
-                  <div className="thrift-gallery">
-                    <img
-                      src={resolvePath(item.thriftImageSrc)}
-                      alt={item.thriftImageAlt || ''}
-                      className="thrift-card"
-                    />
+              {(item.events || []).map((event, eventIdx) => (
+                <div key={eventIdx} className="event-section">
+                  <h3>{event.heading}</h3>
+                  <p>{event.stats}</p>
+                  <div className="event-content">
+                    <div className="event-stats">
+                      {(event.statsLines || []).map((line, idx) => {
+                        const [num, ...rest] = String(line).split(' ');
+                        return (
+                          <h3 key={idx}>
+                            <strong>{num}</strong> {rest.join(' ')}
+                          </h3>
+                        );
+                      })}
+                    </div>
+                    <div className="event-image-container">
+                      <div className="event-gallery">
+                        <img
+                          src={resolvePath(event.imageSrc)}
+                          alt={event.imageAlt || ''}
+                          className="event-card"
+                        />
+                      </div>
+                      <a 
+                        href="https://www.instagram.com/rcfashiongroup/?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw%3D%3D#" 
+                        target="_blank" 
+                        rel="noreferrer noopener" 
+                        className="event-more-btn"
+                        aria-label="More Posts"
+                      >
+                        <span>More Posts</span>
+                      </a>
+                    </div>
                   </div>
-                  <a 
-                    href="https://www.instagram.com/rcfashiongroup/?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw%3D%3D#" 
-                    target="_blank" 
-                    rel="noreferrer noopener" 
-                    className="thrift-more-btn"
-                    aria-label="More Posts"
-                  >
-                    <span>More Posts</span>
-                  </a>
                 </div>
-              </div>
+              ))}
             </section>
           )}
 

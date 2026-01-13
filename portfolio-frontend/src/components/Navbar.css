@@ -4,7 +4,7 @@
   align-items: center;
   padding: 1rem 1rem;
   background-color: #fff;
-  font-family: 'Inter', Arial, sans-serif;
+  font-family: var(--font-primary), Arial, sans-serif;
   gap: 1.5rem;
   position: relative;
 }

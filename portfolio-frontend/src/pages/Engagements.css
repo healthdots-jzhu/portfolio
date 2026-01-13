@@ -46,9 +46,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
   background: #f6f3f0; /* slightly darker tint */
-  padding: 1.6rem; /* increased top padding so icon doesn't overlap content */
+  padding: 1.2rem; /* increased top padding so icon doesn't overlap content */
   border-radius: 12px;
   border: 1px solid #dfe8ff; /* stronger border */
   box-shadow: 0 10px 30px rgba(32,36,64,0.08); /* deeper shadow */
@@ -77,19 +76,23 @@
 }
 
 .engagements-card h3 {
-  margin-top: 1rem;
-  margin-bottom: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .engagements-card p {
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.8;
   display: -webkit-box;
   line-clamp: 6; /* show more content before expand */
   -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.engagements-card p svg {
+  padding-right: 8px;
 }
 
 .engagements-card.expanded p {
@@ -263,43 +266,44 @@
   height: auto;
 }
 
-.thrift-content {
+.event-content {
   display: flex;
   flex-direction: column;
   gap: 2rem;
   margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
-.thrift-stats {
+.event-stats {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.thrift-stats h3 {
+.event-stats h3 {
   margin: 0;
 }
 
-.thrift-image-container {
+.event-image-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1rem;
 }
 
-.thrift-gallery {
+.event-gallery {
   display: flex;
   justify-content: center;
 }
 
-.thrift-card {
+.event-card {
   border-radius: 12px;
   box-shadow: 0 2px 10px #dadee966;
   background: #f5f5f8;
   max-width: 100%;
 }
 
-.thrift-more-btn {
+.event-more-btn {
   display: inline-block;
   padding: 10px 24px;
   background: transparent;
@@ -314,28 +318,28 @@
   text-align: center;
 }
 
-.thrift-more-btn:hover {
+.event-more-btn:hover {
   background: #000;
   color: #fff;
 }
 
-.thrift-more-btn span {
+.event-more-btn span {
   display: block;
 }
 
 @media (min-width: 768px) {
-  .thrift-content {
+  .event-content {
     flex-direction: row;
     align-items: center;
     gap: 3rem;
   }
 
-  .thrift-stats {
+  .event-stats {
     flex: 0 0 auto;
     max-width: 350px;
   }
 
-  .thrift-image-container {
+  .event-image-container {
     flex: 1;
   }
 }

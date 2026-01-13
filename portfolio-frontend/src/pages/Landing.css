@@ -143,9 +143,33 @@
   margin-top: auto;
 }
 
+.landing-footer .footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.landing-footer .footer-links a {
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.2s;
+  font-size: 0.9rem;
+}
+
+.landing-footer .footer-links a:hover {
+  color: white;
+}
+
+.landing-footer .footer-links span {
+  color: #6b7280;
+}
+
 .landing-footer p {
   margin: 0;
   font-size: 0.95rem;
+  color: #9ca3af;
 }
 
 @media (max-width: 768px) {
