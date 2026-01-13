@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import privacyPolicyEn from '../locales/privacy-policy?raw';
-import privacyPolicyFr from '../locales/privacy-policy.fr?raw';
+import privacyPolicyEn from '../locales/privacy-policy.md?raw';
+import privacyPolicyFr from '../locales/privacy-policy.fr.md?raw';
 import './LegalPage.css';
 
 const PrivacyPolicy = () => {
