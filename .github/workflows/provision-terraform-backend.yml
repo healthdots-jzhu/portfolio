@@ -1,0 +1,66 @@
+name: Provision Terraform Backend (S3 + DynamoDB)
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws_region:
+        description: "AWS region to deploy backend resources"
+        required: true
+        default: "ca-central-1"
+      bucket_name:
+        description: "Explicit S3 bucket name (optional; must be lowercase, globally unique)"
+        required: false
+      table_name:
+        description: "DynamoDB table name (optional)"
+        required: false
+      sse_algorithm:
+        description: "S3 encryption algorithm (AES256 or aws:kms)"
+        required: false
+        default: "AES256"
+      kms_key_id:
+        description: "KMS key ID/ARN when sse_algorithm=aws:kms (optional)"
+        required: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws_region }}
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform/state-backend
+        run: |
+          terraform init -input=false
+
+      - name: Terraform Apply (one-time provisioning)
+        working-directory: terraform/state-backend
+        env:
+          AWS_REGION: ${{ inputs.aws_region }}
+        run: |
+          TF_VAR_aws_region='${{ inputs.aws_region }}' \
+          TF_VAR_bucket_name='${{ inputs.bucket_name }}' \
+          TF_VAR_table_name='${{ inputs.table_name }}' \
+          TF_VAR_sse_algorithm='${{ inputs.sse_algorithm }}' \
+          TF_VAR_kms_key_id='${{ inputs.kms_key_id }}' \
+          terraform apply -auto-approve -input=false
+
+      - name: Show outputs
+        working-directory: terraform/state-backend
+        run: |
+          terraform output

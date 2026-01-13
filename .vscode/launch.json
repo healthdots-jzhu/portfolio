@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (web)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/APIs/Portfolio.Api/bin/Debug/net10.0/Portfolio.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/APIs/Portfolio.Api",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "AWS_PROFILE": "Admin-199061575177"
+      },
+      "console": "internalConsole"
+    },
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ]
+}
