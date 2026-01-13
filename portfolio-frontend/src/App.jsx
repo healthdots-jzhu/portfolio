@@ -14,6 +14,8 @@ import Engagements from './pages/Engagements';
 import Specialties from './pages/Specialties';
 import Cherish from './pages/Cherish';
 import SimonSaves from './pages/SimonSaves';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfUse from './pages/TermsOfUse';
 import './App.css';
 
 // Subdomain to person ID mapping
@@ -143,6 +145,10 @@ function SubdomainRedirectWrapper() {
     <Routes>
       {/* Default landing page - no person ID required */}
       <Route path="/" element={<Landing />} />
+
+      {/* Legal pages */}
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfUse />} />
 
       {/* Person-specific portfolios */}
       <Route path="/p/:personId/*" element={<PersonLoader />} />
