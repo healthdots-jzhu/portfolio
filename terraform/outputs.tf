@@ -49,3 +49,29 @@ output "postgres_connection_via_ssm" {
   description = "psql command to connect to PostgreSQL via SSM session"
   sensitive   = true
 }
+
+# Scheduler Outputs
+output "scheduler_lambda_function_name" {
+  value       = aws_lambda_function.resource_scheduler.function_name
+  description = "Lambda function name for resource scheduler"
+}
+
+output "scheduler_lambda_arn" {
+  value       = aws_lambda_function.resource_scheduler.arn
+  description = "Lambda function ARN for resource scheduler"
+}
+
+output "scheduler_stop_time" {
+  value       = "12:00 AM ET (5:00 AM UTC during DST)"
+  description = "Time when resources are stopped daily"
+}
+
+output "scheduler_start_time" {
+  value       = "9:00 AM ET (2:00 PM UTC during DST)"
+  description = "Time when resources are started daily"
+}
+
+output "scheduler_cloudwatch_logs" {
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#logsV2:log-groups/log-group/${replace(aws_cloudwatch_log_group.lambda_scheduler.name, "/", "$252F")}"
+  description = "CloudWatch Logs URL for scheduler Lambda"
+}

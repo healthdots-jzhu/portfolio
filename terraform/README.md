@@ -18,6 +18,7 @@ This Terraform configuration creates a secure, minimal setup for accessing a Pos
 ✅ **Encryption**: RDS encrypted with customer-managed KMS key
 ✅ **Monitoring**: CloudWatch monitoring enabled
 ✅ **Backup**: Automated daily backups retained for 7 days
+✅ **Cost Optimization**: Automated scheduler stops resources at night (12AM-9AM ET) - See [SCHEDULER_README.md](SCHEDULER_README.md)
 
 ## Prerequisites
 - AWS Account with appropriate permissions
