@@ -11,7 +11,7 @@ const Navbar = () => {
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
 
-  const navLabels = t('common.nav') || {};
+  const navConfig = t('common.nav') || [];
   const languageLabel = t('common.languageLabel');
   const languageNames = t('common.languages');
 
@@ -19,20 +19,24 @@ const Navbar = () => {
   const currentPersonId = personId || contextPersonId;
 
   // Get navigation items dynamically with correct paths
-  const navItems = Object.keys(navLabels).map(key => {
-    let path;
-    if (key === 'home') {
-      // Home should go to the person root
-      path = currentPersonId ? `/p/${currentPersonId}` : '/';
+  const navItems = navConfig.map((item, index) => {
+    // If path starts with 'http://' or 'https://', use as external link
+    // If path starts with '/', use as absolute path
+    // Otherwise, treat as relative path under /p/{personId}/
+    let fullPath;
+    if (item.path.startsWith('http://') || item.path.startsWith('https://')) {
+      fullPath = item.path;
+    } else if (item.path.startsWith('/')) {
+      fullPath = item.path;
     } else {
-      // Other pages should be relative to the person route
-      path = currentPersonId ? `/p/${currentPersonId}/${key}` : `/${key}`;
+      fullPath = currentPersonId ? `/p/${currentPersonId}/${item.path}` : `/${item.path}`;
     }
 
     return {
-      key,
-      label: navLabels[key],
-      path
+      key: `nav-${index}`,
+      label: item.label,
+      path: fullPath,
+      isExternal: item.path.startsWith('http://') || item.path.startsWith('https://')
     };
   });
 
@@ -57,9 +61,13 @@ const Navbar = () => {
           </select>
         </div>
         <ul className={`navbar-links ${isOpen ? 'show' : ''}`}>
-          {navItems.map(({ key, label, path }) => (
+          {navItems.map(({ key, label, path, isExternal }) => (
             <li key={key}>
-              <Link to={path} onClick={closeMenu}>{label}</Link>
+              {isExternal ? (
+                <a href={path} target="_blank" rel="noopener noreferrer" onClick={closeMenu}>{label}</a>
+              ) : (
+                <Link to={path} onClick={closeMenu}>{label}</Link>
+              )}
             </li>
           ))}
         </ul>

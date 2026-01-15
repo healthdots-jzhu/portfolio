@@ -2,10 +2,16 @@
   "common": {
     "siteName": "Jason Zhu",
     "baseTitle": "Jason Zhu",
-    "nav": {
-      "specialties": "Achievements",
-      "about": "About Me"
-    },
+    "nav": [
+      {
+        "label": "Achievements",
+        "path": "specialties"
+      },
+      {
+        "label": "About Me",
+        "path": "about"
+      }
+    ],
     "languageLabel": "Language",
     "languages": {
       "en": "English",
@@ -13,13 +19,84 @@
       "zh": "中文"
     },
     "toggleNavMenu": "Toggle navigation menu",
-    "footer": "© 2025 by Jason Zhu | Senior Software Engineering Leader"
+    "footer": "© 2026 by Jason Zhu | Senior Software Engineering Leader",
+    "showcases": [
+      {
+        "title": "Platform Modernization Initiative",
+        "subtitle": "Leading a large-scale cloud migration and microservices transformation",
+        "cta_label": "View Details",
+        "cta_url": "https://example.com",
+        "carouselImages": [
+          {
+            "imageSrc": "/img/{person_id}/platform_arch_1.png",
+            "imageAlt": "Legacy system architecture"
+          },
+          {
+            "imageSrc": "/img/{person_id}/platform_arch_2.png",
+            "imageAlt": "Modern cloud-based architecture"
+          },
+          {
+            "imageSrc": "/img/{person_id}/platform_metrics.png",
+            "imageAlt": "Performance improvements dashboard"
+          }
+        ],
+        "features": [
+          {
+            "title": "Architecture Design",
+            "description": "Designed and implemented a modern, scalable cloud-native architecture using microservices principles, containerization with Docker/Kubernetes, and event-driven patterns to replace the monolithic legacy system."
+          },
+          {
+            "title": "Team Leadership",
+            "description": "Led cross-functional teams of developers, architects, and DevOps engineers through the complex migration process, ensuring clear communication and alignment on technical decisions and timelines."
+          },
+          {
+            "title": "Risk Management",
+            "description": "Implemented comprehensive risk mitigation strategies including parallel running, canary deployments, and rollback procedures to ensure zero downtime and data integrity during the transition."
+          },
+          {
+            "title": "Performance Optimization",
+            "description": "Achieved 60% reduction in latency, 40% cost savings, and 99.99% uptime through optimized caching strategies, load balancing, and auto-scaling capabilities in the new cloud infrastructure."
+          }
+        ],
+        "stories": [
+          {
+            "title": "The Challenge",
+            "subtitle": "Moving from Monolith to Microservices",
+            "description": "The organization was operating on a 15-year-old monolithic application that had become increasingly difficult to scale and maintain. The system experienced frequent outages, had long deployment cycles, and couldn't support the company's growth ambitions.",
+            "images": [
+              {
+                "imageSrc": "/img/{person_id}/legacy_system.png",
+                "imageAlt": "Legacy monolithic system architecture diagram"
+              }
+            ],
+            "footer": "This transformation required careful planning, stakeholder management, and a phased approach to minimize business impact while maximizing technical improvements."
+          },
+          {
+            "title": "The Solution",
+            "subtitle": "Building the Future Platform",
+            "description": "We implemented a comprehensive modernization strategy that included breaking down the monolith into independently deployable microservices, adopting containerization for consistency, and leveraging AWS services for scalability and reliability.",
+            "images": [
+              {
+                "imageSrc": "/img/{person_id}/microservices_arch.png",
+                "imageAlt": "Microservices architecture with event streaming"
+              },
+              {
+                "imageSrc": "/img/{person_id}/kubernetes_deployment.png",
+                "imageAlt": "Kubernetes cluster deployment diagram"
+              }
+            ],
+            "footer": "The new platform reduced operational overhead, improved developer productivity, and enabled the organization to deploy updates multiple times per day with confidence."
+          }
+        ]
+      }
+    ]
   },
   "theme": {
     "fontFamily": "Comic Neue"
   },
   "home": {
     "hero": {
+      "title": "Jason Zhu",
       "subtitle": "Technology Management | Software Engineering | Team & Platform Builder",
       "intro": "Sr. technology leader with 25+ years of experience leading software architecture, development, and transformation initiatives in Health, Insurance, and Group Benefits. Expert in AI-powered automation, scalable enterprise platforms, cloud and agile delivery. Known for driving innovation, operational efficiency, and measurable business outcomes."
     },

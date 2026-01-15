@@ -12,7 +12,7 @@ const PersonHome = () => {
   const basePath = location.pathname.split('/').slice(0, 3).join('/');
 
   const hero = {
-    title: t('common.siteName'),
+    title: t('home.hero.title'),
     subtitle: t('home.hero.subtitle'),
     intro: t('home.hero.intro')
   };

@@ -8,6 +8,10 @@ const Engagements = () => {
   const [expandedCards, setExpandedCards] = useState({});
   const contentRefs = useRef({});
   const [isClipped, setIsClipped] = useState({});
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   // Support multiple engagements (array) while remaining backwards-compatible
   const engagementsRoot = t('engagements') || {};
   const items = Array.isArray(engagementsRoot.items)

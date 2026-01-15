@@ -2,10 +2,16 @@
   "common": {
     "siteName": "Jason Zhu",
     "baseTitle": "Jason Zhu",
-    "nav": {
-      "specialties": "成就",
-      "about": "关于我"
-    },
+    "nav": [
+      {
+        "label": "成就",
+        "path": "specialties"
+      },
+      {
+        "label": "关于我",
+        "path": "about"
+      }
+    ],
     "languageLabel": "语言",
     "languages": {
       "en": "English",
@@ -13,14 +19,83 @@
       "zh": "中文"
     },
     "toggleNavMenu": "切换导航菜单",
-    "footer": "© 2025 Jason Zhu | 高级软件工程领导者"
+    "footer": "© 2026 Jason Zhu | 高级软件工程领导者",
+    "showcases": [
+      {
+        "title": "平台现代化计划",
+        "subtitle": "领导大规模云迁移和微服务转型",
+        "cta_label": "查看详情",
+        "cta_url": "https://example.com",
+        "carouselImages": [
+          {
+            "imageSrc": "/img/{person_id}/platform_arch_1.png",
+            "imageAlt": "传统系统架构"
+          },
+          {
+            "imageSrc": "/img/{person_id}/platform_arch_2.png",
+            "imageAlt": "现代云架构"
+          },
+          {
+            "imageSrc": "/img/{person_id}/platform_metrics.png",
+            "imageAlt": "性能改进仪表板"
+          }
+        ],
+        "features": [
+          {
+            "title": "架构设计",
+            "description": "设计并实施了现代的、可扩展的云原生架构，采用微服务原则、使用Docker/Kubernetes的容器化，以及事件驱动模式来替代单体的传统系统。"
+          },
+          {
+            "title": "团队领导",
+            "description": "领导开发人员、架构师和DevOps工程师组成的跨职能团队完成复杂的迁移过程，确保在技术决策和时间表上的清晰沟通和一致性。"
+          },
+          {
+            "title": "风险管理",
+            "description": "实施了全面的风险缓解策略，包括平行运行、金丝雀部署和回滚程序，以确保迁移过程中零停机和数据完整性。"
+          },
+          {
+            "title": "性能优化",
+            "description": "通过优化缓存策略、负载均衡和新云基础设施中的自动扩展功能，实现了60%的延迟降低、40%的成本节省和99.99%的正常运行时间。"
+          }
+        ],
+        "stories": [
+          {
+            "title": "挑战",
+            "subtitle": "从单体到微服务的转变",
+            "description": "该组织运营一个有15年历史的单体应用程序，它变得越来越难以扩展和维护。系统经常出现故障，部署周期长，无法支持公司的增长雄心。",
+            "images": [
+              {
+                "imageSrc": "/img/{person_id}/legacy_system.png",
+                "imageAlt": "传统单体系统架构图"
+              }
+            ],
+            "footer": "这次转型需要仔细的计划、利益相关者管理和分阶段的方法，以最小化业务影响，同时最大化技术改进。"
+          },
+          {
+            "title": "解决方案",
+            "subtitle": "构建未来的平台",
+            "description": "我们实施了一项全面的现代化战略，包括将单体分解为独立可部署的微服务，采用容器化实现一致性，并利用AWS服务实现可扩展性和可靠性。",
+            "images": [
+              {
+                "imageSrc": "/img/{person_id}/microservices_arch.png",
+                "imageAlt": "具有事件流的微服务架构"
+              },
+              {
+                "imageSrc": "/img/{person_id}/kubernetes_deployment.png",
+                "imageAlt": "Kubernetes集群部署图"
+              }
+            ],
+            "footer": "新平台降低了运营开销，提高了开发人员生产力，使组织能够每天多次自信地部署更新。"
+          }
+        ]
+      }
+    ]
   },
   "theme": {
     "fontFamily": "Comic Neue"
   },
   "home": {
-    "hero": {
-      "subtitle": "技术管理 | 软件工程 | 团队与平台构建者",
+    "hero": {      "title": "Jason Zhu",      "subtitle": "技术管理 | 软件工程 | 团队与平台构建者",
       "intro": "拥有25年以上经验的资深技术领导者，专业从事健康、保险和集体福利领域的软件架构、开发和转型倡议。擅长AI驱动的自动化、可扩展企业平台、云计算和敏捷交付。以推动创新、运营效率和可衡量的业务成果而闻名。"
     },
     "features": {

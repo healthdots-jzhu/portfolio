@@ -30,37 +30,70 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@v5.0.1
+        with:
+          path: ${{ env.HOME }}/.terraform.d/plugin-cache
+          key: terraform-plugin-cache-${{ runner.os }}-${{ inputs.aws_region }}
+          restore-keys: |
+            terraform-plugin-cache-${{ runner.os }}-
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
           aws-region: ${{ inputs.aws_region }}
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v3.1.2
         with:
           terraform_wrapper: false
 
+      - name: Terraform Fmt (check)
+        working-directory: terraform/state-backend
+        env:
+          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
+        run: |
+          terraform fmt -check -recursive
+
       - name: Terraform Init
         working-directory: terraform/state-backend
+        env:
+          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
         run: |
           terraform init -input=false
 
-      - name: Terraform Apply (one-time provisioning)
+      - name: Terraform Validate
+        working-directory: terraform/state-backend
+        env:
+          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
+        run: |
+          terraform validate -no-color
+
+      - name: Terraform Plan
         working-directory: terraform/state-backend
         env:
           AWS_REGION: ${{ inputs.aws_region }}
+          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
         run: |
           TF_VAR_aws_region='${{ inputs.aws_region }}' \
           TF_VAR_bucket_name='${{ inputs.bucket_name }}' \
           TF_VAR_table_name='${{ inputs.table_name }}' \
           TF_VAR_sse_algorithm='${{ inputs.sse_algorithm }}' \
           TF_VAR_kms_key_id='${{ inputs.kms_key_id }}' \
-          terraform apply -auto-approve -input=false
+          terraform plan -input=false -out=tfplan
+
+      - name: Terraform Apply (one-time provisioning)
+        working-directory: terraform/state-backend
+        env:
+          AWS_REGION: ${{ inputs.aws_region }}
+          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
+        run: |
+          terraform apply -auto-approve -input=false tfplan
 
       - name: Show outputs
         working-directory: terraform/state-backend
         run: |
-          terraform output
+          terraform output -json

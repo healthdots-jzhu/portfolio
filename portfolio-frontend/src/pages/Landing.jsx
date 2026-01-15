@@ -1,9 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getAuthConfig } from '../services/authService';
 import '../App.css';
 import './Landing.css';
 
 const Landing = () => {
+  const [authUrl, setAuthUrl] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadAuthUrl = async () => {
+      try {
+        const config = await getAuthConfig();
+        
+        // Store the current URL for redirect after auth
+        sessionStorage.setItem('preAuthUrl', window.location.href);
+        
+        // Build the Cognito authorization URL
+        const params = new URLSearchParams({
+          client_id: config.clientId,
+          response_type: 'code',
+          scope: 'email openid phone',
+          redirect_uri: config.redirectUri
+        });
+        setAuthUrl(`https://${config.domain}/oauth2/authorize?${params.toString()}`);
+      } catch (err) {
+        console.error('Failed to load auth config:', err);
+        setError(err.message);
+      }
+    };
+    loadAuthUrl();
+  }, []);
+
   return (
     <div className="landing-container">
       <nav className="navbar">
@@ -21,7 +49,13 @@ const Landing = () => {
               Share your projects, experiences, and passion with the world.
             </p>
             <div className="cta-buttons">
-              <button className="cta-primary">Register Your Portfolio</button>
+              {error ? (
+                <button className="cta-primary" disabled title="Error loading auth config">Register Your Portfolio</button>
+              ) : (
+                <a href={authUrl || '#'} className="cta-primary" onClick={(e) => !authUrl && e.preventDefault()}>
+                  {authUrl ? 'Register Your Portfolio' : 'Loading...'}
+                </a>
+              )}
               <button className="cta-secondary">Learn More</button>
             </div>
           </div>

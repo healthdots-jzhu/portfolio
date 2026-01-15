@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useParams, Navigate, useLocation } from 'react-router-dom';
 import { LanguageProvider, useTranslations } from './context/LanguageContext';
 import { personExists, getAvailablePersons } from './locales';
 import { applyFontFamily } from './utils/fontLoader';
@@ -14,8 +14,10 @@ import Engagements from './pages/Engagements';
 import Specialties from './pages/Specialties';
 import Cherish from './pages/Cherish';
 import SimonSaves from './pages/SimonSaves';
+import Showcases from './pages/Showcases';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
+import AuthCallback from './pages/AuthCallback';
 import './App.css';
 
 // Subdomain to person ID mapping
@@ -87,6 +89,10 @@ function PersonPortfolio() {
       routes.push(<Route key="simonSaves" path="simonSaves" element={<SimonSaves />} />);
     }
 
+    if (t('common.showcases') && t('common.showcases').length > 0) {
+      routes.push(<Route key="showcases" path="showcase/:showcaseIndex" element={<Showcases />} />);
+    }
+
     return routes;
   };
 
@@ -125,12 +131,10 @@ function PersonLoader() {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Subdomain redirect - must be first to catch root and non-/p/ paths */}
-        <Route path="*" element={<SubdomainRedirectWrapper />} />
-      </Routes>
-    </Router>
+    <Routes>
+      {/* Subdomain redirect - must be first to catch root and non-/p/ paths */}
+      <Route path="*" element={<SubdomainRedirectWrapper />} />
+    </Routes>
   );
 }
 
@@ -143,6 +147,9 @@ function SubdomainRedirectWrapper() {
   
   return (
     <Routes>
+      {/* Auth callback route */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
+
       {/* Default landing page - no person ID required */}
       <Route path="/" element={<Landing />} />
 
