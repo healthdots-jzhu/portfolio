@@ -11,9 +11,10 @@ const Navbar = () => {
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
 
-  const navConfig = t('common.nav') || [];
+  const rawNav = t('common.nav');
+  const navConfig = Array.isArray(rawNav) ? rawNav : [];
   const languageLabel = t('common.languageLabel');
-  const languageNames = t('common.languages');
+  const languageNames = t('common.languages') || {};
 
   // Use personId from context (which handles default route) or from params
   const currentPersonId = personId || contextPersonId;

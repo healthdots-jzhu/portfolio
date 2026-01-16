@@ -64,11 +64,11 @@ function PersonPortfolio() {
     routes.push(<Route key="about" path="about" element={<AboutMe />} />);
 
     // Other sections - relative paths
-    if (t('engagements.title')) {
+    if (t('engagements')) {
       routes.push(<Route key="engagements" path="engagements" element={<Engagements />} />);
     }
 
-    if (t('specialties.title')) {
+    if (t('specialties')) {
       routes.push(<Route key="specialties" path="specialties" element={<Specialties />} />);
     }
 
@@ -113,13 +113,7 @@ function PersonLoader() {
   const { personId } = useParams();
 
   if (!personExists(personId)) {
-    return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <h1>Portfolio Not Found</h1>
-        <p>The portfolio for "{personId}" could not be found.</p>
-        {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
-      </div>
-    );
+    return <Navigate to="/" replace />;
   }
 
   return (

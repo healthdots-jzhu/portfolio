@@ -19,10 +19,10 @@ const PersonHome = () => {
 
   const features = {
     title: t('home.features.title'),
-    items: t('home.features.items') || []
+    items: Array.isArray(t('home.features.items')) ? t('home.features.items') : []
   };
 
-  const topEngagements = t('home.topEngagements') || [];
+  const topEngagements = Array.isArray(t('home.topEngagements')) ? t('home.topEngagements') : [];
 
   // Helper function to resolve link paths
   const resolveLink = (link) => {

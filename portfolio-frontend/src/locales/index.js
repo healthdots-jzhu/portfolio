@@ -1,4 +1,6 @@
-// Dynamic loading using Vite's import.meta.glob
+import { portfolioApi } from '../services/portfolioApi';
+
+// Dynamic loading using Vite's import.meta.glob (for fallback)
 const personModules = import.meta.glob('./persons/*/en.json', { eager: true });
 const personModulesFr = import.meta.glob('./persons/*/fr.json', { eager: true });
 const personModulesZh = import.meta.glob('./persons/*/zh.json', { eager: true });
@@ -20,9 +22,17 @@ Object.keys(personModules).forEach(path => {
 
 console.log('Available person portfolios:', Object.keys(personRegistry));
 
-// Synchronous loading of person-specific translations
-export const loadTranslations = (personId, language) => {
+// Async loading of person-specific translations (API first, fallback to static)
+export const loadTranslations = async (personId, language) => {
   try {
+    // Try to load from API first
+    const data = await portfolioApi.getLocale(personId, language);
+    console.log(`Loaded ${personId}/${language} from API`);
+    return data;
+  } catch (apiError) {
+    console.warn(`Failed to load from API, falling back to static files:`, apiError.message);
+    
+    // Fallback to static files
     const personConfig = personRegistry[personId];
     if (!personConfig) {
       console.warn(`Person ${personId} not found, available persons:`, Object.keys(personRegistry));
@@ -38,29 +48,22 @@ export const loadTranslations = (personId, language) => {
     }
 
     return translations;
-  } catch (error) {
-    console.error(`Failed to load translations for ${personId}/${language}:`, error);
-    // Ultimate fallback - return first available person's English translations
-    const firstPerson = Object.keys(personRegistry)[0];
-    return personRegistry[firstPerson]?.en || {
-      common: {
-        siteName: "Portfolio Platform",
-        baseTitle: "Portfolio Platform",
-        nav: { about: "About" },
-        footer: "Welcome to our portfolio platform"
-      },
-      about: {
-        pageTitle: "Welcome",
-        title: "Portfolio Platform",
-        subtitle: "Showcase your work",
-        aboutParagraphs: ["Welcome to our portfolio platform where you can showcase your work."]
-      }
-    };
   }
 };
 
-// Return available languages per person based on loaded locale files
-export const getAvailableLanguages = (personId) => {
+// Return available languages per person (API first, fallback to static)
+export const getAvailableLanguages = async (personId) => {
+  try {
+    // Try to get from API
+    const portfolio = await portfolioApi.getPortfolio(personId);
+    if (portfolio && portfolio.availableLanguages) {
+      return portfolio.availableLanguages;
+    }
+  } catch (error) {
+    console.warn(`Failed to get languages from API, using static registry:`, error.message);
+  }
+  
+  // Fallback to static registry
   const config = personRegistry[personId];
   const langs = [];
   if (config?.en) langs.push('en');

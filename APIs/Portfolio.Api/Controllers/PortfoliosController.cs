@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Portfolio.Api.Data;
 using Portfolio.Api.Models;
@@ -56,18 +57,12 @@ public class PortfoliosController : ControllerBase
     /// Get public portfolio metadata by personId.
     /// </summary>
     [HttpGet("{personId}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetPortfolio(string personId)
     {
         var portfolio = await _context.Portfolios
+            .Include(p => p.Locales)
             .Where(p => p.PersonId == personId && p.IsActive)
-            .Select(p => new
-            {
-                p.Id,
-                p.PersonId,
-                p.DisplayName,
-                p.Subdomain,
-                p.CreatedAt
-            })
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -75,13 +70,28 @@ public class PortfoliosController : ControllerBase
             return NotFound(new { error = "Portfolio not found" });
         }
 
-        return Ok(portfolio);
+        var availableLanguages = portfolio.Locales
+            .Select(l => l.Language)
+            .Distinct()
+            .OrderBy(l => l)
+            .ToList();
+
+        return Ok(new
+        {
+            portfolio.Id,
+            portfolio.PersonId,
+            portfolio.DisplayName,
+            portfolio.Subdomain,
+            portfolio.CreatedAt,
+            AvailableLanguages = availableLanguages
+        });
     }
 
     /// <summary>
     /// Get locale content for a portfolio by personId and language.
     /// </summary>
     [HttpGet("{personId}/locales/{language}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetLocale(string personId, string language)
     {
         var locale = await _context.PortfolioLocales
