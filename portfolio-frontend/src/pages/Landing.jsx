@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAuthConfig } from '../services/authService';
+import { getAuthConfig, getAccessToken, clearTokens } from '../services/authService';
 import '../App.css';
 import './Landing.css';
 
 const Landing = () => {
   const [authUrl, setAuthUrl] = useState(null);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const loadAuthUrl = async () => {
+    const checkAuthAndLoadUrl = async () => {
+      // Check if user is authenticated
+      const token = getAccessToken();
+      setIsAuthenticated(!!token);
+
+      // Always load auth URL for the Register button
       try {
         const config = await getAuthConfig();
         
@@ -29,14 +35,35 @@ const Landing = () => {
         setError(err.message);
       }
     };
-    loadAuthUrl();
+
+    checkAuthAndLoadUrl();
   }, []);
+
+  const handleLogout = () => {
+    clearTokens();
+    window.location.href = '/';
+  };
 
   return (
     <div className="landing-container">
       <nav className="navbar">
         <Link to="/" className="navbar-logo">HealthDots Portfolios</Link>
         <div className="navbar-controls"></div>
+        <div className="navbar-right">
+          {isAuthenticated ? (
+            <button className="login-button" onClick={handleLogout}>
+              Logout
+            </button>
+          ) : authUrl ? (
+            <a href={authUrl} className="login-button">
+              Login
+            </a>
+          ) : (
+            <span className="login-button" style={{ cursor: 'wait', opacity: 0.6 }}>
+              Loading...
+            </span>
+          )}
+        </div>
       </nav>
 
       <main className="landing-main">
@@ -49,14 +76,33 @@ const Landing = () => {
               Share your projects, experiences, and passion with the world.
             </p>
             <div className="cta-buttons">
-              {error ? (
-                <button className="cta-primary" disabled title="Error loading auth config">Register Your Portfolio</button>
+              {isAuthenticated ? (
+                <>
+                  <Link to="/admin" className="cta-primary">
+                    Manage My Portfolios
+                  </Link>
+                  <button className="cta-secondary">Learn More</button>
+                </>
+              ) : error ? (
+                <>
+                  <button className="cta-primary" disabled title="Error loading auth config">Register Your Portfolio</button>
+                  <button className="cta-secondary">Learn More</button>
+                </>
+              ) : authUrl ? (
+                <>
+                  <a href={authUrl} className="cta-primary">
+                    Register Your Portfolio
+                  </a>
+                  <button className="cta-secondary">Learn More</button>
+                </>
               ) : (
-                <a href={authUrl || '#'} className="cta-primary" onClick={(e) => !authUrl && e.preventDefault()}>
-                  {authUrl ? 'Register Your Portfolio' : 'Loading...'}
-                </a>
+                <>
+                  <button className="cta-primary" disabled style={{ cursor: 'wait', opacity: 0.7 }}>
+                    Loading...
+                  </button>
+                  <button className="cta-secondary">Learn More</button>
+                </>
               )}
-              <button className="cta-secondary">Learn More</button>
             </div>
           </div>
         </section>

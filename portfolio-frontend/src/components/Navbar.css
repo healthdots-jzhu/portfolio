@@ -143,6 +143,30 @@
   padding: 0;
 }
 
+.login-button {
+  background: #6c63ff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.login-button:hover:not(:disabled) {
+  background: #5a52d5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(108, 99, 255, 0.3);
+}
+
+.login-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 .hamburger span {
   display: block;
   height: 3px;
@@ -202,5 +226,9 @@
   }
   .hamburger {
     display: flex;
+  }
+  .login-button {
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
   }
 }
