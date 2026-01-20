@@ -87,11 +87,6 @@ namespace Portfolio.Api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<string>("CloudFrontUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -104,11 +99,6 @@ namespace Portfolio.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(6)
                         .HasColumnType("character varying(6)");
-
-                    b.Property<string>("S3Url")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.HasKey("Id");
 

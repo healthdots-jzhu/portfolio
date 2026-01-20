@@ -118,7 +118,7 @@ export default function PortfolioEditor() {
         return;
       }
 
-      const portfolioData = await portfolioApi.getPortfolio(personId, { noCache: true });
+      const portfolioData = await portfolioApi.getPortfolioForEdit(personId, token, { noCache: true });
       setPortfolio(portfolioData);
       setLanguages(portfolioData.availableLanguages || ['en']);
       

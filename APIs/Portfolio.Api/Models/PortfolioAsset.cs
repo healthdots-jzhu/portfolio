@@ -16,12 +16,6 @@ public class PortfolioAsset
     [MaxLength(255)]
     public string AssetKey { get; set; } = string.Empty;
 
-    [MaxLength(500)]
-    public string S3Url { get; set; } = string.Empty;
-
-    [MaxLength(500)]
-    public string CloudFrontUrl { get; set; } = string.Empty;
-
     [MaxLength(50)]
     public string FileType { get; set; } = string.Empty;
 

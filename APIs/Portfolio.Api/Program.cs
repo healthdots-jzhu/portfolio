@@ -65,8 +65,13 @@ builder.Services.AddAuthorization(options =>
 
 // Register AWS clients (region from config)
 var awsRegion = builder.Configuration["Aws:Region"] ?? "us-east-1";
-builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(new Amazon.S3.AmazonS3Client(Amazon.RegionEndpoint.GetBySystemName(awsRegion)));
-builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(new AmazonSimpleSystemsManagementClient(Amazon.RegionEndpoint.GetBySystemName(awsRegion)));
+var region = Amazon.RegionEndpoint.GetBySystemName(awsRegion);
+
+// Use AmazonS3Client with default credential chain (includes environment vars, AWS credentials file, and SSO profiles)
+var s3Client = new Amazon.S3.AmazonS3Client(region);
+
+builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(s3Client);
+builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(new AmazonSimpleSystemsManagementClient(region));
 builder.Services.AddScoped<Portfolio.Api.Services.IS3Service, Portfolio.Api.Services.S3Service>();
 
 // Register ShortIdGenerator for Portfolio ID generation; prefer Parameter Store salt if configured

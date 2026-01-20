@@ -120,25 +120,14 @@ function PersonLoader() {
   React.useEffect(() => {
     const checkExists = async () => {
       try {
-        // First check if it's a hardcoded portfolio
-        if (personExists(personId)) {
-          setExists(true);
-          setLoading(false);
-          return;
-        }
-
-        // If not hardcoded, check the backend
-        try {
-          await portfolioApi.getPortfolio(personId);
-          setExists(true);
-        } catch (err) {
-          setExists(false);
-        }
+        const exists = await personExists(personId);
+        setExists(!!exists);
+      } catch (err) {
+        setExists(false);
       } finally {
         setLoading(false);
       }
     };
-
     checkExists();
   }, [personId]);
 
@@ -204,7 +193,7 @@ function SubdomainRedirectWrapper() {
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <h1>Portfolio Not Found</h1>
           <p>Please check the URL and try again.</p>
-          {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
+          {/* <p>Available portfolios: (async) { /* getAvailablePersons() now returns a Promise */ } */}
         </div>
       } />
     </Routes>

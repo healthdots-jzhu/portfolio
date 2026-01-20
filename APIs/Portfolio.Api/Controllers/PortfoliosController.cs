@@ -14,12 +14,14 @@ public class PortfoliosController : ControllerBase
     private readonly AppDbContext _context;
     private readonly ICurrentUserProvider _currentUser;
     private readonly IShortIdGenerator _shortIdGenerator;
+    private readonly IS3Service _s3Service;
 
-    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IShortIdGenerator shortIdGenerator)
+    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IShortIdGenerator shortIdGenerator, IS3Service s3Service)
     {
         _context = context;
         _currentUser = currentUser;
         _shortIdGenerator = shortIdGenerator;
+        _s3Service = s3Service;
     }
 
     /// <summary>
@@ -51,6 +53,48 @@ public class PortfoliosController : ControllerBase
             .ToListAsync();
 
         return Ok(portfolios);
+    }
+
+    /// <summary>
+    /// Get portfolio for editing by personId (authenticated).
+    /// Ensures the S3 folder exists for this portfolio.
+    /// </summary>
+    [HttpGet("edit/{personId}")]
+    public async Task<IActionResult> GetPortfolioForEdit(string personId)
+    {
+        var userId = _currentUser.GetUserId(HttpContext);
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Authentication required" });
+        }
+
+        var portfolio = await _context.Portfolios
+            .Include(p => p.Locales)
+            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .FirstOrDefaultAsync();
+
+        if (portfolio == null)
+        {
+            return NotFound(new { error = "Portfolio not found or access denied" });
+        }
+
+        var availableLanguages = portfolio.Locales
+            .Where(l => !string.IsNullOrWhiteSpace(l.ContentJson) && l.ContentJson != "{}")
+            .Select(l => l.Language)
+            .Distinct()
+            .OrderBy(l => l)
+            .ToList();
+
+        return Ok(new
+        {
+            portfolio.Id,
+            portfolio.PersonId,
+            portfolio.DisplayName,
+            portfolio.Subdomain,
+            portfolio.CreatedAt,
+            portfolio.UpdatedAt,
+            AvailableLanguages = availableLanguages
+        });
     }
 
     /// <summary>

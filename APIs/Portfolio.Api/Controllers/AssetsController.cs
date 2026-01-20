@@ -64,18 +64,14 @@ public class AssetsController : ControllerBase
         string s3Key;
         using (var stream = file.OpenReadStream())
         {
-            s3Key = await _s3Service.UploadAssetAsync(portfolio.Id, file.FileName, stream, file.ContentType);
+            s3Key = await _s3Service.UploadAssetAsync(portfolio.PersonId, file.FileName, stream, file.ContentType);
         }
-
-        var cloudFrontUrl = _s3Service.GetCloudFrontUrl(s3Key);
 
         var asset = new PortfolioAsset
         {
             Id = Guid.NewGuid(),
             PortfolioId = portfolio.Id,
             AssetKey = s3Key,
-            S3Url = $"s3://{s3Key}",
-            CloudFrontUrl = cloudFrontUrl,
             FileType = extension
         };
 
@@ -86,7 +82,6 @@ public class AssetsController : ControllerBase
         {
             asset.Id,
             asset.AssetKey,
-            asset.CloudFrontUrl,
             asset.FileType,
             asset.CreatedAt
         });
@@ -118,7 +113,6 @@ public class AssetsController : ControllerBase
         {
             a.Id,
             a.AssetKey,
-            a.CloudFrontUrl,
             a.FileType,
             a.CreatedAt
         });

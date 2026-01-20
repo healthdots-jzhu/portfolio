@@ -149,6 +149,56 @@ class PortfolioApiService {
   }
 
   /**
+   * Get portfolio for editing by personId (authenticated)
+   * Ensures the S3 folder exists for this portfolio
+   * GET /api/portfolios/edit/{personId}
+   */
+  async getPortfolioForEdit(personId, token, options = {}) {
+    const { noCache = false } = options;
+    const cacheKey = `portfolio-edit-${personId}`;
+    
+    // Check cache first
+    if (!noCache && this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey);
+    }
+
+    try {
+      const ts = noCache ? `?_ts=${Date.now()}` : '';
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/edit/${personId}${ts}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...(noCache ? { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } : {}),
+        },
+        cache: noCache ? 'no-store' : 'default',
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        if (response.status === 404) {
+          throw new Error(`Portfolio not found: ${personId}`);
+        }
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Cache the result unless bypass requested
+      if (!noCache) {
+        this.cache.set(cacheKey, data);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`Failed to fetch portfolio for edit ${personId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Update locale content for a portfolio
    * Requires authentication
    * PUT /api/portfolios/{personId}/locales/{language}

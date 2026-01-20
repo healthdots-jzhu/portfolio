@@ -113,8 +113,13 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
       if (replaced.startsWith('http://') || replaced.startsWith('https://')) {
         return replaced;
       }
-      // Don't prefix static asset paths (images, fonts, etc.)
-      if (replaced.startsWith('/img/') || replaced.startsWith('/assets/') || replaced.startsWith('/fonts/')) {
+      // Prefix image paths with CDN URL
+      if (replaced.startsWith('/img/')) {
+        const cdnUrl = import.meta.env.VITE_CDN_URL || '';
+        return cdnUrl ? `${cdnUrl}${replaced}` : replaced;
+      }
+      // Don't prefix other static asset paths (served by frontend)
+      if (replaced.startsWith('/assets/') || replaced.startsWith('/fonts/')) {
         return replaced;
       }
       // Prefix portfolio-relative navigation paths (like /specialties, /projects, etc.)
