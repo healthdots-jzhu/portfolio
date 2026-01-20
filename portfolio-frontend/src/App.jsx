@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, useParams, Navigate, useLocation } from 'react-router-dom';
 import { LanguageProvider, useTranslations } from './context/LanguageContext';
 import { personExists, getAvailablePersons } from './locales';
+import { portfolioApi } from './services/portfolioApi';
 import { applyFontFamily } from './utils/fontLoader';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -112,14 +113,49 @@ function PersonPortfolio() {
 }
 
 function PersonLoader() {
-  const { personId } = useParams();
+  const { personId, versionId } = useParams();
+  const [exists, setExists] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
 
-  if (!personExists(personId)) {
+  React.useEffect(() => {
+    const checkExists = async () => {
+      try {
+        // First check if it's a hardcoded portfolio
+        if (personExists(personId)) {
+          setExists(true);
+          setLoading(false);
+          return;
+        }
+
+        // If not hardcoded, check the backend
+        try {
+          await portfolioApi.getPortfolio(personId);
+          setExists(true);
+        } catch (err) {
+          setExists(false);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkExists();
+  }, [personId]);
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <p>Loading portfolio...</p>
+      </div>
+    );
+  }
+
+  if (!exists) {
     return <Navigate to="/" replace />;
   }
 
   return (
-    <LanguageProvider personId={personId}>
+    <LanguageProvider personId={personId} versionId={versionId}>
       <PersonPortfolio />
     </LanguageProvider>
   );
@@ -156,6 +192,9 @@ function SubdomainRedirectWrapper() {
       {/* Legal pages */}
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsOfUse />} />
+
+      {/* Version preview routes - must come before regular person routes */}
+      <Route path="/preview/:versionId/:personId/*" element={<PersonLoader />} />
 
       {/* Person-specific portfolios */}
       <Route path="/p/:personId/*" element={<PersonLoader />} />

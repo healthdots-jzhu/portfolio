@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Portfolio.Api.Models.Dto;
 using Portfolio.Api.Services;
+using Portfolio.Api.Models;
 using System.Text.Json;
 
 namespace Portfolio.Api.Controllers;
@@ -122,6 +123,35 @@ public class VersionsController : ControllerBase
     }
 
     /// <summary>
+    /// Update a portfolio version's locale content (for draft/staged versions)
+    /// </summary>
+    [HttpPut("{versionId}/locales/{language}")]
+    public async Task<IActionResult> UpdateVersionLocale(string portfolioId, int versionId, string language, [FromBody] UpdateLocaleRequest request)
+    {
+        var userId = _currentUser.GetUserId(HttpContext);
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Authentication required" });
+        }
+
+        try
+        {
+            var success = await _versionService.UpdateVersionLocaleAsync(versionId, language, request.ContentJson);
+            if (!success)
+            {
+                return NotFound(new { error = "Version not found or cannot be updated" });
+            }
+
+            return Ok(new { message = "Version locale updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating version locale for version {VersionId}", versionId);
+            return StatusCode(500, new { error = "Failed to update version locale" });
+        }
+    }
+
+    /// <summary>
     /// Publish a version (make it live)
     /// </summary>
     [HttpPost("{versionId}/publish")]
@@ -210,6 +240,38 @@ public class VersionsController : ControllerBase
     }
 
     /// <summary>
+    /// Soft delete an unpublished version (Draft or Staged). Published versions cannot be deleted.
+    /// </summary>
+    [HttpDelete("{versionId}")]
+    public async Task<IActionResult> DeleteVersion(string portfolioId, int versionId)
+    {
+        var userId = _currentUser.GetUserId(HttpContext);
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Authentication required" });
+        }
+
+        var version = await _versionService.GetVersionAsync(versionId);
+        if (version == null || version.PortfolioId != portfolioId)
+        {
+            return NotFound(new { error = "Version not found" });
+        }
+
+        if (version.Status == VersionStatus.Published || version.IsCurrentPublished)
+        {
+            return BadRequest(new { error = "Published versions cannot be deleted" });
+        }
+
+        var success = await _versionService.SoftDeleteVersionAsync(versionId);
+        if (!success)
+        {
+            return BadRequest(new { error = "Failed to delete version" });
+        }
+
+        return Ok(new { message = "Version deleted" });
+    }
+
+    /// <summary>
     /// Get all staged versions for preview
     /// </summary>
     [HttpGet("staged")]
@@ -235,6 +297,41 @@ public class VersionsController : ControllerBase
         });
 
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Copy a version (published or otherwise) to a new draft version
+    /// </summary>
+    [HttpPost("{versionId}/copy")]
+    public async Task<IActionResult> CopyVersionToNew(string portfolioId, int versionId)
+    {
+        var userId = _currentUser.GetUserId(HttpContext);
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Authentication required" });
+        }
+
+        try
+        {
+            var newVersion = await _versionService.CopyVersionAsync(versionId, userId);
+            if (newVersion == null)
+            {
+                return NotFound(new { error = "Version not found" });
+            }
+
+            return Ok(new
+            {
+                message = "Version copied successfully",
+                newVersion.Id,
+                newVersion.VersionNumber,
+                newVersion.Status
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error copying version {VersionId}", versionId);
+            return StatusCode(500, new { error = "Failed to copy version" });
+        }
     }
 
     /// <summary>

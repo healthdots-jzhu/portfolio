@@ -12,20 +12,24 @@ class PortfolioApiService {
    * Fetch locale data for a specific portfolio and language
    * GET /api/portfolios/{personId}/locales/{language}
    */
-  async getLocale(personId, language) {
+  async getLocale(personId, language, options = {}) {
+    const { noCache = false } = options;
     const cacheKey = `${personId}-${language}`;
     
-    // Check cache first
-    if (this.cache.has(cacheKey)) {
+    // Check cache first unless noCache requested
+    if (!noCache && this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey);
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}`, {
+      const ts = noCache ? `?_ts=${Date.now()}` : '';
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}${ts}` , {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(noCache ? { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } : {}),
         },
+        cache: noCache ? 'no-store' : 'default',
       });
 
       if (!response.ok) {
@@ -35,10 +39,13 @@ class PortfolioApiService {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      // Get raw JSON text to preserve field order
+      const data = await response.text();
       
-      // Cache the result
-      this.cache.set(cacheKey, data);
+      // Cache the result unless bypass requested
+      if (!noCache) {
+        this.cache.set(cacheKey, data);
+      }
       
       return data;
     } catch (error) {
@@ -51,27 +58,31 @@ class PortfolioApiService {
    * Get portfolio metadata
    * GET /api/portfolios/{personId}
    */
-  async getPortfolio(personId) {
+  async getPortfolio(personId, options = {}) {
+    const { noCache = false } = options;
     const cacheKey = `portfolio-${personId}`;
     
     // Check cache first
-    if (this.cache.has(cacheKey)) {
+    if (!noCache && this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey);
     }
 
     // Check if request is already in flight
-    if (this.inFlightRequests.has(cacheKey)) {
+    if (!noCache && this.inFlightRequests.has(cacheKey)) {
       return this.inFlightRequests.get(cacheKey);
     }
 
     // Create the request promise
     const requestPromise = (async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}`, {
+        const ts = noCache ? `?_ts=${Date.now()}` : '';
+        const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}${ts}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            ...(noCache ? { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } : {}),
           },
+          cache: noCache ? 'no-store' : 'default',
         });
 
         if (!response.ok) {
@@ -83,21 +94,27 @@ class PortfolioApiService {
 
         const data = await response.json();
         
-        // Cache the result
-        this.cache.set(cacheKey, data);
+        // Cache the result unless bypass requested
+        if (!noCache) {
+          this.cache.set(cacheKey, data);
+        }
         
         return data;
       } catch (error) {
         console.error(`Failed to fetch portfolio ${personId}:`, error);
         throw error;
       } finally {
-        // Remove from in-flight requests when done
-        this.inFlightRequests.delete(cacheKey);
+        // Remove from in-flight requests when done (only if used)
+        if (!noCache) {
+          this.inFlightRequests.delete(cacheKey);
+        }
       }
     })();
 
-    // Store the in-flight request
-    this.inFlightRequests.set(cacheKey, requestPromise);
+    // Store the in-flight request if caching enabled
+    if (!noCache) {
+      this.inFlightRequests.set(cacheKey, requestPromise);
+    }
 
     return requestPromise;
   }
@@ -136,22 +153,31 @@ class PortfolioApiService {
    * Requires authentication
    * PUT /api/portfolios/{personId}/locales/{language}
    */
-  async updateLocale(personId, language, content, token) {
+  async updateLocale(personId, language, contentJson, token) {
     try {
+      const body = { 
+        // contentJson is already a JSON string from the textarea
+        contentJson: typeof contentJson === 'string' ? contentJson : JSON.stringify(contentJson)
+      };
+      
+      console.log(`updateLocale request - personId: ${personId}, language: ${language}, contentJson: ${body.contentJson}`);
+      
       const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ contentJson: JSON.stringify(content) }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
         if (response.status === 401) {
           throw new Error('Authentication required');
         }
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        console.error('Update locale error response:', { status: response.status, statusText: response.statusText, data: errorData });
+        throw new Error(`API error: ${response.status} ${response.statusText}${errorData.error ? ' - ' + errorData.error : ''}`);;
       }
 
       // Invalidate cache
@@ -234,24 +260,39 @@ class PortfolioApiService {
    * GET /api/portfolios/{portfolioId}/versions/{versionId}
    */
   async getVersion(portfolioId, versionId, token) {
-    try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch version:', error);
-      throw error;
+    const cacheKey = `version_${portfolioId}_${versionId}`;
+    
+    // Check for in-flight request
+    if (this.inFlightRequests.has(cacheKey)) {
+      return this.inFlightRequests.get(cacheKey);
     }
+    
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch version:', error);
+        throw error;
+      } finally {
+        // Remove from in-flight requests
+        this.inFlightRequests.delete(cacheKey);
+      }
+    })();
+    
+    this.inFlightRequests.set(cacheKey, requestPromise);
+    return requestPromise;
   }
 
   /**
@@ -281,36 +322,6 @@ class PortfolioApiService {
       return await response.json();
     } catch (error) {
       console.error('Failed to create version:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Publish a version (make it live)
-   * Requires authentication
-   * POST /api/portfolios/{portfolioId}/versions/{versionId}/publish
-   */
-  async publishVersion(portfolioId, versionId, token) {
-    try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/publish`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ confirmed: true }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
-      }
-
-      // Clear caches
-      this.clearCache();
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to publish version:', error);
       throw error;
     }
   }
@@ -368,6 +379,35 @@ class PortfolioApiService {
   }
 
   /**
+   * Soft delete an unpublished version (Draft or Staged)
+   * Requires authentication
+   * DELETE /api/portfolios/{portfolioId}/versions/{versionId}
+   */
+  async deleteVersion(portfolioId, versionId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      // Clear caches
+      this.clearCache();
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to delete version:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all staged versions for preview
    * Requires authentication
    * GET /api/portfolios/{portfolioId}/versions/staged
@@ -394,26 +434,145 @@ class PortfolioApiService {
   }
 
   /**
+   * Update version status (e.g., Draft -> Staged)
+   * Requires authentication
+   * PUT /api/portfolios/{portfolioId}/versions/{versionId}/status
+   */
+  async updateVersionStatus(versionId, status, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/versions/${versionId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to update version status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Publish a specific version (make it the current published version)
+   * Requires authentication
+   * POST /api/portfolios/{portfolioId}/versions/{versionId}/publish
+   */
+  async publishVersion(portfolioId, versionId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/publish`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ confirmed: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      // Clear caches
+      this.clearCache();
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to publish version:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Copy a version to create a new draft version
+   * Requires authentication
+   * POST /api/portfolios/{portfolioId}/versions/{versionId}/copy
+   */
+  async copyVersionToNew(portfolioId, versionId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/copy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to copy version:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update version content (for a draft version)
+   * Requires authentication
+   * PUT /api/portfolios/versions/{versionId}/locales/{language}
+   */
+  async updateVersionContent(versionId, language, contentJson, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/versions/${versionId}/locales/${language}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ contentJson }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to update version content:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Validate locale content without saving
    * Requires authentication
    * POST /api/portfolios/{portfolioId}/versions/validate
    */
   async validateLocale(portfolioId, contentJson, language, token) {
     try {
+      // Normalize empty content to empty object
+      const normalizedContent = (!contentJson || contentJson.trim() === '') ? '{}' : contentJson;
+      
+      const requestBody = {
+        contentJson: normalizedContent,
+        language,
+      };
+      
+      console.log(`validateLocale request - portfolioId: ${portfolioId}, language: ${language}, contentJson: ${normalizedContent}`);
+      
       const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/validate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          contentJson,
-          language,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Validate locale error response:', { status: response.status, statusText: response.statusText, data: errorData });
+        throw new Error(`API error: ${response.status} ${response.statusText}${errorData.error ? ' - ' + errorData.error : ''}`);
       }
 
       return await response.json();
@@ -428,26 +587,63 @@ class PortfolioApiService {
    * Requires authentication
    * GET /api/portfolios/{personId}/preview/{versionId}/locales/{language}
    */
-  async getLocalePreview(personId, versionId, language, token) {
+  async getLocalePreview(personId, versionId, language, token, options = {}) {
+    const { noCache = false } = options;
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/preview/${versionId}/locales/${language}`, {
+      const ts = noCache ? `?_ts=${Date.now()}` : '';
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/preview/${versionId}/locales/${language}${ts}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          ...(noCache ? { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } : {}),
         },
+        cache: noCache ? 'no-store' : 'default',
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error(`Preview not found: ${personId}/${versionId}/${language}`);
-        }
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
 
-      return await response.json();
+      // Get raw JSON text to preserve field order
+      return await response.text();
     } catch (error) {
       console.error(`Failed to fetch preview ${personId}/${versionId}/${language}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a version's locale content
+   * PUT /api/portfolios/{portfolioId}/versions/{versionId}/locales/{language}
+   */
+  async updateVersionLocale(portfolioId, versionId, language, contentJson, token) {
+    try {
+      const body = { contentJson };
+      
+      console.log(`updateVersionLocale request - portfolioId: ${portfolioId}, versionId: ${versionId}, language: ${language}, contentJson: ${body.contentJson}`);
+      
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/locales/${language}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Update version locale error response:', { status: response.status, statusText: response.statusText, data: errorData });
+        throw new Error(`API error: ${response.status} ${response.statusText}${errorData.error ? ' - ' + errorData.error : ''}`);
+      }
+
+      // Clear caches
+      this.clearCache();
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to update version locale:', error);
       throw error;
     }
   }

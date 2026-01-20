@@ -84,4 +84,9 @@ public class PortfolioVersion
     /// Indicates if this is the currently published version
     /// </summary>
     public bool IsCurrentPublished { get; set; } = false;
+
+    /// <summary>
+    /// Soft-delete flag for unpublished versions
+    /// </summary>
+    public bool IsDeleted { get; set; } = false;
 }

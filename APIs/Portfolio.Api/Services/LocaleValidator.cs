@@ -26,93 +26,95 @@ public class LocaleValidator : ILocaleValidator
             // 1. Check if it's valid JSON
             var content = JsonDocument.Parse(contentJson);
 
-            // 2. Required fields validation
-            var requiredFields = new[] { "name", "tagline", "email" };
-            foreach (var field in requiredFields)
+            // 2. Validate root is an object
+            if (content.RootElement.ValueKind != JsonValueKind.Object)
             {
-                if (!content.RootElement.TryGetProperty(field, out var property) || 
-                    string.IsNullOrWhiteSpace(property.GetString()))
+                response.IsValid = false;
+                response.Errors.Add(new ValidationError
                 {
-                    response.IsValid = false;
-                    response.Errors.Add(new ValidationError
+                    Field = "root",
+                    Message = "Content must be a JSON object",
+                    Severity = "Error"
+                });
+                return response;
+            }
+
+            // 3. Structure validation - validate array fields are actually arrays
+            var arrayFields = new[] { "sections", "socialLinks", "projects" };
+            foreach (var field in arrayFields)
+            {
+                if (content.RootElement.TryGetProperty(field, out var property))
+                {
+                    if (property.ValueKind != JsonValueKind.Array)
                     {
-                        Field = field,
-                        Message = $"Required field '{field}' is missing or empty",
-                        Severity = "Error"
-                    });
+                        response.IsValid = false;
+                        response.Errors.Add(new ValidationError
+                        {
+                            Field = field,
+                            Message = $"Field '{field}' must be an array",
+                            Severity = "Error"
+                        });
+                    }
                 }
             }
 
-            // 3. Structure validation
+            // 4. Validate sections structure if present
             if (content.RootElement.TryGetProperty("sections", out var sections))
             {
-                if (sections.ValueKind != JsonValueKind.Array)
+                if (sections.ValueKind == JsonValueKind.Array)
                 {
-                    response.IsValid = false;
-                    response.Errors.Add(new ValidationError
-                    {
-                        Field = "sections",
-                        Message = "Sections must be an array",
-                        Severity = "Error"
-                    });
-                }
-                else
-                {
-                    // Validate each section
                     int sectionIndex = 0;
                     foreach (var section in sections.EnumerateArray())
                     {
-                        if (!section.TryGetProperty("id", out _))
+                        if (section.ValueKind != JsonValueKind.Object)
                         {
-                            response.Warnings.Add(new ValidationWarning
+                            response.IsValid = false;
+                            response.Errors.Add(new ValidationError
                             {
                                 Field = $"sections[{sectionIndex}]",
-                                Message = "Section is missing an 'id' field"
+                                Message = "Section must be an object",
+                                Severity = "Error"
                             });
                         }
-
-                        if (!section.TryGetProperty("title", out _))
-                        {
-                            response.Warnings.Add(new ValidationWarning
-                            {
-                                Field = $"sections[{sectionIndex}]",
-                                Message = "Section is missing a 'title' field"
-                            });
-                        }
-
                         sectionIndex++;
                     }
                 }
             }
 
-            // 4. Validate social links structure
+            // 5. Validate social links structure if present
             if (content.RootElement.TryGetProperty("socialLinks", out var socialLinks))
             {
-                if (socialLinks.ValueKind != JsonValueKind.Array)
+                if (socialLinks.ValueKind == JsonValueKind.Array)
                 {
-                    response.Warnings.Add(new ValidationWarning
-                    {
-                        Field = "socialLinks",
-                        Message = "socialLinks should be an array"
-                    });
-                }
-                else
-                {
+                    int linkIndex = 0;
                     foreach (var link in socialLinks.EnumerateArray())
                     {
-                        if (!link.TryGetProperty("url", out _))
+                        if (link.ValueKind != JsonValueKind.Object)
                         {
                             response.Warnings.Add(new ValidationWarning
                             {
-                                Field = "socialLinks",
-                                Message = "Social link is missing 'url' field"
+                                Field = $"socialLinks[{linkIndex}]",
+                                Message = "Social link must be an object"
                             });
                         }
+                        else if (link.TryGetProperty("url", out var urlProp))
+                        {
+                            var url = urlProp.GetString();
+                            if (!string.IsNullOrEmpty(url) && !IsValidUrl(url))
+                            {
+                                response.Warnings.Add(new ValidationWarning
+                                {
+                                    Field = $"socialLinks[{linkIndex}].url",
+                                    Message = "URL may not be valid"
+                                });
+                            }
+                        }
+                        linkIndex++;
                     }
                 }
             }
 
-            // 5. Check for potentially broken links
+            // 6. Check for potentially broken links
             if (content.RootElement.TryGetProperty("resumeLink", out var resumeLink))
             {
                 var url = resumeLink.GetString();
@@ -125,17 +127,6 @@ public class LocaleValidator : ILocaleValidator
                     });
                 }
             }
-
-            // 6. Language-specific validation
-            if (language == "en")
-            {
-                // English-specific checks if needed
-            }
-            else if (language == "fr")
-            {
-                // French-specific checks if needed
-            }
-
         }
         catch (JsonException ex)
         {

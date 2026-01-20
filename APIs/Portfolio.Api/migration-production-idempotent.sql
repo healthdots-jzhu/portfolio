@@ -289,3 +289,41 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260119040959_ChangeLocaleSnapshotToJson') THEN
+    ALTER TABLE "PortfolioVersions" ALTER COLUMN "LocaleSnapshot" TYPE json USING "LocaleSnapshot"::json;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260119040959_ChangeLocaleSnapshotToJson') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20260119040959_ChangeLocaleSnapshotToJson', '8.0.10');
+    END IF;
+END $EF$;
+COMMIT;
+
+START TRANSACTION;
+
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260119154011_AddVersionSoftDelete') THEN
+    ALTER TABLE "PortfolioVersions" ADD COLUMN "IsDeleted" boolean NOT NULL DEFAULT false;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260119154011_AddVersionSoftDelete') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20260119154011_AddVersionSoftDelete', '8.0.10');
+    END IF;
+END $EF$;
+COMMIT;
+

@@ -16,6 +16,9 @@ public interface IVersionService
     Task<PortfolioVersion?> StageVersionAsync(int versionId);
     Task<bool> UnstageVersionAsync(int versionId);
     Task<List<PortfolioVersion>> GetStagedVersionsAsync(string portfolioId);
+    Task<bool> SoftDeleteVersionAsync(int versionId);
+    Task<PortfolioVersion?> CopyVersionAsync(int versionId, Guid userId);
+    Task<bool> UpdateVersionLocaleAsync(int versionId, string language, string contentJson);
 }
 
 public class VersionService : IVersionService
@@ -36,21 +39,16 @@ public class VersionService : IVersionService
             .Where(l => l.PortfolioId == portfolioId)
             .ToListAsync();
 
-        // Create snapshot
-        var snapshot = new Dictionary<string, object>();
+        // Create snapshot - preserve field order by building JSON manually from raw strings
+        var snapshotParts = new List<string>();
         foreach (var locale in locales)
         {
-            try
-            {
-                var content = JsonSerializer.Deserialize<Dictionary<string, object>>(locale.ContentJson);
-                snapshot[locale.Language] = content ?? new Dictionary<string, object>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deserializing locale content for {Language}", locale.Language);
-                snapshot[locale.Language] = new Dictionary<string, object>();
-            }
+            // Escape the language key and use the raw ContentJson as-is
+            var escapedLanguage = JsonSerializer.Serialize(locale.Language);
+            snapshotParts.Add($"{escapedLanguage}:{locale.ContentJson}");
         }
+        
+        var snapshotJson = "{" + string.Join(",", snapshotParts) + "}";
 
         // Retry logic for concurrency conflicts
         const int maxRetries = 3;
@@ -70,7 +68,7 @@ public class VersionService : IVersionService
                     Status = request.Stage ? VersionStatus.Staged : VersionStatus.Draft,
                     Label = request.Label,
                     ChangeDescription = request.ChangeDescription,
-                    LocaleSnapshot = JsonSerializer.Serialize(snapshot),
+                    LocaleSnapshot = snapshotJson,
                     CreatedBy = userId,
                     CreatedAt = DateTimeOffset.UtcNow
                 };
@@ -101,13 +99,13 @@ public class VersionService : IVersionService
     {
         return await _context.PortfolioVersions
             .Include(v => v.Creator)
-            .FirstOrDefaultAsync(v => v.Id == versionId);
+            .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted);
     }
 
     public async Task<List<VersionSummary>> GetVersionHistoryAsync(string portfolioId)
     {
         return await _context.PortfolioVersions
-            .Where(v => v.PortfolioId == portfolioId)
+            .Where(v => v.PortfolioId == portfolioId && !v.IsDeleted)
             .Include(v => v.Creator)
             .OrderByDescending(v => v.VersionNumber)
             .Select(v => new VersionSummary
@@ -128,7 +126,7 @@ public class VersionService : IVersionService
     public async Task<PortfolioVersion?> GetCurrentPublishedVersionAsync(string portfolioId)
     {
         return await _context.PortfolioVersions
-            .Where(v => v.PortfolioId == portfolioId && v.IsCurrentPublished)
+            .Where(v => v.PortfolioId == portfolioId && v.IsCurrentPublished && !v.IsDeleted)
             .FirstOrDefaultAsync();
     }
 
@@ -136,7 +134,7 @@ public class VersionService : IVersionService
     {
         var version = await _context.PortfolioVersions
             .Include(v => v.Portfolio)
-            .FirstOrDefaultAsync(v => v.Id == versionId);
+            .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted);
 
         if (version == null)
         {
@@ -150,7 +148,7 @@ public class VersionService : IVersionService
         {
             // Unmark current published version
             var currentPublished = await _context.PortfolioVersions
-                .Where(v => v.PortfolioId == version.PortfolioId && v.IsCurrentPublished)
+                .Where(v => v.PortfolioId == version.PortfolioId && v.IsCurrentPublished && !v.IsDeleted)
                 .FirstOrDefaultAsync();
 
             if (currentPublished != null)
@@ -206,9 +204,9 @@ public class VersionService : IVersionService
 
             return version;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _logger.LogError(ex, "Error publishing version {VersionId}", versionId);
+            _logger.LogError("Error publishing version {VersionId}", versionId);
             await transaction.RollbackAsync();
             throw;
         }
@@ -217,9 +215,9 @@ public class VersionService : IVersionService
     public async Task<PortfolioVersion?> StageVersionAsync(int versionId)
     {
         var version = await _context.PortfolioVersions
-            .FirstOrDefaultAsync(v => v.Id == versionId);
+            .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted);
 
-        if (version == null)
+        if (version == null || version.Status == VersionStatus.Published)
         {
             return null;
         }
@@ -233,7 +231,7 @@ public class VersionService : IVersionService
     public async Task<bool> UnstageVersionAsync(int versionId)
     {
         var version = await _context.PortfolioVersions
-            .FirstOrDefaultAsync(v => v.Id == versionId);
+            .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted);
 
         if (version == null || version.Status != VersionStatus.Staged)
         {
@@ -249,10 +247,141 @@ public class VersionService : IVersionService
     public async Task<List<PortfolioVersion>> GetStagedVersionsAsync(string portfolioId)
     {
         return await _context.PortfolioVersions
-            .Where(v => v.PortfolioId == portfolioId && v.Status == VersionStatus.Staged)
+            .Where(v => v.PortfolioId == portfolioId && v.Status == VersionStatus.Staged && !v.IsDeleted)
             .Include(v => v.Creator)
             .OrderByDescending(v => v.VersionNumber)
             .ToListAsync();
+    }
+
+    public async Task<bool> SoftDeleteVersionAsync(int versionId)
+    {
+        var version = await _context.PortfolioVersions
+            .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted);
+
+        if (version == null || version.Status == VersionStatus.Published || version.IsCurrentPublished)
+        {
+            return false;
+        }
+
+        version.IsDeleted = true;
+        version.Status = VersionStatus.Archived;
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<PortfolioVersion?> CopyVersionAsync(int versionId, Guid userId)
+    {
+        // Get the source version
+        var sourceVersion = await _context.PortfolioVersions
+            .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted);
+
+        if (sourceVersion == null)
+        {
+            return null;
+        }
+
+        // Get portfolio info to create the new version
+        var portfolio = await _context.Portfolios
+            .FirstOrDefaultAsync(p => p.Id == sourceVersion.PortfolioId);
+
+        if (portfolio == null)
+        {
+            return null;
+        }
+
+        // Get the next version number
+        var maxVersionNumber = await _context.PortfolioVersions
+            .Where(v => v.PortfolioId == sourceVersion.PortfolioId && !v.IsDeleted)
+            .MaxAsync(v => (int?)v.VersionNumber) ?? 0;
+
+        // Create new snapshot from source version's locale snapshot
+        var snapshotJson = sourceVersion.LocaleSnapshot;
+
+        // Create the new version
+        var newVersion = new PortfolioVersion
+        {
+            PortfolioId = sourceVersion.PortfolioId,
+            VersionNumber = maxVersionNumber + 1,
+            Status = VersionStatus.Draft,
+            Label = $"Restored from v{sourceVersion.VersionNumber}",
+            ChangeDescription = null,
+            LocaleSnapshot = snapshotJson,
+            CreatedBy = userId,
+            CreatedAt = DateTimeOffset.UtcNow,
+            PublishedAt = null,
+            IsCurrentPublished = false,
+            IsDeleted = false
+        };
+
+        _context.PortfolioVersions.Add(newVersion);
+        await _context.SaveChangesAsync();
+
+        // Also update live content with the snapshot
+        var localeData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(snapshotJson) ?? new();
+        foreach (var kvp in localeData)
+        {
+            var language = kvp.Key;
+            var contentJson = kvp.Value.GetRawText();
+            var locale = await _context.PortfolioLocales
+                .FirstOrDefaultAsync(l => l.PortfolioId == sourceVersion.PortfolioId && l.Language == language);
+
+            if (locale != null)
+            {
+                locale.ContentJson = contentJson;
+            }
+            else
+            {
+                _context.PortfolioLocales.Add(new PortfolioLocale
+                {
+                    PortfolioId = sourceVersion.PortfolioId,
+                    Language = language,
+                    ContentJson = contentJson
+                });
+            }
+        }
+        await _context.SaveChangesAsync();
+
+        return newVersion;
+    }
+
+    public async Task<bool> UpdateVersionLocaleAsync(int versionId, string language, string contentJson)
+    {
+        var version = await _context.PortfolioVersions
+            .FirstOrDefaultAsync(v => v.Id == versionId && !v.IsDeleted);
+
+        if (version == null || version.Status == VersionStatus.Published)
+        {
+            return false; // Cannot update published versions
+        }
+
+        // Parse the current snapshot
+        var snapshot = JsonSerializer.Deserialize<Dictionary<string, object>>(version.LocaleSnapshot) ?? new();
+        
+        // If content is blank/empty, remove the language from snapshot
+        if (string.IsNullOrWhiteSpace(contentJson) || contentJson == "{}")
+        {
+            snapshot.Remove(language);
+        }
+        else
+        {
+            // Update or add the language content
+            snapshot[language] = JsonSerializer.Deserialize<object>(contentJson) ?? new();
+        }
+        
+        // Rebuild the snapshot JSON preserving field order
+        var snapshotParts = new List<string>();
+        foreach (var kvp in snapshot.OrderBy(x => x.Key))
+        {
+            var escapedLanguage = JsonSerializer.Serialize(kvp.Key);
+            var contentValue = JsonSerializer.Serialize(kvp.Value);
+            snapshotParts.Add($"{escapedLanguage}:{contentValue}");
+        }
+        
+        version.LocaleSnapshot = "{" + string.Join(",", snapshotParts) + "}";
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 
     /// <summary>

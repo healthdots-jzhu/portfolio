@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Portfolio.Api.Data;
@@ -11,9 +12,11 @@ using Portfolio.Api.Data;
 namespace Portfolio.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260118040835_ChangeContentJsonToTextJson")]
+    partial class ChangeContentJsonToTextJson
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,16 +173,13 @@ namespace Portfolio.Api.Migrations
                     b.Property<bool>("IsCurrentPublished")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Label")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
                     b.Property<string>("LocaleSnapshot")
                         .IsRequired()
-                        .HasColumnType("json");
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("PortfolioId")
                         .IsRequired()

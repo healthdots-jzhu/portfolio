@@ -45,7 +45,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PortfolioLocale>(entity =>
         {
             entity.HasIndex(l => new { l.PortfolioId, l.Language }).IsUnique();
-            entity.Property(l => l.ContentJson).HasColumnType("jsonb");
+            entity.Property(l => l.ContentJson).HasColumnType("json");
         });
 
         modelBuilder.Entity<PortfolioAsset>(entity =>
@@ -58,7 +58,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(v => new { v.PortfolioId, v.VersionNumber }).IsUnique();
             entity.HasIndex(v => new { v.PortfolioId, v.Status });
             entity.HasIndex(v => new { v.PortfolioId, v.IsCurrentPublished });
-            entity.Property(v => v.LocaleSnapshot).HasColumnType("jsonb");
+            entity.Property(v => v.LocaleSnapshot).HasColumnType("json");
             entity.Property(v => v.Status)
                   .HasConversion<int>()
                   .HasColumnType("integer");

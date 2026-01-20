@@ -6,14 +6,14 @@ const LanguageContext = createContext();
 const getNestedValue = (obj, path) =>
   path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
 
-export const LanguageProvider = ({ children, personId }) => {
+export const LanguageProvider = ({ children, personId, versionId }) => {
   const [language, setLanguage] = useState('en');
   const [translations, setTranslations] = useState(null);
   const [availableLanguages, setAvailableLanguages] = useState(['en']);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load translations when personId or language changes
+  // Load translations when personId, versionId, or language changes
   useEffect(() => {
     let isMounted = true;
 
@@ -29,12 +29,12 @@ export const LanguageProvider = ({ children, personId }) => {
           return;
         }
         
-        console.log('Loading translations for personId:', personId, 'language:', language);
+        console.log('Loading translations for personId:', personId, 'versionId:', versionId, 'language:', language);
         
         // Load translations and available languages in parallel
         const [translationsData, languages] = await Promise.all([
-          loadTranslations(personId, language),
-          getAvailableLanguages(personId)
+          loadTranslations(personId, language, versionId),
+          getAvailableLanguages(personId, versionId)
         ]);
 
         if (isMounted) {
@@ -56,7 +56,7 @@ export const LanguageProvider = ({ children, personId }) => {
     return () => {
       isMounted = false;
     };
-  }, [personId, language]);
+  }, [personId, language, versionId]);
 
   // If loading, show a minimal loading state
   if (loading || !translations) {
@@ -85,8 +85,14 @@ export const LanguageProvider = ({ children, personId }) => {
 
   const fontFamily = translations.theme?.fontFamily || 'Montserrat';
 
+  const basePrefix = personId
+    ? (versionId ? `/preview/${versionId}/${personId}` : `/p/${personId}`)
+    : '';
+
   const value = {
     personId: personId || '',
+    versionId: versionId || null,
+    basePrefix,
     language,
     availableLanguages,
     setLanguage,
@@ -99,10 +105,23 @@ export const LanguageProvider = ({ children, personId }) => {
       // Avoid showing raw path strings when missing keys; prefer empty string fallback
       return result !== undefined ? result : '';
     },
-    // Resolve paths containing {person_id} placeholder
+    // Resolve paths containing {person_id} placeholder and prefix with the correct base when needed
     resolvePath: (path) => {
       if (!path || typeof path !== 'string') return path;
-      return path.replace(/{person_id}/g, personId || '');
+      const replaced = path.replace(/{person_id}/g, personId || '');
+      // Don't prefix external URLs
+      if (replaced.startsWith('http://') || replaced.startsWith('https://')) {
+        return replaced;
+      }
+      // Don't prefix static asset paths (images, fonts, etc.)
+      if (replaced.startsWith('/img/') || replaced.startsWith('/assets/') || replaced.startsWith('/fonts/')) {
+        return replaced;
+      }
+      // Prefix portfolio-relative navigation paths (like /specialties, /projects, etc.)
+      if (replaced.startsWith('/')) {
+        return `${basePrefix}${replaced}`;
+      }
+      return replaced;
     },
   };
 

@@ -6,7 +6,7 @@ import './Navbar.css';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { personId } = useParams();
-  const { t, language, setLanguage, availableLanguages, personId: contextPersonId } = useTranslations();
+  const { t, language, setLanguage, availableLanguages, personId: contextPersonId, versionId } = useTranslations();
 
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
@@ -19,18 +19,23 @@ const Navbar = () => {
   // Use personId from context (which handles default route) or from params
   const currentPersonId = personId || contextPersonId;
 
+  // Compute base prefix depending on preview/live
+  const basePrefix = currentPersonId
+    ? (versionId ? `/preview/${versionId}/${currentPersonId}` : `/p/${currentPersonId}`)
+    : '';
+
   // Get navigation items dynamically with correct paths
   const navItems = navConfig.map((item, index) => {
     // If path starts with 'http://' or 'https://', use as external link
-    // If path starts with '/', use as absolute path
-    // Otherwise, treat as relative path under /p/{personId}/
+    // If path starts with '/', treat as portfolio-rooted path using basePrefix
+    // Otherwise, treat as relative path under basePrefix
     let fullPath;
     if (item.path.startsWith('http://') || item.path.startsWith('https://')) {
       fullPath = item.path;
     } else if (item.path.startsWith('/')) {
-      fullPath = item.path;
+      fullPath = `${basePrefix}${item.path}`;
     } else {
-      fullPath = currentPersonId ? `/p/${currentPersonId}/${item.path}` : `/${item.path}`;
+      fullPath = currentPersonId ? `${basePrefix}/${item.path}` : `/${item.path}`;
     }
 
     return {
@@ -43,7 +48,7 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <Link to={currentPersonId ? `/p/${currentPersonId}` : '/'} className="navbar-logo">{t('common.siteName')}</Link>
+      <Link to={currentPersonId ? basePrefix : '/'} className="navbar-logo">{t('common.siteName')}</Link>
       <div className="navbar-controls"></div>
       <div className="navbar-right">
         <div className="language-select-wrapper">

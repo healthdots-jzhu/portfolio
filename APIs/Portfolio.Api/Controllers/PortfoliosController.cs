@@ -71,6 +71,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var availableLanguages = portfolio.Locales
+            .Where(l => !string.IsNullOrWhiteSpace(l.ContentJson) && l.ContentJson != "{}")
             .Select(l => l.Language)
             .Distinct()
             .OrderBy(l => l)
@@ -110,6 +111,7 @@ public class PortfoliosController : ControllerBase
     /// <summary>
     /// Get locale content for a specific version (for preview).
     /// Requires authentication to preview staged/draft versions.
+    /// Returns empty object {} if language doesn't exist yet.
     /// </summary>
     [HttpGet("{personId}/preview/{versionId}/locales/{language}")]
     public async Task<IActionResult> GetLocalePreview(string personId, int versionId, string language)
@@ -140,7 +142,8 @@ public class PortfoliosController : ControllerBase
                 return Content(content.GetRawText(), "application/json");
             }
 
-            return NotFound(new { error = $"Language '{language}' not found in this version" });
+            // Return empty object for non-existent languages (e.g., new languages being created in a version)
+            return Content("{}", "application/json");
         }
         catch (Exception ex)
         {
@@ -315,6 +318,19 @@ public class PortfoliosController : ControllerBase
         var locale = await _context.PortfolioLocales
             .Where(l => l.PortfolioId == portfolio.Id && l.Language == language)
             .FirstOrDefaultAsync();
+
+        // If content is blank/empty, remove the locale
+        if (string.IsNullOrWhiteSpace(request.ContentJson) || request.ContentJson == "{}")
+        {
+            if (locale != null)
+            {
+                _context.PortfolioLocales.Remove(locale);
+                portfolio.UpdatedAt = DateTimeOffset.UtcNow;
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Locale removed successfully", language });
+            }
+            return Ok(new { message = "Locale already empty", language });
+        }
 
         if (locale == null)
         {

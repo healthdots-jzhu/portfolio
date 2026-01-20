@@ -80,7 +80,7 @@ export default function PortfolioManager() {
 
   const handlePreviewPortfolio = (portfolio) => {
     const baseUrl = window.location.origin;
-    const previewUrl = `${baseUrl}/${portfolio.personId}`;
+    const previewUrl = `${baseUrl}/p/${portfolio.personId}`;
     window.open(previewUrl, '_blank');
   };
 
