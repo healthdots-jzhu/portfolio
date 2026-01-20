@@ -16,7 +16,7 @@ public class PortfolioLocale
     [MaxLength(10)]
     public string Language { get; set; } = "en";
 
-    // Stored as JSONB in PostgreSQL
+    // Stored as TEXT in PostgreSQL to preserve formatting
     public string ContentJson { get; set; } = "{}";
 
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;

@@ -261,7 +261,8 @@ export default function PortfolioEditor() {
         // Saving from Live creates a new Draft version
         // First, update the live content for all languages
         for (const lang of languagesToSave) {
-          const contentToSave = normalizeContent(draftContent[lang] || content);
+          // Save the text exactly as in the editor, no serialization
+          const contentToSave = draftContent[lang] || content;
           await portfolioApi.updateLocale(personId, lang, contentToSave, token);
         }
         
@@ -289,7 +290,8 @@ export default function PortfolioEditor() {
       } else {
         // When editing a draft/staged version, save changes to that version's snapshot for all languages
         for (const lang of languagesToSave) {
-          const contentToSave = normalizeContent(draftContent[lang] || content);
+          // Save the text exactly as in the editor, no serialization
+          const contentToSave = draftContent[lang] || content;
           await portfolioApi.updateVersionLocale(
             portfolio.id,
             selectedVersionId,

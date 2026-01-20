@@ -189,7 +189,7 @@ public class PortfoliosController : ControllerBase
             // Return empty object for non-existent languages (e.g., new languages being created in a version)
             return Content("{}", "application/json");
         }
-        catch (Exception ex)
+        catch
         {
             return StatusCode(500, new { error = "Failed to load preview content" });
         }

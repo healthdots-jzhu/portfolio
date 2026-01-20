@@ -61,14 +61,15 @@ public class VersionsController : ControllerBase
             return NotFound(new { error = "Version not found" });
         }
 
-        Dictionary<string, object>? localeContent = null;
-        try
+        // Parse the snapshot as a dictionary of raw JSON strings
+        var localeContent = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(version.LocaleSnapshot) && version.LocaleSnapshot != "{}")
         {
-            localeContent = JsonSerializer.Deserialize<Dictionary<string, object>>(version.LocaleSnapshot);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deserializing locale snapshot for version {VersionId}", versionId);
+            using var doc = JsonDocument.Parse(version.LocaleSnapshot);
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                localeContent[prop.Name] = prop.Value.GetRawText();
+            }
         }
 
         var detail = new VersionDetail
@@ -78,7 +79,7 @@ public class VersionsController : ControllerBase
             Status = version.Status,
             Label = version.Label,
             ChangeDescription = version.ChangeDescription,
-            LocaleContent = localeContent ?? new Dictionary<string, object>(),
+            LocaleContent = localeContent,
             CreatedAt = version.CreatedAt,
             PublishedAt = version.PublishedAt,
             IsCurrentPublished = version.IsCurrentPublished,

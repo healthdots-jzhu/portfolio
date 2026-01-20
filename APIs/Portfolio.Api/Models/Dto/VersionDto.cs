@@ -89,7 +89,7 @@ public class VersionDetail
     public VersionStatus Status { get; set; }
     public string? Label { get; set; }
     public string? ChangeDescription { get; set; }
-    public Dictionary<string, object> LocaleContent { get; set; } = new();
+    public Dictionary<string, string> LocaleContent { get; set; } = new();
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? PublishedAt { get; set; }
     public bool IsCurrentPublished { get; set; }

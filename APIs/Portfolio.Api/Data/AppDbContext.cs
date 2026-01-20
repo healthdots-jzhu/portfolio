@@ -45,7 +45,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PortfolioLocale>(entity =>
         {
             entity.HasIndex(l => new { l.PortfolioId, l.Language }).IsUnique();
-            entity.Property(l => l.ContentJson).HasColumnType("json");
+            entity.Property(l => l.ContentJson).HasColumnType("text");
         });
 
         modelBuilder.Entity<PortfolioAsset>(entity =>

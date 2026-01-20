@@ -193,7 +193,7 @@ function SubdomainRedirectWrapper() {
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <h1>Portfolio Not Found</h1>
           <p>Please check the URL and try again.</p>
-          {/* <p>Available portfolios: (async) { /* getAvailablePersons() now returns a Promise */ } */}
+          {/* <p>Available portfolios: (async) getAvailablePersons() now returns a Promise */}
         </div>
       } />
     </Routes>

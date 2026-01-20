@@ -355,9 +355,17 @@ public class VersionService : IVersionService
             return false; // Cannot update published versions
         }
 
-        // Parse the current snapshot
-        var snapshot = JsonSerializer.Deserialize<Dictionary<string, object>>(version.LocaleSnapshot) ?? new();
-        
+        // Parse the current snapshot as a dictionary of raw JSON strings
+        var snapshot = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(version.LocaleSnapshot) && version.LocaleSnapshot != "{}")
+        {
+            using var doc = JsonDocument.Parse(version.LocaleSnapshot);
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                snapshot[prop.Name] = prop.Value.GetRawText();
+            }
+        }
+
         // If content is blank/empty, remove the language from snapshot
         if (string.IsNullOrWhiteSpace(contentJson) || contentJson == "{}")
         {
@@ -365,19 +373,18 @@ public class VersionService : IVersionService
         }
         else
         {
-            // Update or add the language content
-            snapshot[language] = JsonSerializer.Deserialize<object>(contentJson) ?? new();
+            // Update or add the language content as raw string
+            snapshot[language] = contentJson;
         }
-        
-        // Rebuild the snapshot JSON preserving field order
+
+        // Rebuild the snapshot JSON preserving field order and formatting
         var snapshotParts = new List<string>();
         foreach (var kvp in snapshot.OrderBy(x => x.Key))
         {
             var escapedLanguage = JsonSerializer.Serialize(kvp.Key);
-            var contentValue = JsonSerializer.Serialize(kvp.Value);
-            snapshotParts.Add($"{escapedLanguage}:{contentValue}");
+            snapshotParts.Add($"{escapedLanguage}:{kvp.Value}");
         }
-        
+
         version.LocaleSnapshot = "{" + string.Join(",", snapshotParts) + "}";
         await _context.SaveChangesAsync();
 
