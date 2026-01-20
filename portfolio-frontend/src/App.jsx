@@ -18,6 +18,8 @@ import Showcases from './pages/Showcases';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
 import AuthCallback from './pages/AuthCallback';
+import PortfolioManager from './pages/PortfolioManager';
+import PortfolioEditor from './pages/PortfolioEditor';
 import './App.css';
 
 // Subdomain to person ID mapping
@@ -143,6 +145,10 @@ function SubdomainRedirectWrapper() {
     <Routes>
       {/* Auth callback route */}
       <Route path="/auth/callback" element={<AuthCallback />} />
+
+      {/* Portfolio management routes (authenticated) */}
+      <Route path="/portfolios" element={<PortfolioManager />} />
+      <Route path="/portfolio-editor/:personId" element={<PortfolioEditor />} />
 
       {/* Default landing page - no person ID required */}
       <Route path="/" element={<Landing />} />

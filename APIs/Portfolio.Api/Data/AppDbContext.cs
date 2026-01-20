@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Portfolio.Api.Models.Portfolio> Portfolios => Set<Portfolio.Api.Models.Portfolio>();
     public DbSet<PortfolioLocale> PortfolioLocales => Set<PortfolioLocale>();
     public DbSet<PortfolioAsset> PortfolioAssets => Set<PortfolioAsset>();
+    public DbSet<PortfolioVersion> PortfolioVersions => Set<PortfolioVersion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,6 +51,25 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PortfolioAsset>(entity =>
         {
             entity.HasIndex(a => new { a.PortfolioId, a.AssetKey }).IsUnique();
+        });
+
+        modelBuilder.Entity<PortfolioVersion>(entity =>
+        {
+            entity.HasIndex(v => new { v.PortfolioId, v.VersionNumber }).IsUnique();
+            entity.HasIndex(v => new { v.PortfolioId, v.Status });
+            entity.HasIndex(v => new { v.PortfolioId, v.IsCurrentPublished });
+            entity.Property(v => v.LocaleSnapshot).HasColumnType("jsonb");
+            entity.Property(v => v.Status)
+                  .HasConversion<int>()
+                  .HasColumnType("integer");
+            entity.HasOne(v => v.Portfolio)
+                  .WithMany()
+                  .HasForeignKey(v => v.PortfolioId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(v => v.Creator)
+                  .WithMany()
+                  .HasForeignKey(v => v.CreatedBy)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

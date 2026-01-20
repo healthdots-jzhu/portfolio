@@ -166,6 +166,293 @@ class PortfolioApiService {
   }
 
   /**
+   * Create a new portfolio
+   * Requires authentication
+   * POST /api/portfolios
+   */
+  async createPortfolio(displayName, preferredPersonId, subdomain, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          displayName,
+          preferredPersonId,
+          subdomain,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication required');
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to create portfolio:', error);
+      throw error;
+    }
+  }
+
+  // ============== VERSION MANAGEMENT ==============
+
+  /**
+   * Get version history for a portfolio
+   * Requires authentication
+   * GET /api/portfolios/{portfolioId}/versions
+   */
+  async getVersionHistory(portfolioId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch version history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get details of a specific version
+   * Requires authentication
+   * GET /api/portfolios/{portfolioId}/versions/{versionId}
+   */
+  async getVersion(portfolioId, versionId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch version:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new version (snapshot of current state)
+   * Requires authentication
+   * POST /api/portfolios/{portfolioId}/versions
+   */
+  async createVersion(portfolioId, label, changeDescription, stage, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          label,
+          changeDescription,
+          stage,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to create version:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Publish a version (make it live)
+   * Requires authentication
+   * POST /api/portfolios/{portfolioId}/versions/{versionId}/publish
+   */
+  async publishVersion(portfolioId, versionId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/publish`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ confirmed: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      // Clear caches
+      this.clearCache();
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to publish version:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stage a version for preview
+   * Requires authentication
+   * POST /api/portfolios/{portfolioId}/versions/{versionId}/stage
+   */
+  async stageVersion(portfolioId, versionId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/stage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to stage version:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unstage a version
+   * Requires authentication
+   * POST /api/portfolios/{portfolioId}/versions/{versionId}/unstage
+   */
+  async unstageVersion(portfolioId, versionId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/unstage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to unstage version:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all staged versions for preview
+   * Requires authentication
+   * GET /api/portfolios/{portfolioId}/versions/staged
+   */
+  async getStagedVersions(portfolioId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/staged`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch staged versions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Validate locale content without saving
+   * Requires authentication
+   * POST /api/portfolios/{portfolioId}/versions/validate
+   */
+  async validateLocale(portfolioId, contentJson, language, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/validate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          contentJson,
+          language,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to validate locale:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get locale content for preview (specific version)
+   * Requires authentication
+   * GET /api/portfolios/{personId}/preview/{versionId}/locales/{language}
+   */
+  async getLocalePreview(personId, versionId, language, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/preview/${versionId}/locales/${language}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Preview not found: ${personId}/${versionId}/${language}`);
+        }
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`Failed to fetch preview ${personId}/${versionId}/${language}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Clear the cache
    */
   clearCache() {

@@ -33,14 +33,15 @@ const AuthCallback = () => {
         // Exchange code for tokens
         await exchangeCodeForTokens(code);
 
-        // Redirect back to the original page or home
+        // Redirect to portfolio management page
         const preAuthUrl = sessionStorage.getItem('preAuthUrl');
         sessionStorage.removeItem('preAuthUrl');
         
         if (preAuthUrl) {
           window.location.href = preAuthUrl;
         } else {
-          navigate('/', { replace: true });
+          // Default: redirect to portfolio management
+          navigate('/portfolios', { replace: true });
         }
       } catch (err) {
         console.error('Authentication callback error:', err);

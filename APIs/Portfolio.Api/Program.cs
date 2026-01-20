@@ -106,6 +106,8 @@ builder.Services.AddSingleton<Portfolio.Api.Services.IShortIdGenerator>(sp =>
     return new Portfolio.Api.Services.ShortIdGenerator(salt, logger);
 });
 builder.Services.AddScoped<Portfolio.Api.Services.ICurrentUserProvider, Portfolio.Api.Services.CurrentUserProvider>();
+builder.Services.AddScoped<Portfolio.Api.Services.IVersionService, Portfolio.Api.Services.VersionService>();
+builder.Services.AddScoped<Portfolio.Api.Services.ILocaleValidator, Portfolio.Api.Services.LocaleValidator>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

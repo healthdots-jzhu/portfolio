@@ -108,6 +108,47 @@ public class PortfoliosController : ControllerBase
     }
 
     /// <summary>
+    /// Get locale content for a specific version (for preview).
+    /// Requires authentication to preview staged/draft versions.
+    /// </summary>
+    [HttpGet("{personId}/preview/{versionId}/locales/{language}")]
+    public async Task<IActionResult> GetLocalePreview(string personId, int versionId, string language)
+    {
+        var userId = _currentUser.GetUserId(HttpContext);
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Authentication required for preview" });
+        }
+
+        var version = await _context.PortfolioVersions
+            .Include(v => v.Portfolio)
+            .Where(v => v.Id == versionId && 
+                   v.Portfolio.PersonId == personId && 
+                   v.Portfolio.OwnerId == userId)
+            .FirstOrDefaultAsync();
+
+        if (version == null)
+        {
+            return NotFound(new { error = "Version not found or access denied" });
+        }
+
+        try
+        {
+            var snapshot = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(version.LocaleSnapshot);
+            if (snapshot != null && snapshot.TryGetValue(language, out var content))
+            {
+                return Content(content.GetRawText(), "application/json");
+            }
+
+            return NotFound(new { error = $"Language '{language}' not found in this version" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "Failed to load preview content" });
+        }
+    }
+
+    /// <summary>
     /// Soft-delete a portfolio (sets IsActive = false).
     /// </summary>
     [HttpDelete("{personId}")]
