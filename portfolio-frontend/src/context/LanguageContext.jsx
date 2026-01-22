@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loadTranslations, getAvailableLanguages } from '../locales';
 
 const LanguageContext = createContext();
@@ -6,44 +6,133 @@ const LanguageContext = createContext();
 const getNestedValue = (obj, path) =>
   path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
 
-export const LanguageProvider = ({ children, personId }) => {
+export const LanguageProvider = ({ children, personId, versionId }) => {
   const [language, setLanguage] = useState('en');
+  const [translations, setTranslations] = useState(null);
+  const [availableLanguages, setAvailableLanguages] = useState(['en']);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const translations = useMemo(() => {
-    if (!personId) {
-      console.log('No personId provided, using default Karen translations');
-      return loadTranslations('karen-zhu-EU2O', language);
-    }
+  // Load translations when personId, versionId, or language changes
+  useEffect(() => {
+    let isMounted = true;
 
-    console.log('Loading translations for personId:', personId, 'language:', language);
-    return loadTranslations(personId, language);
-  }, [personId, language]);
+    const fetchTranslations = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        if (!personId) {
+          console.error('No personId provided to LanguageProvider');
+          setError('No portfolio specified');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Loading translations for personId:', personId, 'versionId:', versionId, 'language:', language);
+        
+        // Load translations and available languages in parallel
+        const [translationsData, languages] = await Promise.all([
+          loadTranslations(personId, language, versionId),
+          getAvailableLanguages(personId, versionId)
+        ]);
 
-  const value = useMemo(() => {
-    const fontFamily = translations.theme?.fontFamily || 'Montserrat';
-    return {
-      personId: personId || 'karen-zhu-EU2O', // Make current personId available
-      language,
-      availableLanguages: getAvailableLanguages(personId || 'karen-zhu-EU2O'),
-      setLanguage,
-      fontFamily,
-      t: (path) => {
-        if (!path) return '';
-        const result = getNestedValue(translations, path);
-        return result !== undefined ? result : path;
-      },
-      // Resolve paths containing {person_id} placeholder
-      // Example: "/img/{person_id}/photo.jpg" becomes "/img/karen-zhu-EU2O/photo.jpg"
-      // This allows locale files to use a dynamic placeholder instead of hardcoded person IDs
-      resolvePath: (path) => {
-        if (!path || typeof path !== 'string') return path;
-        return path.replace(/{person_id}/g, personId || 'karen-zhu-EU2O');
-      },
+        if (isMounted) {
+          setTranslations(translationsData);
+          setAvailableLanguages(languages);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Failed to load translations:', err);
+        if (isMounted) {
+          setError(err.message);
+          setLoading(false);
+        }
+      }
     };
-  }, [personId, language, translations]);
+
+    fetchTranslations();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [personId, language, versionId]);
+
+  // If loading, show a minimal loading state
+  if (loading || !translations) {
+    return (
+      <LanguageContext.Provider value={{
+        personId: personId || '',
+        language,
+        availableLanguages: ['en'],
+        setLanguage,
+        fontFamily: 'Montserrat',
+        loading: true,
+        error: null,
+        // During loading, suppress showing translation paths by returning empty strings
+        t: () => '',
+        resolvePath: (path) => path || '',
+      }}>
+        {children}
+      </LanguageContext.Provider>
+    );
+  }
+
+  // If error and no translations, show error state
+  if (error && !translations) {
+    console.error('Translation loading error:', error);
+  }
+
+  const fontFamily = translations.theme?.fontFamily || 'Montserrat';
+
+  const basePrefix = personId
+    ? (versionId ? `/preview/${versionId}/${personId}` : `/p/${personId}`)
+    : '';
+
+  const value = {
+    personId: personId || '',
+    versionId: versionId || null,
+    basePrefix,
+    language,
+    availableLanguages,
+    setLanguage,
+    fontFamily,
+    loading,
+    error,
+    t: (path) => {
+      if (!path) return '';
+      const result = getNestedValue(translations, path);
+      // Avoid showing raw path strings when missing keys; prefer empty string fallback
+      return result !== undefined ? result : '';
+    },
+    // Resolve paths containing {person_id} placeholder and prefix with the correct base when needed
+    resolvePath: (path) => {
+      if (!path || typeof path !== 'string') return path;
+      const replaced = path.replace(/{person_id}/g, personId || '');
+      // Don't prefix external URLs
+      if (replaced.startsWith('http://') || replaced.startsWith('https://')) {
+        return replaced;
+      }
+      // Prefix image paths with CDN URL
+      if (replaced.startsWith('/img/')) {
+        const cdnUrl = import.meta.env.VITE_CDN_URL || '';
+        return cdnUrl ? `${cdnUrl}${replaced}` : replaced;
+      }
+      // Don't prefix other static asset paths (served by frontend)
+      if (replaced.startsWith('/assets/') || replaced.startsWith('/fonts/')) {
+        return replaced;
+      }
+      // Prefix portfolio-relative navigation paths (like /specialties, /projects, etc.)
+      if (replaced.startsWith('/')) {
+        return `${basePrefix}${replaced}`;
+      }
+      return replaced;
+    },
+  };
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
 
 export const useTranslations = () => useContext(LanguageContext);
+
 

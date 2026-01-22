@@ -4,10 +4,20 @@ import { parseIconSyntax } from '../utils/parseIconSyntax';
 import './Engagements.css';
 
 const Engagements = () => {
-  const { t, resolvePath } = useTranslations();
+  const { t, resolvePath, loading } = useTranslations();
   const [expandedCards, setExpandedCards] = useState({});
   const contentRefs = useRef({});
   const [isClipped, setIsClipped] = useState({});
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Wait for translations to load before accessing engagements data
+  if (loading) {
+    return <div className="engagements-page-wrapper">Loading...</div>;
+  }
+
   // Support multiple engagements (array) while remaining backwards-compatible
   const engagementsRoot = t('engagements') || {};
   const items = Array.isArray(engagementsRoot.items)

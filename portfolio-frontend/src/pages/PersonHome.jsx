@@ -5,32 +5,28 @@ import { parseColorTags } from '../utils/textParser';
 import './PersonHome.css';
 
 const PersonHome = () => {
-  const { t, resolvePath } = useTranslations();
-  const location = useLocation();
-
-  // Extract the base path (e.g., /p/karen-zhu-EU2O)
-  const basePath = location.pathname.split('/').slice(0, 3).join('/');
+  const { t, resolvePath, basePrefix } = useTranslations();
 
   const hero = {
-    title: t('common.siteName'),
+    title: t('home.hero.title'),
     subtitle: t('home.hero.subtitle'),
     intro: t('home.hero.intro')
   };
 
   const features = {
     title: t('home.features.title'),
-    items: t('home.features.items') || []
+    items: Array.isArray(t('home.features.items')) ? t('home.features.items') : []
   };
 
-  const topEngagements = t('home.topEngagements') || [];
+  const topEngagements = Array.isArray(t('home.topEngagements')) ? t('home.topEngagements') : [];
 
   // Helper function to resolve link paths
   const resolveLink = (link) => {
     if (!link) return null;
-    // If link starts with /, it's already absolute
-    if (link.startsWith('/')) return link;
-    // Otherwise, make it relative to the base path
-    return `${basePath}/${link}`;
+    // If link starts with /, use resolvePath to add basePrefix
+    if (link.startsWith('/')) return resolvePath(link);
+    // Otherwise, make it relative to the base prefix
+    return `${basePrefix}/${link}`;
   };
 
   return (

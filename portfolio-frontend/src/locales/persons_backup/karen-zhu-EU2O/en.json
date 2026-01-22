@@ -1,0 +1,90 @@
+{
+  "common": {
+    "siteName": "Karen Zhu",
+    "baseTitle": "Karen Zhu",
+    "nav": [
+      {
+        "label": "Marketing",
+        "path": "specialties"
+      },
+      {
+        "label": "About Me",
+        "path": "about"
+      }
+    ],
+    "languageLabel": "Language",
+    "languages": {
+      "en": "English",
+      "fr": "Français"
+    },
+    "toggleNavMenu": "Toggle navigation menu",
+    "footer": "© 2026 by Karen Zhu | Social Media Marketing",
+    "showcases": [
+      {
+        "title": "Bun and Bread Club",
+        "subtitle": "A cozy café experience designed from concept to reality",
+        "cta_label": "View More",
+        "cta_url": "https://www.bunandbreadclub.com/",
+        "carouselImages": [
+          {
+            "imageSrc": "/img/{person_id}/showcase1_carousel_1.jpg",
+            "imageAlt": "Bun and Bread Club exterior view"
+          },
+          {
+            "imageSrc": "/img/{person_id}/showcase1_carousel_2.jpg",
+            "imageAlt": "Bun and Bread Club interior seating area"
+          },
+          {
+            "imageSrc": "/img/{person_id}/showcase1_carousel_3.jpg",
+            "imageAlt": "Bun and Bread Club menu showcase"
+          }
+        ],
+        "features": [
+          {
+            "title": "Brand Identity",
+            "description": "Created a warm, inviting brand identity with a cohesive color palette and logo design that reflects the café's values of comfort and community. The design emphasizes the artisanal nature of fresh baked goods."
+          },
+          {
+            "title": "Interior Design",
+            "description": "Collaborated on the café's interior layout and aesthetic, ensuring the space promotes a welcoming atmosphere for customers to relax and enjoy their experience."
+          },
+          {
+            "title": "Marketing Materials",
+            "description": "Designed comprehensive marketing collateral including business cards, flyers, and social media graphics to launch the café and build initial brand awareness in the local community."
+          },
+          {
+            "title": "Social Media Strategy",
+            "description": "Developed and executed a social media marketing strategy to grow the café's online presence and engage with customers through regular posts and community interactions."
+          }
+        ],
+        "stories": [
+          {
+            "title": "From Concept to Launch",
+            "subtitle": "The Journey of Bringing Bun and Bread Club to Life",
+            "description": "Working on this project was incredibly rewarding as I got to see the café grow from an idea into a thriving business. The owners had a clear vision but needed help translating it into visual designs and marketing strategy.",
+            "images": [
+              {
+                "imageSrc": "/img/{person_id}/showcase1_carousel_1.jpg",
+                "imageAlt": "Initial sketches and brainstorming session"
+              },
+              {
+                "imageSrc": "/img/{person_id}/showcase1_carousel_2.jpg",
+                "imageAlt": "Final design mockups and brand guidelines"
+              }
+            ],
+            "footer": "This experience taught me the importance of understanding the client's vision and translating it into practical, beautiful design solutions that resonate with their target audience."
+          }
+        ]
+      }
+    ]
+  },
+  "theme": {
+    "fontFamily": "Poppins"
+  },
+  "home": {
+    "hero": {
+      "title": "Karen Zhu",
+      "subtitle": "Student | Designer | Marketer | Artist"
+    }
+  }
+}

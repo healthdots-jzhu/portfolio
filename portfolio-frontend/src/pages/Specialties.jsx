@@ -3,13 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { useTranslations } from '../context/LanguageContext';
 
 const Specialties = () => {
-  const { t, resolvePath } = useTranslations();
-  const location = useLocation();
+  const { t, resolvePath, basePrefix } = useTranslations();
   const pageTitle = t('specialties.pageTitle');
   const roles = t('specialties.roles') || [];
-
-  // Extract the base path (e.g., /p/karen-zhu-EU2O)
-  const basePath = location.pathname.split('/').slice(0, 3).join('/');
 
   useEffect(() => {
     document.title = pageTitle;
@@ -18,10 +14,10 @@ const Specialties = () => {
   // Helper function to resolve link paths
   const resolveLink = (link) => {
     if (!link) return null;
-    // If link starts with /, it's already absolute
-    if (link.startsWith('/')) return link;
-    // Otherwise, make it relative to the base path
-    return `${basePath}/${link}`;
+    // If link starts with /, use resolvePath to add basePrefix
+    if (link.startsWith('/')) return resolvePath(link);
+    // Otherwise, make it relative to the base prefix
+    return `${basePrefix}/${link}`;
   };
 
   return (

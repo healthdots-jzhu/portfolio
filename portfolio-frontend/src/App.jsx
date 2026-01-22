@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useParams, Navigate, useLocation } from 'react-router-dom';
 import { LanguageProvider, useTranslations } from './context/LanguageContext';
 import { personExists, getAvailablePersons } from './locales';
+import { portfolioApi } from './services/portfolioApi';
 import { applyFontFamily } from './utils/fontLoader';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -14,8 +15,12 @@ import Engagements from './pages/Engagements';
 import Specialties from './pages/Specialties';
 import Cherish from './pages/Cherish';
 import SimonSaves from './pages/SimonSaves';
+import Showcases from './pages/Showcases';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
+import AuthCallback from './pages/AuthCallback';
+import PortfolioManager from './pages/PortfolioManager';
+import PortfolioEditor from './pages/PortfolioEditor';
 import './App.css';
 
 // Subdomain to person ID mapping
@@ -62,11 +67,11 @@ function PersonPortfolio() {
     routes.push(<Route key="about" path="about" element={<AboutMe />} />);
 
     // Other sections - relative paths
-    if (t('engagements.title')) {
+    if (t('engagements')) {
       routes.push(<Route key="engagements" path="engagements" element={<Engagements />} />);
     }
 
-    if (t('specialties.title')) {
+    if (t('specialties')) {
       routes.push(<Route key="specialties" path="specialties" element={<Specialties />} />);
     }
 
@@ -87,6 +92,10 @@ function PersonPortfolio() {
       routes.push(<Route key="simonSaves" path="simonSaves" element={<SimonSaves />} />);
     }
 
+    if (t('common.showcases') && t('common.showcases').length > 0) {
+      routes.push(<Route key="showcases" path="showcase/:showcaseIndex" element={<Showcases />} />);
+    }
+
     return routes;
   };
 
@@ -104,20 +113,38 @@ function PersonPortfolio() {
 }
 
 function PersonLoader() {
-  const { personId } = useParams();
+  const { personId, versionId } = useParams();
+  const [exists, setExists] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
 
-  if (!personExists(personId)) {
+  React.useEffect(() => {
+    const checkExists = async () => {
+      try {
+        const exists = await personExists(personId);
+        setExists(!!exists);
+      } catch (err) {
+        setExists(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkExists();
+  }, [personId]);
+
+  if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <h1>Portfolio Not Found</h1>
-        <p>The portfolio for "{personId}" could not be found.</p>
-        {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
+        <p>Loading portfolio...</p>
       </div>
     );
   }
 
+  if (!exists) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
-    <LanguageProvider personId={personId}>
+    <LanguageProvider personId={personId} versionId={versionId}>
       <PersonPortfolio />
     </LanguageProvider>
   );
@@ -125,12 +152,10 @@ function PersonLoader() {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Subdomain redirect - must be first to catch root and non-/p/ paths */}
-        <Route path="*" element={<SubdomainRedirectWrapper />} />
-      </Routes>
-    </Router>
+    <Routes>
+      {/* Subdomain redirect - must be first to catch root and non-/p/ paths */}
+      <Route path="*" element={<SubdomainRedirectWrapper />} />
+    </Routes>
   );
 }
 
@@ -143,12 +168,22 @@ function SubdomainRedirectWrapper() {
   
   return (
     <Routes>
+      {/* Auth callback route */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
+
+      {/* Portfolio management routes (authenticated) */}
+      <Route path="/portfolios" element={<PortfolioManager />} />
+      <Route path="/portfolio-editor/:personId" element={<PortfolioEditor />} />
+
       {/* Default landing page - no person ID required */}
       <Route path="/" element={<Landing />} />
 
       {/* Legal pages */}
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsOfUse />} />
+
+      {/* Version preview routes - must come before regular person routes */}
+      <Route path="/preview/:versionId/:personId/*" element={<PersonLoader />} />
 
       {/* Person-specific portfolios */}
       <Route path="/p/:personId/*" element={<PersonLoader />} />
@@ -158,7 +193,7 @@ function SubdomainRedirectWrapper() {
         <div style={{ textAlign: 'center', padding: '2rem' }}>
           <h1>Portfolio Not Found</h1>
           <p>Please check the URL and try again.</p>
-          {/* <p>Available portfolios: {getAvailablePersons().join(', ')}</p> */}
+          {/* <p>Available portfolios: (async) getAvailablePersons() now returns a Promise */}
         </div>
       } />
     </Routes>
