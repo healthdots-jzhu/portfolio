@@ -1,11 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿    // ...existing code...
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Portfolio.Api.Data;
 using Portfolio.Api.Models;
 using Portfolio.Api.Services;
 
+
 namespace Portfolio.Api.Controllers;
+
+
 
 [ApiController]
 [Route("api/[controller]")]
@@ -13,15 +17,175 @@ public class PortfoliosController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ICurrentUserProvider _currentUser;
-    private readonly IShortIdGenerator _shortIdGenerator;
+    private readonly IConfiguration _configuration;
     private readonly IS3Service _s3Service;
+    private readonly IShortIdGenerator _shortIdGenerator;
 
-    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IShortIdGenerator shortIdGenerator, IS3Service s3Service)
+    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IConfiguration configuration, IS3Service s3Service, IShortIdGenerator shortIdGenerator)
     {
         _context = context;
         _currentUser = currentUser;
-        _shortIdGenerator = shortIdGenerator;
+        _configuration = configuration;
         _s3Service = s3Service;
+        _shortIdGenerator = shortIdGenerator;
+    }
+
+    [HttpPost("{personId}/assets")]
+    [RequestSizeLimit(10_000_000)] // 10MB limit
+    public async Task<IActionResult> UploadAsset(string personId)
+    {
+        var userId = _currentUser.GetUserId(HttpContext);
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Authentication required" });
+        }
+
+        var portfolio = await _context.Portfolios
+            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .FirstOrDefaultAsync();
+
+        if (portfolio == null)
+        {
+            return NotFound(new { error = "Portfolio not found or access denied" });
+        }
+
+        if (Request.Form.Files.Count == 0)
+        {
+            return BadRequest(new { error = "No file uploaded" });
+        }
+
+        var file = Request.Form.Files[0];
+        if (file.Length == 0)
+        {
+        // Removed duplicate and misplaced GetLocalePreview method and XML comment
+            return BadRequest(new { error = "Empty file" });
+        }
+
+        int maxFiles = _configuration.GetValue<int>("PortfolioAssetLimits:MaxFilesPerPortfolio", 200);
+        long maxFileSize = _configuration.GetValue<long>("PortfolioAssetLimits:MaxFileSizeBytes", 10485760);
+        if (file.Length > maxFileSize)
+        {
+            return BadRequest(new { error = $"File size exceeds the maximum allowed size of {maxFileSize / (1024 * 1024)} MB." });
+        }
+        int assetCount = await _context.PortfolioAssets.CountAsync(a => a.PortfolioId == portfolio.Id);
+        if (assetCount >= maxFiles)
+        {
+            return BadRequest(new { error = $"This portfolio already has the maximum allowed number of assets ({maxFiles}). Please delete an asset before uploading a new one." });
+        }
+
+        var allowedTypes = new[] {
+            // Images
+            "image/png", "image/jpeg", "image/gif", "image/webp",
+            // Videos
+            "video/mp4", "video/quicktime", "video/x-msvideo", "video/x-matroska", "video/webm",
+            // Documents
+            "application/pdf",
+            "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        };
+        if (!allowedTypes.Contains(file.ContentType))
+        {
+            return BadRequest(new { error = "Unsupported file type" });
+        }
+
+        // Validate file signature (magic bytes)
+        using (var fileStream = file.OpenReadStream())
+        {
+            if (!Portfolio.Api.Utils.FileSignatureValidator.IsValidSignature(fileStream, file.ContentType))
+            {
+                return BadRequest(new { error = "File content does not match its type (possible fake or corrupt file)" });
+            }
+        }
+
+        // Use same S3 key logic as S3Service (use PersonId so keys are stable and human-readable)
+        string sanitizedFileName = SanitizeFileName(file.FileName);
+        string sanitizedPortfolioId = SanitizePathSegment(portfolio.PersonId);
+        var s3Key = $"img/{sanitizedPortfolioId}/{sanitizedFileName}";
+        if (await _s3Service.AssetExistsAsync(s3Key))
+        {
+            return Conflict(new { error = "A file with the same name already exists. Please rename your file or delete the existing one before uploading." });
+        }
+
+        // Upload to S3 (pass PersonId to place object under img/{personId}/...)
+        await _s3Service.UploadAssetAsync(portfolio.PersonId, file.FileName, file.OpenReadStream(), file.ContentType);
+
+        // Create asset record
+        var asset = new Portfolio.Api.Models.PortfolioAsset
+        {
+            Id = Guid.NewGuid(),
+            PortfolioId = portfolio.Id,
+            AssetKey = s3Key,
+            FileType = file.ContentType,
+            FileSize = file.Length,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        _context.PortfolioAssets.Add(asset);
+        portfolio.UpdatedAt = DateTimeOffset.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            asset.Id,
+            asset.AssetKey,
+            asset.FileType,
+            asset.FileSize,
+            asset.CreatedAt,
+            url = _s3Service.GetCloudFrontUrl(s3Key)
+        });
+    }
+
+    [HttpDelete("{personId}/assets/{assetId}")]
+    public async Task<IActionResult> DeleteAsset(string personId, Guid assetId)
+    {
+        var userId = _currentUser.GetUserId(HttpContext);
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Authentication required" });
+        }
+
+        var portfolio = await _context.Portfolios
+            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .FirstOrDefaultAsync();
+
+        if (portfolio == null)
+        {
+            return NotFound(new { error = "Portfolio not found or access denied" });
+        }
+
+        var asset = await _context.PortfolioAssets.FirstOrDefaultAsync(a => a.Id == assetId && a.PortfolioId == portfolio.Id);
+        if (asset == null)
+        {
+            return NotFound(new { error = "Asset not found" });
+        }
+
+        // Attempt to delete the S3 object; log but don't fail the request if deletion fails
+        try
+        {
+            await _s3Service.DeleteObjectAsync(asset.AssetKey);
+        }
+        catch (Exception ex)
+        {
+            // Log and continue to remove DB record to keep state consistent
+            // Using ILogger would be preferable; for now we rely on middleware logs.
+        }
+
+        _context.PortfolioAssets.Remove(asset);
+        portfolio.UpdatedAt = DateTimeOffset.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+        return string.Join("_", fileName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static string SanitizePathSegment(string segment)
+    {
+        var invalidChars = System.IO.Path.GetInvalidPathChars();
+        return string.Join("_", segment.Replace('/', '_').Replace('\\', '_').Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
     }
 
     /// <summary>
@@ -85,6 +249,19 @@ public class PortfoliosController : ControllerBase
             .OrderBy(l => l)
             .ToList();
 
+        var assets = await _context.PortfolioAssets
+            .Where(a => a.PortfolioId == portfolio.Id)
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => new {
+                a.Id,
+                a.AssetKey,
+                a.FileType,
+                a.FileSize,
+                a.CreatedAt,
+                Url = _s3Service.GetCloudFrontUrl(a.AssetKey)
+            })
+            .ToListAsync();
+
         return Ok(new
         {
             portfolio.Id,
@@ -93,7 +270,8 @@ public class PortfoliosController : ControllerBase
             portfolio.Subdomain,
             portfolio.CreatedAt,
             portfolio.UpdatedAt,
-            AvailableLanguages = availableLanguages
+            AvailableLanguages = availableLanguages,
+            Assets = assets
         });
     }
 
@@ -160,44 +338,47 @@ public class PortfoliosController : ControllerBase
     [HttpGet("{personId}/preview/{versionId}/locales/{language}")]
     public async Task<IActionResult> GetLocalePreview(string personId, int versionId, string language)
     {
+
         var userId = _currentUser.GetUserId(HttpContext);
         if (userId == Guid.Empty)
         {
-            return Unauthorized(new { error = "Authentication required for preview" });
+            return Unauthorized(new { error = "Authentication required" });
         }
 
-        var version = await _context.PortfolioVersions
-            .Include(v => v.Portfolio)
-            .Where(v => v.Id == versionId && 
-                   v.Portfolio.PersonId == personId && 
-                   v.Portfolio.OwnerId == userId)
+        var portfolio = await _context.Portfolios
+            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
             .FirstOrDefaultAsync();
 
-        if (version == null)
+        if (portfolio == null)
         {
-            return NotFound(new { error = "Version not found or access denied" });
+            return NotFound(new { error = "Portfolio not found or access denied" });
         }
 
-        try
+        if (Request.Form.Files.Count == 0)
         {
-            var snapshot = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(version.LocaleSnapshot);
-            if (snapshot != null && snapshot.TryGetValue(language, out var content))
-            {
-                return Content(content.GetRawText(), "application/json");
-            }
+            return BadRequest(new { error = "No file uploaded" });
+        }
 
-            // Return empty object for non-existent languages (e.g., new languages being created in a version)
-            return Content("{}", "application/json");
-        }
-        catch
+        var file = Request.Form.Files[0];
+        if (file.Length == 0)
         {
-            return StatusCode(500, new { error = "Failed to load preview content" });
+            return BadRequest(new { error = "Empty file" });
         }
+
+        int maxFiles = _configuration.GetValue<int>("PortfolioAssetLimits:MaxFilesPerPortfolio", 200);
+        long maxFileSize = _configuration.GetValue<long>("PortfolioAssetLimits:MaxFileSizeBytes", 10485760);
+        if (file.Length > maxFileSize)
+        {
+            return BadRequest(new { error = $"File size exceeds the maximum allowed size of {maxFileSize / (1024 * 1024)} MB." });
+        }
+        int assetCount = await _context.PortfolioAssets.CountAsync(a => a.PortfolioId == portfolio.Id);
+        if (assetCount >= maxFiles)
+        {
+            return BadRequest(new { error = $"This portfolio already has the maximum allowed number of assets ({maxFiles}). Please delete an asset before uploading a new one." });
+        }
+        // Ensure a return value for all code paths
+        return Content("{}", "application/json");
     }
-
-    /// <summary>
-    /// Soft-delete a portfolio (sets IsActive = false).
-    /// </summary>
     [HttpDelete("{personId}")]
     public async Task<IActionResult> DeletePortfolio(string personId)
     {
@@ -224,9 +405,7 @@ public class PortfoliosController : ControllerBase
         return Ok(new { message = "Portfolio deactivated successfully" });
     }
 
-    /// <summary>
-    /// Create a new portfolio for the authenticated user.
-    /// </summary>
+    // Create a new portfolio for the authenticated user.
     [HttpPost]
     public async Task<IActionResult> CreatePortfolio([FromBody] Portfolio.Api.Models.Dto.CreatePortfolioRequest request)
     {

@@ -322,12 +322,19 @@
   font-size: 0.75rem;
 }
 
+
 .modal-actions {
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
+}
+
+.modal-actions-center {
+  justify-content: center !important;
+  width: 100%;
+  display: flex;
 }
 
 .modal-actions button {

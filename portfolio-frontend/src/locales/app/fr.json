@@ -25,7 +25,8 @@
       "cancel": "Annuler",
       "createPortfolioBtn": "Créer un Portefeuille",
       "creating": "Création en cours...",
-      "retryLoad": "Réessayer"
+      "retryLoad": "Réessayer",
+      "delete": "Supprimer"
     },
     "portfolioEditor": {
       "back": "Retour",
@@ -118,6 +119,18 @@
       "invalidJson": "JSON invalide",
       "cannotFormat": "JSON invalide. Impossible de formater.",
       "cantAssist": "Désolé, je ne peux pas vous aider avec cela"    },
+    "assets": {
+      "manageAssets": "Gérer les actifs",
+      "loading": "Chargement des actifs...",
+      "empty": "Aucun actif trouvé.",
+      "delete": "Supprimer",
+      "prev": "Précédent",
+      "next": "Suivant",
+      "page": "Page",
+      "of": "de",
+      "show": "Afficher ",
+      "files": " fichiers"
+    },
     "landing": {
       "siteTitle": "Portfolios HealthDots",
       "heroTitle": "Bienvenue chez HealthDots Portfolios",

@@ -25,7 +25,8 @@
       "cancel": "Cancel",
       "createPortfolioBtn": "Create Portfolio",
       "creating": "Creating...",
-      "retryLoad": "Retry"
+      "retryLoad": "Retry",
+      "delete": "Delete"
     },
     "portfolioEditor": {
       "back": "Back",
@@ -118,6 +119,18 @@
       "invalidJson": "Invalid JSON",
       "cannotFormat": "Invalid JSON. Cannot format.",
       "cantAssist": "Sorry, I can't assist with that"
+    },
+    "assets": {
+      "manageAssets": "Manage Assets",
+      "loading": "Loading assets...",
+      "empty": "No assets found.",
+      "delete": "Delete",
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page",
+      "of": "of",
+      "show": "Show ",
+      "files": " files"
     },
     "landing": {
       "siteTitle": "HealthDots Portfolios",

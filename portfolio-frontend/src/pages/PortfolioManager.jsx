@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { getAccessToken } from '../services/authService';
 import { portfolioApi } from '../services/portfolioApi';
 import { useAppLocale } from '../hooks/useAppLocale';
+import { Verify as PuzzleCaptcha } from 'react-puzzle-captcha';
 import './PortfolioManager.css';
+import '../styles/react-puzzle-captcha.css';
 
 export default function PortfolioManager() {
   const [portfolios, setPortfolios] = useState([]);
@@ -16,6 +18,10 @@ export default function PortfolioManager() {
     subdomain: '',
   });
   const [creating, setCreating] = useState(false);
+  const [showDeletePuzzle, setShowDeletePuzzle] = useState(false);
+  const [pendingDeletePortfolio, setPendingDeletePortfolio] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [captchaPassed, setCaptchaPassed] = useState(false);
   const navigate = useNavigate();
   const locale = useAppLocale();
 
@@ -82,6 +88,29 @@ export default function PortfolioManager() {
     const baseUrl = window.location.origin;
     const previewUrl = `${baseUrl}/p/${portfolio.personId}`;
     window.open(previewUrl, '_blank');
+  };
+
+  const handleDeletePortfolio = (portfolio) => {
+    setPendingDeletePortfolio(portfolio);
+    setShowDeletePuzzle(true);
+    setCaptchaPassed(false);
+  };
+
+  const confirmDeletePortfolio = async () => {
+    if (!pendingDeletePortfolio) return;
+    try {
+      setDeleting(true);
+      const token = await getAccessToken();
+      await portfolioApi.deletePortfolio(pendingDeletePortfolio.personId, token);
+      setShowDeletePuzzle(false);
+      setPendingDeletePortfolio(null);
+      setCaptchaPassed(false);
+      await loadPortfolios();
+    } catch (err) {
+      alert(`${locale.messages.failedToDeletePortfolio} ${err.message}`);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -174,6 +203,13 @@ export default function PortfolioManager() {
                 >
                   {locale.portfolioManager.preview}
                 </button>
+                <button
+                  className="btn-delete"
+                  onClick={() => handleDeletePortfolio(portfolio)}
+                  disabled={deleting}
+                >
+                  {locale.portfolioManager.delete}
+                </button>
               </div>
             </div>
           ))}
@@ -258,6 +294,35 @@ export default function PortfolioManager() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Puzzle modal for delete confirmation */}
+      {showDeletePuzzle && pendingDeletePortfolio && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: 400 }}>
+            <h3>{locale.messages.confirmDeletePortfolio}</h3>
+            <PuzzleCaptcha
+              onSuccess={() => setCaptchaPassed(true)}
+              onFailure={() => setCaptchaPassed(false)}
+              imgUrl="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=320&q=80"
+              width={320}
+              height={180}
+              pieceSize={48}
+            />
+            <div className="modal-actions modal-actions-center">
+              <button
+                className="btn-submit"
+                onClick={confirmDeletePortfolio}
+                disabled={!captchaPassed || deleting}
+              >
+                {deleting ? locale.portfolioManager.deleting : locale.portfolioManager.delete}
+              </button>
+              <button className="btn-cancel" onClick={() => { setShowDeletePuzzle(false); setPendingDeletePortfolio(null); setCaptchaPassed(false); }}>
+                {locale.portfolioManager.cancel || 'Cancel'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,8 +1,60 @@
+  // ...existing code...
 // API service for portfolio backend
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const API_PREFIX = '/api';
 
 class PortfolioApiService {
+  /**
+   * Upload an asset (image/file) to a portfolio
+   * POST /api/portfolios/{personId}/assets
+   */
+  async uploadAsset(personId, file, token) {
+    const formData = new FormData();
+    formData.append('file', file);
+    // Optionally add file type or other metadata
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/assets`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to upload asset:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete an asset by id for a given portfolio (personId)
+   * DELETE /api/portfolios/{personId}/assets/{assetId}
+   */
+  async deleteAsset(personId, assetId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/assets/${assetId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Failed to delete asset:', error);
+      throw error;
+    }
+  }
   constructor() {
     this.cache = new Map();
     this.inFlightRequests = new Map(); // Track in-flight requests to prevent duplicates
@@ -711,6 +763,31 @@ class PortfolioApiService {
   clearLocaleCache(personId, language) {
     const cacheKey = `${personId}-${language}`;
     this.cache.delete(cacheKey);
+  }
+
+  /**
+   * Soft delete a portfolio (can be restored)
+   * Requires authentication
+   * DELETE /api/portfolios/{portfolioId}
+   */
+  async deletePortfolio(portfolioId, token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+      this.clearCache();
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to delete portfolio:', error);
+      throw error;
+    }
   }
 }
 

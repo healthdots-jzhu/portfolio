@@ -25,7 +25,8 @@
       "cancel": "取消",
       "createPortfolioBtn": "创建作品集",
       "creating": "创建中...",
-      "retryLoad": "重试"
+      "retryLoad": "重试",
+      "delete": "删除"
     },
     "portfolioEditor": {
       "back": "返回",
@@ -118,6 +119,18 @@
       "invalidJson": "无效的 JSON",
       "cannotFormat": "无效的 JSON。无法格式化。",
       "cantAssist": "抱歉，我无法帮助您"    },
+    "assets": {
+      "manageAssets": "管理资产",
+      "loading": "正在加载资产...",
+      "empty": "未找到资产。",
+      "delete": "删除",
+      "prev": "上一页",
+      "next": "下一页",
+      "page": "页",
+      "of": "共",
+      "show": "显示 ",
+      "files": " 文件"
+    },
     "landing": {
       "siteTitle": "HealthDots 作品集",
       "heroTitle": "欢迎来到 HealthDots 作品集",

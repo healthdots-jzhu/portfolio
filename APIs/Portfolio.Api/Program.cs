@@ -6,6 +6,8 @@ using Microsoft.OpenApi.Models;
 using Portfolio.Api.Data;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
+using Amazon.Runtime;
+using Amazon.Runtime.CredentialManagement;
 using System.IdentityModel.Tokens.Jwt;
 
 // Prevent claim type mapping (keep "sub" as "sub", not transform to ClaimTypes.NameIdentifier)
@@ -63,15 +65,46 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-// Register AWS clients (region from config)
-var awsRegion = builder.Configuration["Aws:Region"] ?? "us-east-1";
-var region = Amazon.RegionEndpoint.GetBySystemName(awsRegion);
+// Register AWS clients. Pick up region from configuration if provided so clients can be constructed
+// with a RegionEndpoint to avoid runtime errors when no default region is present in the environment.
+// Ensure the SDK will load profiles from shared config (supports SSO profiles)
+Environment.SetEnvironmentVariable("AWS_SDK_LOAD_CONFIG", "1");
 
-// Use AmazonS3Client with default credential chain (includes environment vars, AWS credentials file, and SSO profiles)
-var s3Client = new Amazon.S3.AmazonS3Client(region);
+var awsRegionName = builder.Configuration["Aws:Region"];
+var awsProfileName = builder.Configuration["Aws:Profile"] ?? Environment.GetEnvironmentVariable("AWS_PROFILE");
+Amazon.RegionEndpoint? awsRegion = null;
+if (!string.IsNullOrWhiteSpace(awsRegionName))
+{
+    awsRegion = Amazon.RegionEndpoint.GetBySystemName(awsRegionName);
+}
+
+AWSCredentials? awsCredentials = null;
+if (!string.IsNullOrWhiteSpace(awsProfileName))
+{
+    try
+    {
+        var chain = new CredentialProfileStoreChain();
+        if (chain.TryGetAWSCredentials(awsProfileName, out var resolved))
+        {
+            awsCredentials = resolved;
+        }
+    }
+    catch
+    {
+        // If profile lookup fails, leave credentials null so the SDK falls back to other sources.
+    }
+}
+
+var s3Client = awsCredentials is not null
+    ? (awsRegion is not null ? new Amazon.S3.AmazonS3Client(awsCredentials, awsRegion) : new Amazon.S3.AmazonS3Client(awsCredentials))
+    : (awsRegion is not null ? new Amazon.S3.AmazonS3Client(awsRegion) : new Amazon.S3.AmazonS3Client());
+
+var ssmClient = awsCredentials is not null
+    ? (awsRegion is not null ? new AmazonSimpleSystemsManagementClient(awsCredentials, awsRegion) : new AmazonSimpleSystemsManagementClient(awsCredentials))
+    : (awsRegion is not null ? new AmazonSimpleSystemsManagementClient(awsRegion) : new AmazonSimpleSystemsManagementClient());
 
 builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(s3Client);
-builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(new AmazonSimpleSystemsManagementClient(region));
+builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(ssmClient);
 builder.Services.AddScoped<Portfolio.Api.Services.IS3Service, Portfolio.Api.Services.S3Service>();
 
 // Register ShortIdGenerator for Portfolio ID generation; prefer Parameter Store salt if configured
@@ -152,6 +185,17 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Log credential resolution for easier debugging in dev
+try
+{
+    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+    startupLogger.LogInformation("Aws:Region={Region}, Aws:Profile={Profile}, CredentialsResolved={Resolved}", awsRegionName ?? "(none)", awsProfileName ?? "(none)", awsCredentials is not null);
+}
+catch
+{
+    // swallow logging errors during startup diagnostic logging
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -159,6 +203,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Enable routing before applying CORS so the CORS middleware can run with endpoint routing
+app.UseRouting();
 
 app.UseCors("AppCors");
 

@@ -5,6 +5,7 @@ namespace Portfolio.Api.Models;
 
 public class PortfolioAsset
 {
+    public long FileSize { get; set; }
     public Guid Id { get; set; }
 
     [MaxLength(6)]

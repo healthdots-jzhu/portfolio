@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
@@ -11,11 +12,51 @@ import { LANGUAGE_OPTIONS, getLanguageName, searchLanguages } from '../utils/lan
 import './PortfolioEditor.css';
 
 export default function PortfolioEditor() {
+    // Asset management states
+    const [assets, setAssets] = useState([]);
+    const [assetsLoading, setAssetsLoading] = useState(false);
+    const [assetsError, setAssetsError] = useState(null);
+    const [assetsPage, setAssetsPage] = useState(1);
+    const [assetsPageSize, setAssetsPageSize] = useState(50);
+    const [assetsTotal, setAssetsTotal] = useState(0);
   const { personId } = useParams();
   const navigate = useNavigate();
   const locale = useAppLocale();
   
+  // Asset upload handler
+  const handleAssetUpload = async (e) => {
+    if (!e || !e.target || !e.target.files || !personId) return;
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    setAssetsLoading(true);
+    setAssetsError(null);
+    try {
+      const token = await getAccessToken();
+      for (const file of files) {
+        // You may want to add validation here (type/size)
+        await portfolioApi.uploadAsset(personId, file, token);
+      }
+      // Refresh asset list after upload
+      const portfolioData = await portfolioApi.getPortfolioForEdit(personId, token, { noCache: true });
+      let allAssets = Array.isArray(portfolioData.assets) ? portfolioData.assets : [];
+      const total = allAssets.length;
+      const start = (assetsPage - 1) * assetsPageSize;
+      const end = start + assetsPageSize;
+      const pagedAssets = allAssets.slice(start, end);
+      setAssets(pagedAssets);
+      setAssetsTotal(total);
+    } catch (err) {
+      setAssetsError((err && err.message) || 'Failed to upload asset');
+    } finally {
+      setAssetsLoading(false);
+      // Reset file input so same file can be uploaded again if needed
+      if (e.target) e.target.value = '';
+    }
+  };
+  
   const [portfolio, setPortfolio] = useState(null);
+  // Asset management overlay state
+  const [showAssetsOverlay, setShowAssetsOverlay] = useState(false);
   const [languages, setLanguages] = useState([]);
   const [currentLanguage, setCurrentLanguage] = useState('en');
   const [content, setContent] = useState('');
@@ -35,6 +76,35 @@ export default function PortfolioEditor() {
   const [viewLoading, setViewLoading] = useState(false);
   const [error, setError] = useState(null);
   const languageDropdownRef = useRef(null);
+
+  // Fetch assets when overlay opens or paging changes
+  useEffect(() => {
+    const fetchAssets = async () => {
+      if (!showAssetsOverlay) return;
+      setAssetsLoading(true);
+      setAssetsError(null);
+      try {
+        const token = await getAccessToken();
+        const portfolioData = await portfolioApi.getPortfolioForEdit(personId, token, { noCache: true });
+        // Assume assets are in portfolioData.assets (array of { key, name, size, ... })
+        let allAssets = Array.isArray(portfolioData.assets) ? portfolioData.assets : [];
+        // Paging logic
+        const total = allAssets.length;
+        const start = (assetsPage - 1) * assetsPageSize;
+        const end = start + assetsPageSize;
+        const pagedAssets = allAssets.slice(start, end);
+        setAssets(pagedAssets);
+        setAssetsTotal(total);
+      } catch (err) {
+        setAssetsError((err && err.message) || 'Failed to load assets');
+        setAssets([]);
+        setAssetsTotal(0);
+      } finally {
+        setAssetsLoading(false);
+      }
+    };
+    fetchAssets();
+  }, [showAssetsOverlay, assetsPage, assetsPageSize, personId]);
 
   // Determine if current view should be read-only (Published/Archived version)
   const isReadOnlyVersion = selectedVersionId !== 'live' &&
@@ -725,6 +795,12 @@ export default function PortfolioEditor() {
           </div>
         </div>
         <div className="editor-actions">
+          <button 
+            className="btn-assets"
+            onClick={() => setShowAssetsOverlay(true)}
+          >
+            {locale.portfolioEditor.manageAssets || 'Manage Assets'}
+          </button>
           <button className="btn-preview" onClick={handlePreview}>
             {locale.portfolioEditor.preview || 'Preview'}
           </button>
@@ -735,9 +811,132 @@ export default function PortfolioEditor() {
             {showVersionHistory ? locale.portfolioEditor.hideHistory : locale.portfolioEditor.showHistory}
           </button>
         </div>
+
       </div>
 
       <div className="editor-container">
+        {/* Asset Management Overlay */}
+        {showAssetsOverlay && (
+          <div className="assets-overlay">
+            <div className="assets-modal">
+              <div className="assets-modal-header">
+                <h2>{locale.assets?.manageAssets || 'Manage Assets'}</h2>
+                <button className="assets-modal-close" onClick={() => setShowAssetsOverlay(false)} aria-label="Close">✕</button>
+              </div>
+              {/* Upload button below Close (x) button */}
+              <div className="assets-upload-link-row">
+                <label htmlFor="asset-upload-input" className="assets-upload-label">
+                  <button
+                    type="button"
+                    className="assets-upload-link"
+                    onClick={() => document.getElementById('asset-upload-input').click()}
+                  >
+                    {locale.assets?.upload || 'Upload Asset'}
+                  </button>
+                  <input
+                    id="asset-upload-input"
+                    type="file"
+                    style={{ display: 'none' }}
+                    multiple
+                    onChange={handleAssetUpload}
+                  />
+                </label>
+              </div>
+              <div className="assets-modal-content">
+                {/* Asset List */}
+                {assetsLoading ? (
+                  <div className="assets-loading">{locale.assets?.loading || 'Loading assets...'}</div>
+                ) : assetsError ? (
+                  <div className="assets-error">{assetsError}</div>
+                ) : (
+                  <>
+                    <div className="assets-list">
+                      {assets.length === 0 ? (
+                        <div className="assets-empty">{locale.assets?.empty || 'No assets found.'}</div>
+                      ) : (
+                        <ul>
+                          {assets.map((asset) => {
+                            const filename = asset.name ?? asset.key ?? asset.assetKey ?? (asset.url ? asset.url.split('/').pop() : 'file');
+                            const sizeBytes = asset.fileSize ?? asset.FileSize ?? asset.size ?? 0;
+                            const sizeKB = (sizeBytes / 1024).toFixed(1);
+                            const reactKey = asset.assetKey ?? asset.key ?? asset.id ?? filename;
+                            const url = asset.url ?? asset.Url ?? asset.s3Url ?? asset.S3Url ?? null;
+                            const fileType = (asset.fileType ?? asset.FileType ?? '').toLowerCase();
+                            const isImage = fileType.startsWith('image/') || (url && /\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(url));
+                            // derive extension label for non-image icons
+                            const ext = (filename && filename.includes('.')) ? filename.split('.').pop().toUpperCase() : 'FILE';
+
+                            return (
+                              <li key={reactKey} className="asset-item">
+                                {url ? (
+                                  <a href={url} target="_blank" rel="noopener noreferrer" className="asset-link">
+                                    {isImage ? (
+                                      <img src={url} alt={filename} className="asset-thumb" />
+                                    ) : (
+                                      <span className={`asset-icon`} aria-hidden>{ext}</span>
+                                    )}
+                                  </a>
+                                ) : (
+                                  isImage ? (
+                                    <img src={url || ''} alt={filename} className="asset-thumb" />
+                                  ) : (
+                                    <span className={`asset-icon`} aria-hidden>{ext}</span>
+                                  )
+                                )}
+                                <div className="asset-meta">
+                                  <span className="asset-name">{filename}</span>
+                                  <span className="asset-size">{sizeKB} KB</span>
+                                </div>
+                                <button
+                                  className="version-delete-btn asset-delete"
+                                  title={locale.assets?.delete || 'Delete'}
+                                  aria-label={locale.assets?.delete || 'Delete'}
+                                  onClick={async (ev) => {
+                                    ev.stopPropagation();
+                                    if (!confirm(locale.assets?.confirmDelete || 'Delete this asset?')) return;
+                                    try {
+                                      const token = await getAccessToken();
+                                      await portfolioApi.deleteAsset(personId, asset.id || asset.Id || asset.assetKey, token);
+                                      // Refresh asset list
+                                      const portfolioData = await portfolioApi.getPortfolioForEdit(personId, token, { noCache: true });
+                                      const allAssets = Array.isArray(portfolioData.assets) ? portfolioData.assets : [];
+                                      setAssets(allAssets.slice((assetsPage - 1) * assetsPageSize, (assetsPage - 1) * assetsPageSize + assetsPageSize));
+                                      setAssetsTotal(allAssets.length);
+                                    } catch (err) {
+                                      alert((err && err.message) || locale.assets?.deleteFailed || 'Failed to delete asset');
+                                    }
+                                  }}
+                                />
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                    {/* Paging Controls (hidden if <= 10 files) */}
+                    {assetsTotal > 10 && (
+                      <div className="assets-paging">
+                        <button disabled={assetsPage === 1} onClick={() => setAssetsPage(assetsPage - 1)}>{locale.assets?.prev || 'Prev'}</button>
+                        <span>{locale.assets?.page || 'Page'} {assetsPage} {locale.assets?.of || 'of'} {Math.ceil(assetsTotal / assetsPageSize) || 1}</span>
+                        <button disabled={assetsPage * assetsPageSize >= assetsTotal} onClick={() => setAssetsPage(assetsPage + 1)}>{locale.assets?.next || 'Next'}</button>
+                        <label>
+                          {locale.assets?.show || 'Show'}
+                          <select value={assetsPageSize} onChange={e => setAssetsPageSize(Number(e.target.value))}>
+                            {[10, 25, 50, 100].map(size => (
+                              <option key={size} value={size}>{size}</option>
+                            ))}
+                          </select>
+                          {locale.assets?.files || 'files'}
+                        </label>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="assets-modal-backdrop" onClick={() => setShowAssetsOverlay(false)}></div>
+          </div>
+        )}
         {showVersionHistory && (
           <div className={`editor-sidebar ${showVersionHistory ? 'mobile-visible' : ''}`}>
             <div className="version-history">
