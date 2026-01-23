@@ -146,6 +146,24 @@ builder.Services.AddSingleton<Portfolio.Api.Services.IShortIdGenerator>(sp =>
 builder.Services.AddScoped<Portfolio.Api.Services.ICurrentUserProvider, Portfolio.Api.Services.CurrentUserProvider>();
 builder.Services.AddScoped<Portfolio.Api.Services.IVersionService, Portfolio.Api.Services.VersionService>();
 builder.Services.AddScoped<Portfolio.Api.Services.ILocaleValidator, Portfolio.Api.Services.LocaleValidator>();
+// GitHub Models service registration: register a named HttpClient with a retry handler and scoped service that uses IHttpClientFactory.
+builder.Services.AddTransient<Portfolio.Api.Services.GitHubModelsRetryHandler>();
+// Named client "GitHubModels" centralizes default headers, base address and timeout.
+builder.Services.AddHttpClient("GitHubModels", client =>
+{
+    var baseUrl = builder.Configuration["GitHubModels:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        try { client.BaseAddress = new Uri(baseUrl); } catch { }
+    }
+    // Default headers common to GitHub Models / inference hosts
+    try { client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json"); } catch { }
+    try { client.DefaultRequestHeaders.UserAgent.ParseAdd("Portfolio.Api/1.0"); } catch { }
+    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 30));
+})
+.AddHttpMessageHandler<Portfolio.Api.Services.GitHubModelsRetryHandler>();
+
+builder.Services.AddScoped<Portfolio.Api.Services.IGitHubModelsService, Portfolio.Api.Services.GitHubModelsService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

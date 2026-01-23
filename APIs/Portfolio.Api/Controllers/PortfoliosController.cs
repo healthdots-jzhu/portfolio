@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Portfolio.Api.Data;
 using Portfolio.Api.Models;
 using Portfolio.Api.Services;
+using Portfolio.Api.Models.Dto;
 
 
 namespace Portfolio.Api.Controllers;
@@ -20,14 +21,18 @@ public class PortfoliosController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly IS3Service _s3Service;
     private readonly IShortIdGenerator _shortIdGenerator;
+    private readonly IGitHubModelsService _gitHubModelsService;
+    private readonly ILocaleValidator _localeValidator;
 
-    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IConfiguration configuration, IS3Service s3Service, IShortIdGenerator shortIdGenerator)
+    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IConfiguration configuration, IS3Service s3Service, IShortIdGenerator shortIdGenerator, IGitHubModelsService gitHubModelsService, ILocaleValidator localeValidator)
     {
         _context = context;
         _currentUser = currentUser;
         _configuration = configuration;
         _s3Service = s3Service;
         _shortIdGenerator = shortIdGenerator;
+        _gitHubModelsService = gitHubModelsService;
+        _localeValidator = localeValidator;
     }
 
     [HttpPost("{personId}/assets")]
@@ -378,6 +383,94 @@ public class PortfoliosController : ControllerBase
         }
         // Ensure a return value for all code paths
         return Content("{}", "application/json");
+    }
+
+    /// <summary>
+    /// Generate locale content from a free-form prompt using GitHub Models.
+    /// Owner-only. Dry-run by default (does not persist).
+    /// </summary>
+    [HttpPost("{personId}/locales/{language}/generate")]
+    public async Task<IActionResult> GenerateLocaleFromPrompt(string personId, string language, [FromBody] GenerateLocaleRequest request)
+    {
+        var userId = _currentUser.GetUserId(HttpContext);
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(new { error = "Authentication required" });
+        }
+
+        var portfolio = await _context.Portfolios
+            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .FirstOrDefaultAsync();
+
+        if (portfolio == null)
+        {
+            return NotFound(new { error = "Portfolio not found or access denied" });
+        }
+
+        if (request == null || string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            return BadRequest(new { error = "Prompt is required" });
+        }
+
+        // Limit prompt length to avoid abuse
+        var maxPromptLength = _configuration.GetValue<int>("GitHubModels:MaxPromptLength", 4000);
+        if (request.Prompt.Length > maxPromptLength)
+        {
+            return BadRequest(new { error = $"Prompt too long (max {maxPromptLength} characters)" });
+        }
+
+        string generatedJson;
+        try
+        {
+            var options = new GitHubModelOptions { MaxTokens = request.MaxTokens, Temperature = request.Temperature };
+            generatedJson = await _gitHubModelsService.GenerateLocaleJsonAsync(request.Prompt, language, options, HttpContext.RequestAborted);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(502, new { error = "Model generation failed", detail = ex.Message });
+        }
+
+        // Validate generated JSON using existing validator
+        var validation = _localeValidator.ValidateLocale(generatedJson, language);
+
+        if (!validation.IsValid)
+        {
+            // Return validation errors; do not persist
+            return UnprocessableEntity(new { generated = generatedJson, validation });
+        }
+
+        if (request.DryRun)
+        {
+            return Ok(new { generated = generatedJson, validation });
+        }
+
+        // Persist: either update existing locale or create
+        var locale = await _context.PortfolioLocales
+            .Where(l => l.PortfolioId == portfolio.Id && l.Language == language)
+            .FirstOrDefaultAsync();
+
+        if (locale == null)
+        {
+            locale = new PortfolioLocale
+            {
+                Id = Guid.NewGuid(),
+                PortfolioId = portfolio.Id,
+                Language = language,
+                ContentJson = generatedJson,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+            _context.PortfolioLocales.Add(locale);
+        }
+        else
+        {
+            locale.ContentJson = generatedJson;
+            locale.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        portfolio.UpdatedAt = DateTimeOffset.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Locale updated successfully", language, updatedAt = locale.UpdatedAt });
     }
     [HttpDelete("{personId}")]
     public async Task<IActionResult> DeletePortfolio(string personId)
