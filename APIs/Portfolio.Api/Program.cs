@@ -15,7 +15,9 @@ JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("Postgres")
+// Prefer explicit environment variable `ConnectionStrings__Postgres` when present
+var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Postgres")
+    ?? builder.Configuration.GetConnectionString("Postgres")
     ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
 
 builder.Services.AddCors(options =>

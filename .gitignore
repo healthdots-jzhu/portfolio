@@ -1,0 +1,14 @@
+.env
+.env.local
+# Ignore local docker compose overrides
+docker-compose.override.yml
+
+# Node
+node_modules/
+
+# Dotnet
+bin/
+obj/
+**/bin/
+**/obj/
+.vs/
