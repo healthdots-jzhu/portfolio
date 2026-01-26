@@ -283,17 +283,18 @@ resource "aws_instance" "main" {
   ]
 
   lifecycle {
+    prevent_destroy = true
     create_before_destroy = true
-    replace_triggered_by  = [terraform_data.ec2_replace_when_ami_changes.id]
+    ignore_changes = [
+      # Prevent routine deployments or tag/user-data updates from forcing instance replacement
+      user_data,
+      tags,
+    ]
   }
 }
 
 # Trigger EC2 replacement when the latest Amazon Linux 2 AMI changes
-resource "terraform_data" "ec2_replace_when_ami_changes" {
-  triggers_replace = {
-    ami = data.aws_ami.amazon_linux_2.id
-  }
-}
+## Removed terraform_data `ec2_replace_when_ami_changes` to avoid replacement cycles.
 
 # Get latest Amazon Linux 2 AMI (ARM-based for t4g)
 data "aws_ami" "amazon_linux_2" {
@@ -413,4 +414,52 @@ resource "aws_ssm_parameter" "hashids_salt" {
   tags = {
     Name = "${var.project_name}-${var.environment}-hashids-salt"
   }
+}
+
+# ECR repository for Portfolio API
+resource "aws_ecr_repository" "portfolio_api" {
+  name                 = "${var.project_name}-portfolio-api"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-ecr-portfolio-api"
+  }
+}
+
+# Lifecycle policy: expire untagged images older than 30 days
+resource "aws_ecr_lifecycle_policy" "portfolio_api_untagged" {
+  repository = aws_ecr_repository.portfolio_api.name
+
+  policy = <<POLICY
+{
+  "rules": [
+    {
+      "rulePriority": 1,
+      "description": "Expire untagged images older than 30 days",
+      "selection": {
+        "tagStatus": "untagged",
+        "countType": "sinceImagePushed",
+        "countUnit": "days",
+        "countNumber": 30
+      },
+      "action": {
+        "type": "expire"
+      }
+    }
+  ]
+}
+POLICY
+}
+
+output "ecr_repository_url" {
+  description = "ECR repository URL for the API"
+  value       = aws_ecr_repository.portfolio_api.repository_url
 }
