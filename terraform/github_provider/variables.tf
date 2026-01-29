@@ -50,10 +50,25 @@ variable "s3_bucket_frontend" {
   default     = ""
 }
 
-variable "create_aws_role_secret" {
-  description = "When true, create the CI_AWS_ROLE_ARN environment-scoped secret using the value in var.aws_role_arn. Set to true after the CI role exists."
+variable "create_repo_aws_role_secret" {
+  description = "When true, create a repository-scoped secret named CI_AWS_ROLE_ARN with the value in var.aws_role_arn."
   type        = bool
   default     = false
+}
+
+variable "environments" {
+  description = "Map of environments to create. Each key is the environment name and the value is an object with the environment-scoped values. Example: { beta = { tf_state_bucket=.., tf_state_key=.., tf_state_region=.., tf_state_dynamodb_table=.., ecr_registry=.., s3_bucket_frontend=.., create_aws_role_secret=true } }"
+  type = map(object({
+    tf_state_key           = string
+    tf_state_region        = string
+    ecr_registry           = string
+    s3_bucket_frontend     = string
+  }))
+  default = {}
+  validation {
+    condition     = length(var.environments) > 0
+    error_message = "The variable 'environments' must be a non-empty map. Provide at least one environment entry."
+  }
 }
 
 variable "aws_role_arn" {

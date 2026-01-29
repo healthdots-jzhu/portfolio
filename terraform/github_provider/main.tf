@@ -2,71 +2,74 @@
 
 // Note: repository-level AWS role secret removed; prefer environment-scoped secret
 
-# Create a GitHub Environment and an environment-scoped secret (if role ARN provided)
+// Create a GitHub Environment and an environment-scoped secret (if role ARN provided)
+locals {
+  // Require callers to provide `var.environments`; map of env name => values
+  envs = var.environments
+}
+
 resource "github_repository_environment" "env" {
+  for_each    = local.envs
   repository  = var.repository
-  environment = var.environment
+  environment = each.key
 }
 
 resource "github_actions_environment_variable" "s3_bucket_frontend_env" {
-  count       = var.s3_bucket_frontend != "" ? 1 : 0
+  for_each    = { for k, v in local.envs : k => v if v.s3_bucket_frontend != "" }
   repository  = var.repository
-  environment = var.environment
+  environment = each.key
   variable_name = "S3_BUCKET_FRONTEND"
-  value       = var.s3_bucket_frontend
+  value       = each.value.s3_bucket_frontend
   depends_on  = [github_repository_environment.env]
 }
 
-resource "github_actions_environment_variable" "tf_state_bucket_env" {
-  count       = var.tf_state_bucket != "" ? 1 : 0
-  repository  = var.repository
-  environment = var.environment
-  variable_name = "TF_STATE_BUCKET"
-  value       = var.tf_state_bucket
-  depends_on  = [github_repository_environment.env]
-}
 
 resource "github_actions_environment_variable" "tf_state_key_env" {
-  count       = var.tf_state_key != "" ? 1 : 0
+  for_each    = { for k, v in local.envs : k => v if v.tf_state_key != "" }
   repository  = var.repository
-  environment = var.environment
+  environment = each.key
   variable_name = "TF_STATE_KEY"
-  value       = var.tf_state_key
+  value       = each.value.tf_state_key
   depends_on  = [github_repository_environment.env]
 }
 
 resource "github_actions_environment_variable" "tf_state_region_env" {
-  count       = var.tf_state_region != "" ? 1 : 0
+  for_each    = { for k, v in local.envs : k => v if v.tf_state_region != "" }
   repository  = var.repository
-  environment = var.environment
+  environment = each.key
   variable_name = "TF_STATE_REGION"
-  value       = var.tf_state_region
+  value       = each.value.tf_state_region
   depends_on  = [github_repository_environment.env]
 }
 
-resource "github_actions_environment_variable" "tf_state_dynamodb_table_env" {
-  count       = var.tf_state_dynamodb_table != "" ? 1 : 0
-  repository  = var.repository
-  environment = var.environment
-  variable_name = "TF_STATE_DYNAMODB_TABLE"
-  value       = var.tf_state_dynamodb_table
-  depends_on  = [github_repository_environment.env]
-}
 
 resource "github_actions_environment_variable" "ecr_registry_env" {
-  count       = var.ecr_registry != "" ? 1 : 0
+  for_each    = { for k, v in local.envs : k => v if v.ecr_registry != "" }
   repository  = var.repository
-  environment = var.environment
+  environment = each.key
   variable_name = "ECR_REGISTRY"
-  value       = var.ecr_registry
+  value       = each.value.ecr_registry
   depends_on  = [github_repository_environment.env]
 }
 
-resource "github_actions_environment_secret" "aws_role_arn_env" {
-  count         = var.create_aws_role_secret ? 1 : 0
+# Repository-level Actions variables for shared values
+resource "github_actions_variable" "tf_state_bucket_repo" {
+  count         = var.tf_state_bucket != "" ? 1 : 0
   repository    = var.repository
-  environment   = var.environment
-  secret_name   = "CI_AWS_ROLE_ARN"
+  variable_name = "TF_STATE_BUCKET"
+  value         = var.tf_state_bucket
+}
+
+resource "github_actions_variable" "tf_state_dynamodb_table_repo" {
+  count         = var.tf_state_dynamodb_table != "" ? 1 : 0
+  repository    = var.repository
+  variable_name = "TF_STATE_DYNAMODB_TABLE"
+  value         = var.tf_state_dynamodb_table
+}
+
+resource "github_actions_secret" "repo_aws_role_arn" {
+  count          = var.create_repo_aws_role_secret ? 1 : 0
+  repository     = var.repository
+  secret_name    = "CI_AWS_ROLE_ARN"
   plaintext_value = var.aws_role_arn
-  depends_on    = [github_repository_environment.env]
 }

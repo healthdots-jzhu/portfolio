@@ -18,13 +18,12 @@ module "github_provider" {
   github_owner = var.github_owner
   repository   = var.repository
 
-  # Pass environment and computed defaults (allow overrides via orchestration vars)
-  environment            = var.environment
-  tf_state_bucket        = var.tf_state_bucket != "" ? var.tf_state_bucket : "${var.repository}-terraform-state-${var.environment}"
-  tf_state_key           = var.tf_state_key != "" ? var.tf_state_key : "${var.repository}/${var.environment}/terraform.tfstate"
-  tf_state_region        = var.tf_state_region
-  tf_state_dynamodb_table = var.tf_state_dynamodb_table != "" ? var.tf_state_dynamodb_table : "${var.repository}-terraform-locks-${var.environment}"
-  ecr_registry           = var.ecr_registry != "" ? var.ecr_registry : "${var.repository}-${var.environment}"
+  # No computed defaults here — provide per-environment values via `environments` map.
+  # The `environments` map must contain keys for: tf_state_bucket, tf_state_key,
+  # tf_state_region, ecr_registry, and s3_bucket_frontend.
   aws_role_arn = module.ci_role.role_arn
-  create_aws_role_secret = var.create_aws_role_secret
+  create_repo_aws_role_secret = var.create_repo_aws_role_secret
+  tf_state_bucket = var.tf_state_bucket
+  tf_state_dynamodb_table = var.tf_state_dynamodb_table
+  environments = var.environments
 }

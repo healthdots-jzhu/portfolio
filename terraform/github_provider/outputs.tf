@@ -1,16 +1,16 @@
 output "variables_created" {
   description = "List of repo Actions variable names created"
   value = concat(
-    github_actions_environment_variable.s3_bucket_frontend_env.*.variable_name,
-    github_actions_environment_variable.tf_state_bucket_env.*.variable_name,
-    github_actions_environment_variable.tf_state_key_env.*.variable_name,
-    github_actions_environment_variable.tf_state_region_env.*.variable_name,
-    github_actions_environment_variable.tf_state_dynamodb_table_env.*.variable_name,
-    github_actions_environment_variable.ecr_registry_env.*.variable_name,
+    [for k in keys(github_actions_environment_variable.s3_bucket_frontend_env) : "${k}:S3_BUCKET_FRONTEND"],
+    [for k in keys(github_actions_environment_variable.tf_state_key_env) : "${k}:TF_STATE_KEY"],
+    [for k in keys(github_actions_environment_variable.tf_state_region_env) : "${k}:TF_STATE_REGION"],
+    [for k in keys(github_actions_environment_variable.ecr_registry_env) : "${k}:ECR_REGISTRY"],
+    var.tf_state_bucket != "" ? ["TF_STATE_BUCKET"] : [],
+    var.tf_state_dynamodb_table != "" ? ["TF_STATE_DYNAMODB_TABLE"] : [],
   )
 }
 
 output "aws_role_secret_created" {
   description = "Whether CI_AWS_ROLE_ARN environment secret was created"
-  value       = length(github_actions_environment_secret.aws_role_arn_env.*.id) > 0 ? true : false
+  value       = length(github_actions_secret.repo_aws_role_arn.*.id) > 0 ? true : false
 }

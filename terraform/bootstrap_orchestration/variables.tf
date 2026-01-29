@@ -29,28 +29,14 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "tf_state_key" {
-  description = "S3 key for Terraform state"
-  type        = string
-  default     = "portfolio/terraform.tfstate"
-}
 
-variable "tf_state_region" {
-  description = "Region for Terraform S3 state"
-  type        = string
-  default     = "ca-central-1"
-}
 
 variable "tf_state_dynamodb_table" {
   description = "DynamoDB table name for Terraform locks"
   type        = string
 }
 
-variable "ecr_registry" {
-  description = "ECR registry (repository) URL"
-  type        = string
-  default     = ""
-}
+
 
 variable "ecr_repository_arn" {
   description = "Optional ECR repository ARN to scope permissions"
@@ -64,8 +50,19 @@ variable "role_name" {
   default     = "github-actions-oidc-role"
 }
 
-variable "create_aws_role_secret" {
-  description = "When true, instruct the github_provider module to create the CI_AWS_ROLE_ARN environment secret."
+variable "create_repo_aws_role_secret" {
+  description = "When true, instruct the github_provider module to create the CI_AWS_ROLE_ARN repository secret."
   type        = bool
   default     = false
+}
+
+variable "environments" {
+  description = "Optional map of environments to create. When provided, values will be forwarded to the github_provider module to create multiple environment-scoped variables/secrets in one apply."
+  type = map(object({
+    tf_state_key           = string
+    tf_state_region        = string
+    ecr_registry           = string
+    s3_bucket_frontend     = string
+  }))
+  default = {}
 }
