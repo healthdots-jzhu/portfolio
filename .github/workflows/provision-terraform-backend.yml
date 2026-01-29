@@ -101,14 +101,42 @@ jobs:
           BUCKET='${{ inputs.bucket_name }}'
           TABLE='${{ inputs.table_name }}'
           echo "Checking S3 bucket '${BUCKET}'..."
-          if aws s3api head-bucket --bucket "${BUCKET}" >/dev/null 2>&1; then
+          set +e
+          HB_OUT=$(aws s3api head-bucket --bucket "${BUCKET}" 2>&1)
+          HB_RC=$?
+          set -e
+          if [ $HB_RC -eq 0 ]; then
             echo "Pre-existing S3 bucket detected: ${BUCKET}. Aborting to avoid accidental reuse/collision." >&2
             exit 1
+          else
+            # If head-bucket reports Not Found/404, it's safe to proceed; otherwise treat as ambiguous/existing.
+            if echo "$HB_OUT" | grep -qi "not found\|404\|NoSuchBucket"; then
+              echo "S3 bucket ${BUCKET} not found. OK to proceed."
+            else
+              echo "S3 head-bucket returned non-success indicating possible existing or inaccessible bucket:" >&2
+              echo "$HB_OUT" >&2
+              echo "Aborting to avoid accidental reuse/collision." >&2
+              exit 1
+            fi
           fi
+
           echo "Checking DynamoDB table '${TABLE}'..."
-          if aws dynamodb describe-table --table-name "${TABLE}" >/dev/null 2>&1; then
+          set +e
+          DT_OUT=$(aws dynamodb describe-table --table-name "${TABLE}" 2>&1)
+          DT_RC=$?
+          set -e
+          if [ $DT_RC -eq 0 ]; then
             echo "Pre-existing DynamoDB table detected: ${TABLE}. Aborting to avoid accidental reuse/collision." >&2
             exit 1
+          else
+            if echo "$DT_OUT" | grep -qi "ResourceNotFoundException\|not found\|NotFound"; then
+              echo "DynamoDB table ${TABLE} not found. OK to proceed."
+            else
+              echo "DynamoDB describe-table returned non-success indicating possible existing or inaccessible table:" >&2
+              echo "$DT_OUT" >&2
+              echo "Aborting to avoid accidental reuse/collision." >&2
+              exit 1
+            fi
           fi
           echo "No pre-existing backend resources detected. Continuing."
 
@@ -120,7 +148,7 @@ jobs:
         run: |
           TF_VAR_aws_region='${{ inputs.aws_region }}' \
           TF_VAR_bucket_name='${{ inputs.bucket_name }}' \
-          TF_VAR_table_name='${{ inputs.table_name }}' \
+          TF_VAR_lock_table_name='${{ inputs.table_name }}' \
           terraform plan -input=false -out=tfplan
 
       - name: Terraform Apply (one-time provisioning)
