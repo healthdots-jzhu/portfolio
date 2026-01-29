@@ -34,6 +34,11 @@ jobs:
           restore-keys: |
             terraform-plugin-cache-${{ runner.os }}-
 
+      - name: Ensure Terraform plugin cache dir
+        run: |
+          mkdir -p "$HOME/.terraform.d/plugin-cache"
+        shell: bash
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v5.1.1
         with:
