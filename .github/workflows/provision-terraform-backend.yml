@@ -155,7 +155,7 @@ jobs:
         working-directory: terraform/state-init
         env:
           AWS_REGION: ${{ inputs.aws_region }}
-          TF_PLUGIN_CACHE_DIR: ${{ env.HOME }}/.terraform.d/plugin-cache
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
         run: |
           terraform apply -auto-approve -input=false tfplan
 
