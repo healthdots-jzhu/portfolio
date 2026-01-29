@@ -187,8 +187,8 @@ if (previewVersionId && isAuthenticated) {
 
 ### Database Migration
 Run the migration to create the PortfolioVersions table:
-```bash
-cd APIs/Portfolio.Api
+```powershell
+Set-Location APIs/Portfolio.Api
 dotnet ef database update
 ```
 

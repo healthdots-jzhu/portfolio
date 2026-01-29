@@ -66,21 +66,21 @@ portfolioApi.getLocale()
 ## Environment Setup
 
 ### For Development
-```bash
+```powershell
 # .env.development
 VITE_API_URL=http://localhost:5000
 ```
 
 ### For Production
-```bash
+```powershell
 # .env.production
 VITE_API_URL=https://portfolio-api.healthdots.net
 ```
 
 ## Testing Checklist
 
-- [ ] Start backend API: `cd APIs/Portfolio.Api && dotnet run`
-- [ ] Start frontend: `cd portfolio-frontend && npm run dev`
+- [ ] Start backend API: `Set-Location APIs/Portfolio.Api; dotnet run`
+- [ ] Start frontend: `Set-Location portfolio-frontend; npm run dev`
 - [ ] Open browser to http://localhost:5173
 - [ ] Check console logs for "Loaded {personId}/{language} from API"
 - [ ] Test language switching (should use cached data)
@@ -130,14 +130,14 @@ VITE_API_URL=https://portfolio-api.healthdots.net
 To verify the migration was successful:
 
 1. **Check API Response**
-   ```bash
-   curl http://localhost:5000/api/portfolios/karen-zhu-EU2O/locales/en
+   ```powershell
+   Invoke-RestMethod http://localhost:5000/api/portfolios/karen-zhu-EU2O/locales/en
    ```
    Should return: The locale JSON content
 
 2. **Check Available Languages**
-   ```bash
-   curl http://localhost:5000/api/portfolios/karen-zhu-EU2O
+   ```powershell
+   Invoke-RestMethod http://localhost:5000/api/portfolios/karen-zhu-EU2O
    ```
    Should return: `{ ..., "availableLanguages": ["en", "fr"] }`
 

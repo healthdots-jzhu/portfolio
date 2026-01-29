@@ -209,9 +209,9 @@ CREATE INDEX idx_portfolio_published ON PortfolioVersions(PortfolioId, IsCurrent
 
 ### 1. Backend Deployment
 
-```bash
+```powershell
 # Navigate to API project
-cd APIs/Portfolio.Api
+Set-Location APIs/Portfolio.Api
 
 # Create and apply migration
 dotnet ef migrations add AddPortfolioVersioning
@@ -223,9 +223,9 @@ dotnet publish -c Release
 
 ### 2. Frontend Deployment
 
-```bash
+```powershell
 # Navigate to frontend
-cd portfolio-frontend
+Set-Location portfolio-frontend
 
 # Install dependencies (if needed)
 npm install

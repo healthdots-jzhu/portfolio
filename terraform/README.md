@@ -29,15 +29,15 @@ This Terraform configuration creates a secure, minimal setup for accessing a Pos
 ## Quick Start
 
 ### 1. Initialize Terraform
-```bash
-cd terraform
+```powershell
+Set-Location terraform
 terraform init
 ```
 
 ### 2. Configure Variables
 Copy the example and update with your values:
-```bash
-cp terraform.tfvars.example terraform.tfvars
+```powershell
+Copy-Item terraform.tfvars.example terraform.tfvars
 ```
 
 Edit `terraform.tfvars`:
@@ -52,12 +52,12 @@ Set the RDS password via environment variable (do **not** add it to terraform.tf
 $env:TF_VAR_rds_password = "<StrongPassword>"
 ```
 - bash:
-```bash
-export TF_VAR_rds_password="<StrongPassword>"
+```powershell
+$env:TF_VAR_rds_password = "<StrongPassword>"
 ```
 
 ### 3. Plan and Apply
-```bash
+```powershell
 terraform plan
 terraform apply
 ```
@@ -69,7 +69,7 @@ Terraform will output:
 - PostgreSQL connection string
 
 ### 4. Verify Deployment
-```bash
+```powershell
 # Get instance ID from Terraform output
 terraform output ec2_instance_id
 
@@ -80,9 +80,9 @@ aws ssm start-session --target <instance-id> --region us-east-1
 ## Connecting to PostgreSQL
 
 ### Option A: Via SSM Session (Recommended)
-```bash
+```powershell
 # 1. Start SSM session
-aws ssm start-session --target $(terraform output -raw ec2_instance_id) --region us-east-1
+aws ssm start-session --target (terraform output -raw ec2_instance_id) --region us-east-1
 
 # 2. Inside the session, connect to PostgreSQL
 psql -h <rds-address> -U postgres -d portfoliodb
@@ -92,16 +92,16 @@ connect-postgres portfoliodb postgres
 ```
 
 ### Option B: Using AWS Session Manager Port Forwarding
-```bash
-aws ssm start-session \
-  --target <instance-id> \
-  --document-name AWS-StartPortForwardingSessionToRemoteHost \
-  --parameters '{
-    "host":["<rds-address>"],
-    "portNumber":["5432"],
-    "localPortNumber":["5432"]
-  }' \
-  --region us-east-1
+```powershell
+aws ssm start-session `
+   --target <instance-id> `
+   --document-name AWS-StartPortForwardingSessionToRemoteHost `
+   --parameters '{
+      "host":["<rds-address>"],
+      "portNumber":["5432"],
+      "localPortNumber":["5432"]
+   }' `
+   --region us-east-1
 
 # In another terminal:
 psql -h localhost -U postgres -d portfoliodb
@@ -143,7 +143,7 @@ psql -h localhost -U postgres -d portfoliodb
 - **Total: ~$14/month** (free tier: $0-3)
 
 ## Cleanup
-```bash
+```powershell
 terraform destroy
 ```
 

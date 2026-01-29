@@ -8,7 +8,7 @@ Quick steps
 
 2. Start the API container (compose only runs the API; DB is expected to be external such as RDS):
 
-```bash
+```powershell
 docker compose up --build
 ```
 

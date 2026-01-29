@@ -65,7 +65,7 @@ Each language includes:
 
 After migration, test all these endpoints:
 
-```bash
+```powershell
 # Karen's English
 GET /api/portfolios/karen-zhu-EU2O/locales/en
 

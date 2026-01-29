@@ -1,4 +1,4 @@
-# Example terraform.tfvars for bootstrap
+# Example terraform.tfvars for state-init
 # Copy to terraform.tfvars or use with -var-file=terraform.tfvars
 
 bucket_name     = "your-terraform-state-bucket-name"

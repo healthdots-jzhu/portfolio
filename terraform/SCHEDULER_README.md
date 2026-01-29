@@ -36,8 +36,8 @@ The solution uses AWS-native services:
 
 ### Initial Setup
 
-```bash
-cd terraform
+```powershell
+Set-Location terraform
 
 # Initialize Terraform (if not already done)
 terraform init
@@ -51,7 +51,7 @@ terraform apply
 
 ### Verify Deployment
 
-```bash
+```powershell
 # Check Lambda function
 aws lambda get-function --function-name healthdots-dev-resource-scheduler --region ca-central-1
 
@@ -72,33 +72,24 @@ You can manually trigger the Lambda function to test start/stop operations:
 
 **PowerShell:**
 ```powershell
-# Create payload file
-@'
-{"action":"stop"}
-'@ | Out-File -FilePath payload.json -Encoding ASCII -NoNewline
-
 # Test STOP action
 $env:AWS_PROFILE="Admin-199061575177"
 aws lambda invoke `
   --function-name healthdots-beta-resource-scheduler `
   --region ca-central-1 `
   --cli-binary-format raw-in-base64-out `
-  --payload file://payload.json `
+  --payload '{"action":"stop"}' `
   response.json
 
 # View results
 Get-Content response.json | ConvertFrom-Json | ConvertTo-Json -Depth 5
 
 # Test START action
-@'
-{"action":"start"}
-'@ | Out-File -FilePath payload.json -Encoding ASCII -NoNewline
-
 aws lambda invoke `
   --function-name healthdots-beta-resource-scheduler `
   --region ca-central-1 `
   --cli-binary-format raw-in-base64-out `
-  --payload file://payload.json `
+  --payload '{"action":"start"}' `
   response.json
 
 # View results
@@ -106,23 +97,23 @@ Get-Content response.json | ConvertFrom-Json | ConvertTo-Json -Depth 5
 ```
 
 **Bash/Linux:**
-```bash
+```powershell
 # Test STOP action
-aws lambda invoke \
-  --function-name healthdots-beta-resource-scheduler \
-  --region ca-central-1 \
-  --payload '{"action":"stop"}' \
+aws lambda invoke `
+  --function-name healthdots-beta-resource-scheduler `
+  --region ca-central-1 `
+  --payload '{"action":"stop"}' `
   response.json
 
 # Test START action
-aws lambda invoke \
-  --function-name healthdots-beta-resource-scheduler \
-  --region ca-central-1 \
-  --payload '{"action":"start"}' \
+aws lambda invoke `
+  --function-name healthdots-beta-resource-scheduler `
+  --region ca-central-1 `
+  --payload '{"action":"start"}' `
   response.json
 
 # View results
-cat response.json
+Get-Content response.json
 ```
 
 ### Expected Output
@@ -168,7 +159,7 @@ cat response.json
 
 ### Check CloudWatch Logs
 
-```bash
+```powershell
 # View recent logs
 aws logs tail /aws/lambda/healthdots-dev-resource-scheduler --follow --region ca-central-1
 
@@ -180,17 +171,17 @@ terraform output scheduler_cloudwatch_logs
 
 ### Check Scheduler Status
 
-```bash
+```powershell
 # Check EC2 state
-aws ec2 describe-instances \
-  --instance-ids $(terraform output -raw ec2_instance_id) \
-  --query 'Reservations[0].Instances[0].State.Name' \
+aws ec2 describe-instances `
+  --instance-ids (terraform output -raw ec2_instance_id) `
+  --query 'Reservations[0].Instances[0].State.Name' `
   --region ca-central-1
 
 # Check RDS state
-aws rds describe-db-instances \
-  --db-instance-identifier $(terraform output -raw rds_endpoint | cut -d: -f1) \
-  --query 'DBInstances[0].DBInstanceStatus' \
+aws rds describe-db-instances `
+  --db-instance-identifier (terraform output -raw rds_endpoint).Split(':')[0] `
+  --query 'DBInstances[0].DBInstanceStatus' `
   --region ca-central-1
 ```
 
@@ -232,33 +223,34 @@ Assuming t4g.micro EC2 (~$0.0084/hr) and db.t4g.micro RDS (~$0.016/hr):
 ### Resources Not Stopping/Starting
 
 1. Check Lambda logs:
-   ```bash
-   aws logs tail /aws/lambda/healthdots-dev-resource-scheduler --follow
-   ```
+  ```powershell
+  aws logs tail /aws/lambda/healthdots-dev-resource-scheduler --follow
+  ```
 
 2. Verify IAM permissions:
-   ```bash
-   aws iam get-role-policy --role-name $(terraform output -raw scheduler_lambda_function_name | sed 's/-resource-scheduler/-lambda-scheduler-/')* --policy-name *
-   ```
+  ```powershell
+  # List inline policies for the Lambda role
+  aws iam list-role-policies --role-name (terraform output -raw scheduler_lambda_function_name) --region ca-central-1
+  ```
 
 3. Test manually:
-   ```bash
-   aws lambda invoke --function-name healthdots-dev-resource-scheduler \
-     --payload '{"action":"stop"}' response.json
-   ```
+  ```powershell
+  aws lambda invoke --function-name healthdots-dev-resource-scheduler `
+    --payload '{"action":"stop"}' response.json
+  ```
 
 ### EventBridge Not Triggering
 
 1. Check rules are enabled:
-   ```bash
-   aws events describe-rule --name healthdots-dev-stop-resources
-   aws events describe-rule --name healthdots-dev-start-resources
-   ```
+  ```powershell
+  aws events describe-rule --name healthdots-dev-stop-resources
+  aws events describe-rule --name healthdots-dev-start-resources
+  ```
 
 2. Verify Lambda permissions:
-   ```bash
-   aws lambda get-policy --function-name healthdots-dev-resource-scheduler
-   ```
+  ```powershell
+  aws lambda get-policy --function-name healthdots-dev-resource-scheduler
+  ```
 
 ### RDS Won't Stop
 
@@ -269,7 +261,7 @@ RDS instances cannot be stopped if:
 - They are in a maintenance window
 
 Check RDS status:
-```bash
+```powershell
 aws rds describe-db-instances --db-instance-identifier <your-rds-id>
 ```
 
@@ -288,7 +280,7 @@ schedule_expression = "cron(0 13 * * ? *)"
 ```
 
 Then apply changes:
-```bash
+```powershell
 terraform apply
 ```
 
@@ -300,14 +292,14 @@ Edit `lambda/scheduler.py` and add handling for additional AWS resources (ECS, E
 
 To temporarily disable without destroying:
 
-```bash
+```powershell
 # Disable EventBridge rules
 aws events disable-rule --name healthdots-dev-stop-resources --region ca-central-1
 aws events disable-rule --name healthdots-dev-start-resources --region ca-central-1
 ```
 
 To permanently remove:
-```bash
+```powershell
 # Comment out scheduler.tf in your Terraform and apply
 terraform apply
 ```
@@ -316,9 +308,9 @@ terraform apply
 
 If you need to start resources outside the schedule:
 
-```bash
+```powershell
 # Start EC2
-aws ec2 start-instances --instance-ids $(terraform output -raw ec2_instance_id)
+aws ec2 start-instances --instance-ids (terraform output -raw ec2_instance_id)
 
 # Start RDS
 aws rds start-db-instance --db-instance-identifier <your-rds-id>

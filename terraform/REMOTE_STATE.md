@@ -10,10 +10,10 @@ Prerequisites
 
 Replace `<BUCKET_NAME>` and run:
 
-```bash
-aws s3api create-bucket \
-  --bucket <BUCKET_NAME> \
-  --region ca-central-1 \
+```powershell
+aws s3api create-bucket `
+  --bucket <BUCKET_NAME> `
+  --region ca-central-1 `
   --create-bucket-configuration LocationConstraint=ca-central-1
 
 # Enable versioning
@@ -28,12 +28,12 @@ aws s3api put-bucket-encryption --bucket <BUCKET_NAME> \
 
 Replace `<LOCK_TABLE>` and run:
 
-```bash
-aws dynamodb create-table \
-  --table-name <LOCK_TABLE> \
-  --attribute-definitions AttributeName=LockID,AttributeType=S \
-  --key-schema AttributeName=LockID,KeyType=HASH \
-  --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+```powershell
+aws dynamodb create-table `
+  --table-name <LOCK_TABLE> `
+  --attribute-definitions AttributeName=LockID,AttributeType=S `
+  --key-schema AttributeName=LockID,KeyType=HASH `
+  --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 `
   --region ca-central-1
 ```
 
@@ -41,12 +41,12 @@ aws dynamodb create-table \
 
 From the `terraform/` directory run (replace placeholders):
 
-```bash
-terraform init -reconfigure \
-  -backend-config="bucket=<BUCKET_NAME>" \
-  -backend-config="key=portfolio/terraform.tfstate" \
-  -backend-config="region=ca-central-1" \
-  -backend-config="dynamodb_table=<LOCK_TABLE>" \
+```powershell
+terraform init -reconfigure `
+  -backend-config="bucket=<BUCKET_NAME>" `
+  -backend-config="key=portfolio/terraform.tfstate" `
+  -backend-config="region=ca-central-1" `
+  -backend-config="dynamodb_table=<LOCK_TABLE>" `
   -backend-config="encrypt=true"
 
 # Terraform will prompt to copy local state into the new backend. Confirm when prompted.

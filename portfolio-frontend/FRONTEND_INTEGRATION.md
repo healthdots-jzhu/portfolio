@@ -44,7 +44,7 @@ Updated `PortfoliosController.GetPortfolio()` to include:
 
 Create a `.env` file based on `.env.example`:
 
-```bash
+```powershell
 # Development
 VITE_API_URL=http://localhost:5000
 
@@ -56,16 +56,16 @@ VITE_API_URL=https://portfolio-api.healthdots.net
 
 ### Test with API (Recommended)
 1. Start the backend API:
-   ```bash
-   cd APIs/Portfolio.Api
-   dotnet run
-   ```
+  ```powershell
+  Set-Location APIs/Portfolio.Api
+  dotnet run
+  ```
 
 2. Start the frontend:
-   ```bash
-   cd portfolio-frontend
-   npm run dev
-   ```
+  ```powershell
+  Set-Location portfolio-frontend
+  npm run dev
+  ```
 
 3. Open browser to `http://localhost:5173`
 4. Check browser console for API loading messages
@@ -73,9 +73,9 @@ VITE_API_URL=https://portfolio-api.healthdots.net
 ### Test with Static Files (Fallback)
 1. Stop the backend API (or set wrong API URL)
 2. Start the frontend:
-   ```bash
-   npm run dev
-   ```
+  ```powershell
+  npm run dev
+  ```
 3. The app should still work using static JSON files
 4. Check browser console for fallback messages
 
@@ -153,13 +153,13 @@ Check that:
 Test that the API returns the same data as the old static files:
 
 1. Check Karen's English locale:
-   ```
-   http://localhost:5000/api/portfolios/karen-zhu-EU2O/locales/en
-   ```
+  ```powershell
+  Invoke-RestMethod http://localhost:5000/api/portfolios/karen-zhu-EU2O/locales/en
+  ```
 
 2. Check Jason's Chinese locale:
-   ```
-   http://localhost:5000/api/portfolios/jason-zhu-EU1O/locales/zh
-   ```
+  ```powershell
+  Invoke-RestMethod http://localhost:5000/api/portfolios/jason-zhu-EU1O/locales/zh
+  ```
 
 3. Compare the API response with the corresponding JSON file in `src/locales/persons/`.

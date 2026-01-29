@@ -57,7 +57,7 @@ The `PortfolioVersions` table now uses:
 ## Deployment Steps
 
 ### Option 1: Idempotent SQL Script (Recommended for CI/CD)
-```bash
+```powershell
 # Safe to run multiple times - perfect for automated deployments
 psql -U $DB_USER -d $DB_NAME -h $DB_HOST < migration-production-idempotent.sql
 ```
@@ -69,13 +69,13 @@ psql -U $DB_USER -d $DB_NAME -h $DB_HOST < migration-production-idempotent.sql
 - ✅ Production-grade reliability
 
 ### Option 2: Using Entity Framework (Development/Testing)
-```bash
-cd APIs/Portfolio.Api
+```powershell
+Set-Location APIs/Portfolio.Api
 dotnet ef database update
 ```
 
 ### Option 3: Standard SQL Script (One-time deployment)
-```bash
+```powershell
 # Use only if you're certain migrations haven't been applied
 psql -U $DB_USER -d $DB_NAME -h $DB_HOST < migration-production.sql
 ```
@@ -126,8 +126,8 @@ After migration, verify:
 3. No data migration needed (fresh table)
 
 ### Undo Steps (if migration not yet applied)
-```bash
-cd APIs/Portfolio.Api
+```powershell
+Set-Location APIs/Portfolio.Api
 dotnet ef migrations remove  # Removes: AddVersionNumberUniqueIndex
 dotnet ef migrations remove  # Removes: AddUniqueConstraintToVersionNumber
 dotnet ef migrations remove  # Removes: ChangeVersionIdToInteger

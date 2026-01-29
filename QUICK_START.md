@@ -1,11 +1,37 @@
 # Quick Start Guide - Portfolio Management System
 
+## Overall Repo Structure
+As the code base grows, we should consider using a separate repo for each folder/type of code.
+
+### 1. Frontend Application Code Folder
+It should include:
+- Frontend Application codes
+- Github Action Workflows (under the root folder .github/workflows of the entire repo)
+
+### 2. API Application Code Folder
+It should include:
+- API Application codes
+- Github Action Workflows (under the root folder .github/workflows of the entire repo)
+
+### 3. Terraform Scripts Folder
+It should include:
+- State Initializtion (It should be run frist. For creating S3 bucket + DynamoDB lock table for maintaining terraform state)
+
+- Bootstrap Orchestration (covering the following)
+-- CI aws IAM Role (for authorizing Github Action to run the CI jobs)
+-- CD aws IAM Role? (currently created manually)
+-- Github Provider (for writing environment specific secrets and variables required by the Github Action workflows)
+
+- Main terraform scripts for creating the other aws stacks required for operating the solution (e.g. RDS, EC2, ECS, Server Start/stop Scheduler)
+
+Note that this workspace actually combines the both app code repo and terraform scripts repo in 1. They should be separated at a latter time.
+
 ## For First-Time Setup
 
 ### 1. Run Database Migration
 
-```bash
-cd APIs/Portfolio.Api
+```powershell
+Set-Location APIs/Portfolio.Api
 dotnet ef migrations add AddPortfolioVersioning
 dotnet ef database update
 ```
@@ -28,8 +54,8 @@ Ensure your `appsettings.json` has the required AWS Cognito configuration:
 
 ### 3. Start Backend API
 
-```bash
-cd APIs/Portfolio.Api
+```powershell
+Set-Location APIs/Portfolio.Api
 dotnet run
 ```
 
@@ -37,8 +63,8 @@ The API will be available at: `http://localhost:5000`
 
 ### 4. Start Frontend
 
-```bash
-cd portfolio-frontend
+```powershell
+Set-Location portfolio-frontend
 npm install  # if first time
 npm run dev
 ```
@@ -85,7 +111,7 @@ Or run the migration SQL script (see below).
 
 If you have the migration SQL script already generated:
 
-```bash
+```powershell
 psql -h your-db-host -U your-db-user -d your-db-name -f migrate_locale_data.sql
 ```
 

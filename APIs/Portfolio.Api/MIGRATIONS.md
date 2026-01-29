@@ -38,7 +38,7 @@ dotnet ef database update
 
 ### Production (Via CI/CD)
 Apply the generated SQL script through your deployment pipeline:
-```bash
+```powershell
 psql -h \ -U \ -d portfolio -f Migrations/Scripts/InitialCreate.sql
 ```
 

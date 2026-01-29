@@ -30,13 +30,13 @@ VALUES ('EU2O', 'karen-zhu-EU2O', 'Karen Zhu', 'karen-zhu', true, NOW(), NOW(), 
 
 ### 3. Back Up Your Database
 Before running any migration, always back up your database:
-```bash
-pg_dump portfolio_db > backup_$(date +%Y%m%d_%H%M%S).sql
+```powershell
+pg_dump portfolio_db > backup_$(Get-Date -Format yyyyMMdd_HHmmss).sql
 ```
 
 ### 4. Run the Migration Script
 Connect to your database and run the migration:
-```bash
+```powershell
 psql -U postgres -d portfolio_db -f migrate_locale_data.sql
 ```
 
@@ -63,16 +63,16 @@ This confirms:
 Before removing locale files from git, verify the API works for all languages:
 
 **Test Karen's English and French:**
-```bash
-curl http://localhost:5000/api/portfolios/karen-zhu-EU2O/locales/en
-curl http://localhost:5000/api/portfolios/karen-zhu-EU2O/locales/fr
+```powershell
+Invoke-RestMethod http://localhost:5000/api/portfolios/karen-zhu-EU2O/locales/en
+Invoke-RestMethod http://localhost:5000/api/portfolios/karen-zhu-EU2O/locales/fr
 ```
 
 **Test Jason's English, French, and Chinese:**
-```bash
-curl http://localhost:5000/api/portfolios/jason-zhu-EU1O/locales/en
-curl http://localhost:5000/api/portfolios/jason-zhu-EU1O/locales/fr
-curl http://localhost:5000/api/portfolios/jason-zhu-EU1O/locales/zh
+```powershell
+Invoke-RestMethod http://localhost:5000/api/portfolios/jason-zhu-EU1O/locales/en
+Invoke-RestMethod http://localhost:5000/api/portfolios/jason-zhu-EU1O/locales/fr
+Invoke-RestMethod http://localhost:5000/api/portfolios/jason-zhu-EU1O/locales/zh
 ```
 
 All endpoints should return the full locale JSON with content in the respective languages.
@@ -95,7 +95,7 @@ After verifying the migration is successful:
 
 ## Rollback
 If something goes wrong, you can rollback using the backup:
-```bash
+```powershell
 psql -U postgres -d portfolio_db < backup_20260115_120000.sql
 ```
 

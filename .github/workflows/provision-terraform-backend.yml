@@ -52,28 +52,28 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform Fmt (check)
-        working-directory: terraform/state-backend
+        working-directory: terraform/state-init
         env:
           TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
         run: |
           terraform fmt -check -recursive
 
       - name: Terraform Init
-        working-directory: terraform/state-backend
+        working-directory: terraform/state-init
         env:
           TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
         run: |
           terraform init -input=false
 
       - name: Terraform Validate
-        working-directory: terraform/state-backend
+        working-directory: terraform/state-init
         env:
           TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
         run: |
           terraform validate -no-color
 
       - name: Terraform Plan
-        working-directory: terraform/state-backend
+        working-directory: terraform/state-init
         env:
           AWS_REGION: ${{ inputs.aws_region }}
           TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
@@ -86,7 +86,7 @@ jobs:
           terraform plan -input=false -out=tfplan
 
       - name: Terraform Apply (one-time provisioning)
-        working-directory: terraform/state-backend
+        working-directory: terraform/state-init
         env:
           AWS_REGION: ${{ inputs.aws_region }}
           TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
@@ -94,6 +94,6 @@ jobs:
           terraform apply -auto-approve -input=false tfplan
 
       - name: Show outputs
-        working-directory: terraform/state-backend
+        working-directory: terraform/state-init
         run: |
           terraform output -json

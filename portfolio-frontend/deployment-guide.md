@@ -237,7 +237,8 @@ OIDC provides secure authentication without storing AWS credentials in GitHub.
 2. Click **New repository secret**
 
 **Secret 1:**
-- Name: `AWS_ROLE_ARN`
+**Secret 1:**
+- Name: `CI_AWS_ROLE_ARN`
 - Value: The Role ARN you copied (e.g., `arn:aws:iam::123456789012:role/GitHubActionsDeployRole`)
 
 **Secret 2:**
@@ -297,7 +298,7 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
           aws-region: ca-central-1
 
       - name: Upload to S3
@@ -329,7 +330,7 @@ jobs:
 
 ### Step 2: Commit and Push
 
-```bash
+```powershell
 git add .github/workflows/deploy.yml
 git commit -m "Add GitHub Actions deployment workflow"
 git push origin main
@@ -486,7 +487,7 @@ For production/staging separation, create separate:
 
 **Useful AWS CLI Commands:**
 
-```bash
+```powershell
 # List S3 bucket contents
 aws s3 ls s3://healthdots-portfolio-web-app-001/
 
@@ -497,9 +498,9 @@ aws cloudfront get-distribution --id YOUR_DISTRIBUTION_ID
 aws cloudtrail lookup-events --max-results 10
 
 # Test IAM role assumption (from local machine)
-aws sts assume-role-with-web-identity \
-  --role-arn YOUR_ROLE_ARN \
-  --role-session-name test \
+aws sts assume-role-with-web-identity `
+  --role-arn YOUR_ROLE_ARN `
+  --role-session-name test `
   --web-identity-token YOUR_TOKEN
 ```
 
@@ -529,7 +530,7 @@ aws sts assume-role-with-web-identity \
 If deployment causes issues:
 
 **Option 1: Revert commit and redeploy**
-```bash
+```powershell
 git revert HEAD
 git push origin main
 ```
