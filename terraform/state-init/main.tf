@@ -8,7 +8,7 @@ provider "aws" {
 
 resource "aws_s3_bucket" "terraform_state" {
   bucket = var.bucket_name
-  tags = var.tags
+  tags   = var.tags
 }
 
 resource "aws_s3_bucket_versioning" "terraform_state" {

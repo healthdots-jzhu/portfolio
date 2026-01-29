@@ -50,11 +50,28 @@ jobs:
         with:
           terraform_wrapper: false
 
+      - name: Terraform Fmt (show diffs)
+        working-directory: terraform/state-init
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          echo "Showing terraform fmt diffs (if any)"
+          terraform fmt -diff -recursive || true
+
+      - name: Terraform Fmt (auto-fix)
+        working-directory: terraform/state-init
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          echo "Auto-formatting Terraform files"
+          terraform fmt -recursive
+
       - name: Terraform Fmt (check)
         working-directory: terraform/state-init
         env:
           TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
         run: |
+          echo "Verifying terraform formatting"
           terraform fmt -check -recursive
 
       - name: Terraform Init
