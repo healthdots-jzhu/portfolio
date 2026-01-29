@@ -53,21 +53,21 @@ jobs:
       - name: Terraform Fmt (check)
         working-directory: terraform/state-init
         env:
-          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
+          TF_PLUGIN_CACHE_DIR: ${{ env.HOME }}/.terraform.d/plugin-cache
         run: |
           terraform fmt -check -recursive
 
       - name: Terraform Init
         working-directory: terraform/state-init
         env:
-          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
+          TF_PLUGIN_CACHE_DIR: ${{ env.HOME }}/.terraform.d/plugin-cache
         run: |
           terraform init -input=false
 
       - name: Terraform Validate
         working-directory: terraform/state-init
         env:
-          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
+          TF_PLUGIN_CACHE_DIR: ${{ env.HOME }}/.terraform.d/plugin-cache
         run: |
           terraform validate -no-color
 
@@ -99,7 +99,7 @@ jobs:
         working-directory: terraform/state-init
         env:
           AWS_REGION: ${{ inputs.aws_region }}
-          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
+          TF_PLUGIN_CACHE_DIR: ${{ env.HOME }}/.terraform.d/plugin-cache
         run: |
           TF_VAR_aws_region='${{ inputs.aws_region }}' \
           TF_VAR_bucket_name='${{ inputs.bucket_name }}' \
@@ -110,7 +110,7 @@ jobs:
         working-directory: terraform/state-init
         env:
           AWS_REGION: ${{ inputs.aws_region }}
-          TF_PLUGIN_CACHE_DIR: $HOME/.terraform.d/plugin-cache
+          TF_PLUGIN_CACHE_DIR: ${{ env.HOME }}/.terraform.d/plugin-cache
         run: |
           terraform apply -auto-approve -input=false tfplan
 
