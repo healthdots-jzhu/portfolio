@@ -1,4 +1,4 @@
-name: Provision Terraform Backend (S3 + DynamoDB)
+name: OneTime Provision Terraform Backend for State (S3 + DynamoDB)
 
 on:
   workflow_dispatch:

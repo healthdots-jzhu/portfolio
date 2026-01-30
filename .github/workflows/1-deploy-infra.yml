@@ -1,4 +1,4 @@
-name: Terraform - Plan and Apply
+name: Deploy Infrastructure (backend stack - vpc, ec2, rds, etc.)
 
 on:
   workflow_run:
