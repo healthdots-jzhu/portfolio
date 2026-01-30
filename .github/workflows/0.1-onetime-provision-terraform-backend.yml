@@ -3,6 +3,10 @@ name: OneTime Provision Terraform Backend for State (S3 + DynamoDB)
 on:
   workflow_dispatch:
     inputs:
+      provision_AWS_ROLE_ARN_note:
+        description: 'NOTE: create repo secret AWS_ROLE_ARN under Settings → Secrets and variables → Actions → New repository secret before running. This assume role must be created in aws first and have permissions to create S3 buckets and DynamoDB tables. The OIDC trust relationship must also be configured to allow GitHub Actions to assume the role.'
+        required: false
+        default: 'N/A - note only'
       aws_region:
         description: "AWS region to deploy backend resources"
         required: true

@@ -20,7 +20,10 @@ variable "github_repository" {
 
 variable "role_name" {
   type    = string
-  default = "github-actions-oidc-role"
+  # When empty, the module will construct a name using the repository
+  # ("${repo}-github-actions-oidc-ci-role"). Prefer passing an explicit
+  # `role_name` for custom naming if needed.
+  default = ""
 }
 
 variable "tf_state_bucket" {
@@ -32,6 +35,16 @@ variable "tf_state_dynamodb_table" {
 }
 
 variable "ecr_repository_arn" {
-  type = string
+  type    = string
   default = ""
+}
+
+variable "existing_oidc_provider_arn" {
+  description = "ARN of a pre-created OIDC provider for GitHub Actions. Provide this when the module does not create the provider."
+  type        = string
+  default     = ""
+  validation {
+    condition     = length(var.existing_oidc_provider_arn) > 0
+    error_message = "existing_oidc_provider_arn must be provided when the OIDC provider resource is not managed by Terraform in this module."
+  }
 }
