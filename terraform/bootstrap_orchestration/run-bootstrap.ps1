@@ -44,28 +44,44 @@ if ([string]::IsNullOrWhiteSpace($tfDynamo)) { $tfDynamo = $defaultDynamo }
 
 Write-Host "Using GitHub owner: $githubOwner, repo: $repository, aws account: $awsAccount"
 
+# Require repository secret creation by default; we'll populate the ARN from module.ci_role
+$env:TF_VAR_create_repo_aws_role_secret = 'true'
+
 # Ensure we are in the orchestration folder
 Push-Location (Join-Path $PSScriptRoot '.')
 
-# Offer to run targeted role creation first
-$runRole = Read-Host "Run targeted CI role creation first? (y/N)"
-if ($runRole -match '^(y|Y)') {
-  Write-Host "Running targeted apply for module.ci_role..."
-  terraform init
-  if ($LASTEXITCODE -ne 0) {
-    Write-Error "terraform init for targeted apply failed. Aborting bootstrap."
-    Remove-Item env:TF_VAR_github_token -ErrorAction SilentlyContinue
-    Pop-Location
-    exit $LASTEXITCODE
-  }
+Write-Host "Running targeted apply for module.ci_role to produce CI role ARN..."
+terraform init
+if ($LASTEXITCODE -ne 0) {
+  Write-Error "terraform init for targeted apply failed. Aborting bootstrap."
+  Remove-Item env:TF_VAR_github_token -ErrorAction SilentlyContinue
+  Pop-Location
+  exit $LASTEXITCODE
+}
 
-  terraform apply -target="module.ci_role" -var="github_owner=$githubOwner" -var="repository=$repository" -var="aws_account_id=$awsAccount" -var="tf_state_bucket=$tfStateBucket" -var="tf_state_dynamodb_table=$tfDynamo" -auto-approve
-  if ($LASTEXITCODE -ne 0) {
-    Write-Error "Targeted terraform apply failed. Aborting bootstrap."
-    Remove-Item env:TF_VAR_github_token -ErrorAction SilentlyContinue
+terraform apply -target="module.ci_role" -var="github_owner=$githubOwner" -var="repository=$repository" -var="aws_account_id=$awsAccount" -var="tf_state_bucket=$tfStateBucket" -var="tf_state_dynamodb_table=$tfDynamo" -auto-approve
+if ($LASTEXITCODE -ne 0) {
+  Write-Error "Targeted terraform apply failed. Aborting bootstrap."
+  Remove-Item env:TF_VAR_github_token -ErrorAction SilentlyContinue
+  Pop-Location
+  exit $LASTEXITCODE
+}
+
+# Capture the role ARN from the targeted apply and export it for the full apply
+try {
+  $roleArn = terraform output -raw role_arn 2>$null
+  if (-not [string]::IsNullOrWhiteSpace($roleArn)) {
+    $env:TF_VAR_aws_role_arn = $roleArn.Trim()
+    Write-Host "Captured CI role ARN from terraform: $roleArn"
+  } else {
+    Write-Error "terraform output 'role_arn' returned empty. Aborting."
     Pop-Location
-    exit $LASTEXITCODE
+    exit 1
   }
+} catch {
+  Write-Error "Failed to read terraform output 'role_arn'. Aborting."
+  Pop-Location
+  exit 1
 }
 
 # Run the full apply using the sample tfvars file
@@ -73,8 +89,10 @@ Write-Host "Running full apply with bootstrap_environments.tfvars..."
 terraform init
 terraform apply -var="github_owner=$githubOwner" -var="repository=$repository" -var="aws_account_id=$awsAccount" -var="tf_state_bucket=$tfStateBucket" -var="tf_state_dynamodb_table=$tfDynamo" -var-file="bootstrap_environments.tfvars" -auto-approve
 
-# Clear token from environment
+# Clear token and any TF_VARs we set for this session
 Remove-Item env:TF_VAR_github_token -ErrorAction SilentlyContinue
+Remove-Item env:TF_VAR_aws_role_arn -ErrorAction SilentlyContinue
+Remove-Item env:TF_VAR_create_repo_aws_role_secret -ErrorAction SilentlyContinue
 
 Pop-Location
 Write-Host "Bootstrap orchestration finished. Verify GitHub Environments and Actions variables/secrets."

@@ -1,0 +1,66 @@
+name: Terraform - Plan and Apply
+
+on:
+  workflow_run:
+    workflows: [ "Build and push Docker image to ECR" ]
+    types: [ completed ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (staging, beta, prod)'
+        required: false
+        default: 'beta'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ca-central-1
+  ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'beta' }}
+
+jobs:
+  terraform:
+    name: Terraform plan/apply (uses S3 backend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'beta' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5.1.1
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Terraform init (S3 backend)
+        run: |
+          terraform init -reconfigure \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY }}" \
+            -backend-config="region=${{ vars.TF_STATE_REGION }}" \
+            -backend-config="dynamodb_table=${{ vars.TF_STATE_DYNAMODB_TABLE }}" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform plan
+        run: |
+          terraform plan -out=plan.tfplan
+
+      - name: Terraform apply on master
+        if: |
+          github.ref == 'refs/heads/main' && github.event_name == 'push' ||
+          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+        run: |
+          terraform apply -auto-approve plan.tfplan
