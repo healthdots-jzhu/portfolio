@@ -3,15 +3,15 @@
 Purpose
 - Manage GitHub Actions repository-level variables (non-sensitive) and an optional environment-scoped secret (`CI_AWS_ROLE_ARN`) using the Terraform `github` provider. This is useful to keep environment-specific CI values under IaC control.
 
-What this creates
-- `TF_STATE_BUCKET`, `TF_STATE_KEY`, `TF_STATE_REGION`, `TF_STATE_DYNAMODB_TABLE`, `ECR_REGISTRY` as repository Actions variables.
+- What this creates
+- `TF_STATE_BUCKET`, `TF_STATE_KEY`, `AWS_REGION`, `TF_STATE_DYNAMODB_TABLE`, `ECR_REGISTRY` as repository Actions variables.
  - Optional environment-scoped secret `CI_AWS_ROLE_ARN` when `aws_role_arn` is provided.
 
 Required inputs
 - `github_token` (env or var): a GitHub token with `repo` or `admin:repo_hook` privileges for the target repository.
 - `github_owner`: owner or organization name.
 - `repository`: repository name.
-- `tf_state_bucket`, `tf_state_key`, `tf_state_region`, `tf_state_dynamodb_table`, `ecr_registry`.
+- `tf_state_bucket`, `tf_state_key`, `aws_region`, `tf_state_dynamodb_table`, `ecr_registry`.
 
 Quick usage
 

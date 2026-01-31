@@ -26,8 +26,8 @@ variable "tf_state_key" {
   default     = ""
 }
 
-variable "tf_state_region" {
-  description = "Region for Terraform S3 state"
+variable "aws_region" {
+  description = "AWS region for this environment (used to populate AWS_REGION environment variable)"
   type        = string
   default     = "ca-central-1"
 }
@@ -57,12 +57,12 @@ variable "create_repo_aws_role_secret" {
 }
 
 variable "environments" {
-  description = "Map of environments to create. Each key is the environment name and the value is an object with the environment-scoped values. Example: { beta = { tf_state_bucket=.., tf_state_key=.., tf_state_region=.., tf_state_dynamodb_table=.., ecr_registry=.., s3_bucket_frontend=.., create_aws_role_secret=true } }"
+  description = "Map of environments to create. Each key is the environment name and the value is an object with the environment-scoped values. Example: { beta = { tf_state_bucket=.., tf_state_key=.., aws_region=.., tf_state_dynamodb_table=.., ecr_registry=.., s3_bucket_frontend=.., create_aws_role_secret=true } }"
   type = map(object({
-    tf_state_key           = string
-    tf_state_region        = string
-    ecr_registry           = string
-    s3_bucket_frontend     = string
+    tf_state_key       = string
+    aws_region         = string
+    ecr_registry       = string
+    s3_bucket_frontend = string
   }))
   default = {}
   validation {

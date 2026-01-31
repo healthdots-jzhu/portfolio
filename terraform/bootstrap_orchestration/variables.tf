@@ -18,6 +18,12 @@ variable "aws_account_id" {
   type        = string
 }
 
+variable "existing_oidc_provider_arn" {
+  description = "ARN of an existing AWS OIDC provider to use when Terraform does not manage the provider. Provide this if the ci_aws_oidc module has its OIDC provider resource commented out or unmanaged."
+  type        = string
+  default     = ""
+}
+
 variable "tf_state_bucket" {
   description = "S3 bucket for Terraform state"
   type        = string
@@ -60,7 +66,7 @@ variable "environments" {
   description = "Optional map of environments to create. When provided, values will be forwarded to the github_provider module to create multiple environment-scoped variables/secrets in one apply."
   type = map(object({
     tf_state_key           = string
-    tf_state_region        = string
+    aws_region             = string
     ecr_registry           = string
     s3_bucket_frontend     = string
   }))
