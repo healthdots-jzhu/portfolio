@@ -1,15 +1,19 @@
-// Minimal backend declaration so `terraform init -reconfigure -backend-config=...`
-// can override it in this subfolder. This prevents the "Missing backend
-// configuration" warning when running init with -backend-config here.
+// S3 backend configuration for bootstrap orchestration.
+// This file contains the concrete backend values so local and CI runs
+// consistently use the same remote state. If you prefer to pass values
+// at init time, revert to an empty backend block and supply -backend-config
+// flags on the CLI or in CI.
 
 terraform {
-  backend "s3" {}
+  backend "s3" {
+    bucket         = "healthdots-portfolio-terraform-state"
+    key            = "portfolio/terraform.tfstate"
+    region         = "ca-central-1"
+    dynamodb_table = "healthdots-portfolio-terraform-locks"
+    encrypt        = true
+  }
 }
 
-// Provide concrete backend values on the CLI (example):
-// terraform init -reconfigure \
-//   -backend-config="bucket=healthdots-portfolio-terraform-state" \
-//   -backend-config="key=portfolio/terraform.tfstate" \
-//   -backend-config="region=ca-central-1" \
-//   -backend-config="dynamodb_table=healthdots-portfolio-terraform-locks" \
-//   -backend-config="encrypt=true"
+// NOTE: backend values are literals and cannot use variables.
+// If you need to change these values, update this file and run:
+// terraform init -reconfigure -migrate-state
