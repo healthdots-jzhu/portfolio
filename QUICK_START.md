@@ -28,6 +28,12 @@ Note that this workspace actually combines the both app code repo and terraform 
 
 ## For First-Time Setup
 
+### 0. Run the 2 one-time workflows and the infra workflow in GitHub Action
+First run 0.1-onetime-provision-terraform-backend.yml;
+Then run 0.2-onetime-provision-github-oidc-secrets-variables.yml;
+Lastly run 1-deploy-infra.yml for all environments (start with dev/test environment first);
+Note - if some non-prod environments sit in different aws account, run the 2 one-time workflows separately on each account for the desired environments. Split the bootstrap_environments.tfvars file under terraform/bootstrap-orchestration into 2 files.
+
 ### 1. Run Database Migration
 
 ```powershell
