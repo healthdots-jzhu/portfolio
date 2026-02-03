@@ -40,6 +40,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com
 
+      - name: Debug OIDC token claims (temporary)
+        run: |
+          pwsh .github/scripts/debug-oidc.ps1
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:

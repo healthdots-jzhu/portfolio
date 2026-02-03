@@ -31,10 +31,22 @@ data "aws_iam_policy_document" "assume_role_policy" {
       identifiers = [var.existing_oidc_provider_arn]
     }
 
+    # Allow only the main branch refs and workflow_run tokens for this repository
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_owner}/${var.github_repository}:ref:refs/heads/main"]
+      values   = [
+        "repo:${var.github_owner}/${var.github_repository}:ref:refs/heads/main",
+        "repo:${var.github_owner}/${var.github_repository}:workflow_run:*
+"
+      ]
+    }
+
+    # Require the token audience to be sts.amazonaws.com (GitHub Actions' default)
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
     }
 
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -65,6 +77,17 @@ data "aws_iam_policy_document" "ci_policy_doc" {
     resources = ["*"]
   }
 
+  # Allow repository inspection/creation and image reads
+  statement {
+    actions = [
+      "ecr:DescribeRepositories",
+      "ecr:CreateRepository",
+      "ecr:BatchGetImage",
+      "ecr:DescribeImages"
+    ]
+    resources = ["arn:aws:ecr:${var.aws_region}:${var.aws_account_id}:repository/*"]
+  }
+
   statement {
     actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket", "s3:DeleteObject"]
     resources = [
@@ -76,6 +99,39 @@ data "aws_iam_policy_document" "ci_policy_doc" {
   statement {
     actions   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:DeleteItem", "dynamodb:UpdateItem", "dynamodb:Query"]
     resources = ["arn:aws:dynamodb:${var.aws_region}:${var.aws_account_id}:table/${var.tf_state_dynamodb_table}"]
+  }
+
+  # Allow CI to describe the DynamoDB lock table
+  statement {
+    actions   = ["dynamodb:DescribeTable"]
+    resources = ["arn:aws:dynamodb:${var.aws_region}:${var.aws_account_id}:table/${var.tf_state_dynamodb_table}"]
+  }
+
+  # Allow reading SSM parameters and Secrets Manager secrets used by pipelines
+  statement {
+    actions = ["ssm:GetParameter", "ssm:GetParameters", "secretsmanager:GetSecretValue"]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${var.aws_account_id}:parameter/*",
+      "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:*"
+    ]
+  }
+
+  # Allow KMS decrypt / data key generation for keys used to encrypt secrets/state
+  statement {
+    actions = ["kms:Decrypt", "kms:GenerateDataKey"]
+    resources = ["arn:aws:kms:${var.aws_region}:${var.aws_account_id}:key/*"]
+  }
+
+  # Allow passing limited roles (scoped to project-prefixed roles)
+  statement {
+    actions = ["iam:PassRole"]
+    resources = ["arn:aws:iam::${var.aws_account_id}:role/${var.project_name}*"]
+  }
+
+  # Helpful read-only call for CI debugging
+  statement {
+    actions = ["sts:GetCallerIdentity"]
+    resources = ["*"]
   }
 }
 
