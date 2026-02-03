@@ -8,7 +8,7 @@ module "ci_role" {
   tf_state_bucket        = var.tf_state_bucket != "" ? var.tf_state_bucket : "${var.repository}-terraform-state-${var.environment}"
   tf_state_dynamodb_table = var.tf_state_dynamodb_table != "" ? var.tf_state_dynamodb_table : "${var.repository}-terraform-locks-${var.environment}"
   ecr_repository_arn     = var.ecr_repository_arn
-  role_name              = var.role_name
+  role_name              = var.role_name != "" ? var.role_name : "${var.repository}-github-actions-oidc-role"
   existing_oidc_provider_arn = var.existing_oidc_provider_arn
 }
 

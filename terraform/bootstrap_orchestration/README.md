@@ -72,3 +72,48 @@ Notes and security
 - For non-interactive automation prefer GitHub Actions OIDC or a GitHub App rather than personal tokens.
 
 If you want, you can add a Bash wrapper or a `bootstrap_environments.auto.tfvars` template.
+
+# Example Commands to re-import Terraform state
+
+```powershell
+terraform init -reconfigure `
+  -backend-config="bucket=healthdots-portfolio-terraform-state" `
+  -backend-config="key=portfolio/bootstrap.tfstate" `
+  -backend-config="region=ca-central-1" `
+  -backend-config="dynamodb_table=healthdots-portfolio-terraform-locks" `
+  -backend-config="encrypt=true"
+
+# Import role (use role NAME, not ARN)
+terraform import `
+  -var-file="bootstrap_environments.tfvars" `
+  -var="github_owner=healthdots-jzhu" `
+  -var="repository=portfolio" `
+  -var="aws_account_id=199061575177" `
+  -var="tf_state_bucket=healthdots-portfolio-terraform-state" `
+  -var="tf_state_dynamodb_table=healthdots-portfolio-terraform-locks" `
+  -var="existing_oidc_provider_arn=arn:aws:iam::199061575177:oidc-provider/token.actions.githubusercontent.com" `
+  module.ci_role.aws_iam_role.github_actions_role portfolio-github-actions-oidc-role
+
+# Import policy (needs full ARN)
+terraform import `
+  -var-file="bootstrap_environments.tfvars" `
+  -var="github_owner=healthdots-jzhu" `
+  -var="repository=portfolio" `
+  -var="aws_account_id=199061575177" `
+  -var="tf_state_bucket=healthdots-portfolio-terraform-state" `
+  -var="tf_state_dynamodb_table=healthdots-portfolio-terraform-locks" `
+  -var="existing_oidc_provider_arn=arn:aws:iam::199061575177:oidc-provider/token.actions.githubusercontent.com" `
+  module.ci_role.aws_iam_policy.ci_policy arn:aws:iam::199061575177:policy/portfolio-github-actions-oidc-role-policy
+
+# Import attachment (roleName/policyArn)
+terraform import `
+  -var-file="bootstrap_environments.tfvars" `
+  -var="github_owner=healthdots-jzhu" `
+  -var="repository=portfolio" `
+  -var="aws_account_id=199061575177" `
+  -var="tf_state_bucket=healthdots-portfolio-terraform-state" `
+  -var="tf_state_dynamodb_table=healthdots-portfolio-terraform-locks" `
+  -var="existing_oidc_provider_arn=arn:aws:iam::199061575177:oidc-provider/token.actions.githubusercontent.com" `
+  module.ci_role.aws_iam_role_policy_attachment.attach_ci_policy 'portfolio-github-actions-oidc-role/arn:aws:iam::199061575177:policy/portfolio-github-actions-oidc-role-policy'
+  
+```

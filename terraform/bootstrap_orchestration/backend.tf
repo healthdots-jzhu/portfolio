@@ -7,7 +7,7 @@
 terraform {
   backend "s3" {
     bucket         = "healthdots-portfolio-terraform-state"
-    key            = "portfolio/terraform.tfstate"
+    key            = "portfolio/bootstrap.tfstate"
     region         = "ca-central-1"
     dynamodb_table = "healthdots-portfolio-terraform-locks"
     encrypt        = true

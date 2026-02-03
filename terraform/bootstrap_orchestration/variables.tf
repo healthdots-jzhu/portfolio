@@ -53,7 +53,7 @@ variable "ecr_repository_arn" {
 variable "role_name" {
   description = "Name for the created IAM role"
   type        = string
-  default     = "github-actions-oidc-role"
+  default     = ""
 }
 
 variable "create_repo_aws_role_secret" {
