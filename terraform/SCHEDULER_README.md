@@ -1,6 +1,6 @@
 # AWS Resource Scheduler
 
-This directory contains the automated cost-saving scheduler that stops and starts AWS resources (EC2 and RDS) on a daily schedule.
+The scheduler Terraform configuration has been merged into the root Terraform module (`terraform/main.tf`) and the `terraform/scheduler` folder has been removed.
 
 ## Overview
 
@@ -20,10 +20,9 @@ The solution uses AWS-native services:
 
 ## Components
 
-### Files
-- `scheduler.tf` - Terraform configuration for all scheduler resources
-- `lambda/scheduler.py` - Python Lambda function code
-- `lambda/scheduler.zip` - Packaged Lambda deployment (auto-generated)
+### Where the scheduler lives now
+- Scheduler resources are in `terraform/main.tf` (Lambda, IAM role/policy, CloudWatch Logs, EventBridge rules/targets, Lambda permissions).
+- Lambda code still lives under `terraform/lambda/` (e.g. `terraform/lambda/scheduler.py`).
 
 ### Resources Created
 1. Lambda function: `{project}-{env}-resource-scheduler`
@@ -32,9 +31,9 @@ The solution uses AWS-native services:
 4. Two EventBridge rules with cron schedules
 5. Lambda permissions for EventBridge invocation
 
-## Deployment
+### Deployment (root module)
 
-### Initial Setup
+Manage the scheduler together with the rest of the infrastructure from the `terraform/` root:
 
 ```powershell
 Set-Location terraform
@@ -45,7 +44,7 @@ terraform init
 # Review changes
 terraform plan
 
-# Apply the scheduler configuration
+# Apply the configuration (includes scheduler)
 terraform apply
 ```
 

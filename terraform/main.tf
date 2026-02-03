@@ -117,7 +117,7 @@ resource "aws_route_table_association" "public" {
 
 # Security Group for EC2
 resource "aws_security_group" "ec2" {
-  name_prefix = "${var.project_name}-ec2-"
+  name_prefix = "${var.environment}-${var.project_name}-ec2-"
   description = "Security group for EC2 instance with SSM access"
   vpc_id      = aws_vpc.main.id
 
@@ -225,7 +225,7 @@ resource "aws_vpc_endpoint" "ec2messages" {
 
 # IAM Role for EC2 (SSM access)
 resource "aws_iam_role" "ec2_ssm_role" {
-  name_prefix = "${var.project_name}-ec2-ssm-"
+  name_prefix = "${var.environment}-${var.project_name}-ec2-ssm-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -253,7 +253,7 @@ resource "aws_iam_role_policy_attachment" "ssm_policy" {
 
 # IAM Instance Profile
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name_prefix = "${var.project_name}-ec2-profile-"
+  name_prefix = "${var.environment}-${var.project_name}-ec2-profile-"
   role        = aws_iam_role.ec2_ssm_role.name
 }
 
@@ -319,7 +319,7 @@ data "aws_ami" "amazon_linux_2" {
 
 # DB Parameter Group for PostgreSQL
 resource "aws_db_parameter_group" "postgres" {
-  name_prefix = "${var.project_name}-postgres-"
+  name_prefix = "${var.environment}-${var.project_name}-postgres-"
   family      = "postgres${var.postgres_version}"
   description = "Custom parameter group for PostgreSQL"
 
@@ -336,7 +336,7 @@ resource "aws_db_parameter_group" "postgres" {
 
 # DB Subnet Group for RDS
 resource "aws_db_subnet_group" "postgres" {
-  name_prefix = "${var.project_name}-db-"
+  name_prefix = "${var.environment}-${var.project_name}-db-"
   subnet_ids  = [aws_subnet.private_2a.id, aws_subnet.private_2b.id]
 
   tags = {
@@ -346,7 +346,7 @@ resource "aws_db_subnet_group" "postgres" {
 
 # RDS PostgreSQL Instance
 resource "aws_db_instance" "postgres-portfolio" {
-  identifier_prefix           = "${var.project_name}-${var.environment}-${var.rds_database_name}-postgres"
+  identifier_prefix           = "${var.environment}-${var.project_name}-${var.rds_database_name}-postgres"
   engine                      = "postgres"
   engine_version              = var.postgres_version
   instance_class              = var.rds_instance_class
@@ -393,7 +393,7 @@ resource "aws_kms_key" "rds" {
 }
 
 resource "aws_kms_alias" "rds" {
-  name          = "alias/${var.project_name}-${var.environment}-rds"
+  name          = "alias/${var.environment}-${var.project_name}-rds"
   target_key_id = aws_kms_key.rds.key_id
 }
 
@@ -405,7 +405,7 @@ resource "random_password" "hashids_salt" {
 
 # SSM Parameter for Hashids Salt (used by Portfolio API)
 resource "aws_ssm_parameter" "hashids_salt" {
-  name            = "/${var.project_name}/hashids/salt"
+  name            = "/${var.environment}/${var.project_name}/hashids/salt"
   description     = "Salt for Hashids ID generation"
   type            = "SecureString"
   value           = random_password.hashids_salt.result
@@ -418,16 +418,18 @@ resource "aws_ssm_parameter" "hashids_salt" {
 
 # ECR repository for Portfolio API
 resource "aws_ecr_repository" "portfolio_api" {
-  name                 = "${var.project_name}-portfolio-api"
+  name                 = "${var.environment}-${var.project_name}-portfolio-api"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
     scan_on_push = true
   }
 
+  /* Temporarily disabled to allow controlled rename/replacement of the ECR repository
   lifecycle {
     prevent_destroy = true
   }
+  */
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecr-portfolio-api"
@@ -463,3 +465,173 @@ output "ecr_repository_url" {
   description = "ECR repository URL for the API"
   value       = aws_ecr_repository.portfolio_api.repository_url
 }
+
+/* Scheduler resources (moved from terraform/scheduler/main.tf)
+   These allow scheduled start/stop of EC2 and RDS instances via Lambda + EventBridge.
+*/
+
+# Lambda function to start/stop EC2 and RDS instances
+resource "aws_lambda_function" "resource_scheduler" {
+  filename         = "${path.module}/lambda/scheduler.zip"
+  function_name    = "${var.project_name}-${var.environment}-resource-scheduler"
+  role            = aws_iam_role.lambda_scheduler.arn
+  handler         = "index.handler"
+  source_code_hash = data.archive_file.lambda_scheduler.output_base64sha256
+  runtime         = "python3.12"
+  timeout         = 60
+
+  environment {
+    variables = {
+      EC2_INSTANCE_ID = aws_instance.main.id
+      RDS_INSTANCE_ID = aws_db_instance.postgres-portfolio.identifier
+    }
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-scheduler"
+  }
+}
+
+# Package Lambda function code
+data "archive_file" "lambda_scheduler" {
+  type        = "zip"
+  output_path = "${path.module}/lambda/scheduler.zip"
+  
+  source {
+    content  = file("${path.module}/lambda/scheduler.py")
+    filename = "index.py"
+  }
+}
+
+# IAM Role for Lambda
+resource "aws_iam_role" "lambda_scheduler" {
+  name_prefix = "${var.environment}-${var.project_name}-lambda-scheduler-"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-lambda-scheduler-role"
+  }
+}
+
+# IAM Policy for Lambda to manage EC2 and RDS
+resource "aws_iam_role_policy" "lambda_scheduler" {
+  name_prefix = "${var.environment}-${var.project_name}-scheduler-policy-"
+  role        = aws_iam_role.lambda_scheduler.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:StartInstances",
+          "ec2:StopInstances"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "rds:DescribeDBInstances",
+          "rds:StartDBInstance",
+          "rds:StopDBInstance"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+# CloudWatch Log Group for Lambda
+resource "aws_cloudwatch_log_group" "lambda_scheduler" {
+  name              = "/aws/lambda/${aws_lambda_function.resource_scheduler.function_name}"
+  retention_in_days = 7
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-scheduler-logs"
+  }
+}
+
+# EventBridge Rule to stop resources at 12AM ET (5AM UTC during DST, 6AM UTC during standard time)
+# Using 5AM UTC for simplicity - adjust as needed for DST changes
+resource "aws_cloudwatch_event_rule" "stop_resources" {
+  name                = "${var.project_name}-${var.environment}-stop-resources"
+  description         = "Stop EC2 and RDS at 12AM ET daily"
+  schedule_expression = "cron(0 5 * * ? *)"  # 12AM ET = 5AM UTC (during DST)
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-stop-rule"
+  }
+}
+
+resource "aws_cloudwatch_event_target" "stop_resources" {
+  rule      = aws_cloudwatch_event_rule.stop_resources.name
+  target_id = "StopResources"
+  arn       = aws_lambda_function.resource_scheduler.arn
+
+  input = jsonencode({
+    action = "stop"
+  })
+}
+
+# EventBridge Rule to start resources at 9AM ET (2PM UTC during DST, 3PM UTC during standard time)
+# Using 2PM UTC for simplicity - adjust as needed for DST changes
+resource "aws_cloudwatch_event_rule" "start_resources" {
+  name                = "${var.project_name}-${var.environment}-start-resources"
+  description         = "Start EC2 and RDS at 9AM ET daily"
+  schedule_expression = "cron(0 14 * * ? *)"  # 9AM ET = 2PM UTC (during DST)
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-start-rule"
+  }
+}
+
+resource "aws_cloudwatch_event_target" "start_resources" {
+  rule      = aws_cloudwatch_event_rule.start_resources.name
+  target_id = "StartResources"
+  arn       = aws_lambda_function.resource_scheduler.arn
+
+  input = jsonencode({
+    action = "start"
+  })
+}
+
+# Lambda permissions for EventBridge
+resource "aws_lambda_permission" "allow_eventbridge_stop" {
+  statement_id  = "AllowExecutionFromEventBridgeStop"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.resource_scheduler.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.stop_resources.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_start" {
+  statement_id  = "AllowExecutionFromEventBridgeStart"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.resource_scheduler.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.start_resources.arn
+}
+
