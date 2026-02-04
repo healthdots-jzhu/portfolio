@@ -1,10 +1,10 @@
-name: Build and push Docker images (APIs) to ECR
+name: Build and push Docker images (APIs) to ECR and other backend tasks
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
   workflow_dispatch:
     inputs:
       environment:
