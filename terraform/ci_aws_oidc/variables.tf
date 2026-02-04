@@ -39,6 +39,12 @@ variable "ecr_repository_arn" {
   default = ""
 }
 
+variable "project_name" {
+  description = "Project prefix used for scoping iam:PassRole resources (optional). Falls back to repository name when empty."
+  type        = string
+  default     = ""
+}
+
 variable "existing_oidc_provider_arn" {
   description = "ARN of a pre-created OIDC provider for GitHub Actions. Provide this when the module does not create the provider."
   type        = string

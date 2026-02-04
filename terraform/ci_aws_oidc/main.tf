@@ -17,6 +17,9 @@ resource "aws_iam_openid_connect_provider" "github" {
 locals {
   computed_role_name = var.role_name != "" ? var.role_name : "${var.github_repository}-github-actions-oidc-ci-role"
 }
+locals {
+  computed_project_name = var.project_name != "" ? var.project_name : var.github_repository
+}
 
 
 # IAM role assumable by GitHub Actions via OIDC
@@ -124,7 +127,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
   # Allow passing limited roles (scoped to project-prefixed roles)
   statement {
     actions = ["iam:PassRole"]
-    resources = ["arn:aws:iam::${var.aws_account_id}:role/${var.project_name}*"]
+    resources = ["arn:aws:iam::${var.aws_account_id}:role/${local.computed_project_name}*"]
   }
 
   # Helpful read-only call for CI debugging
