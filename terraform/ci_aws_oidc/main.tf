@@ -37,8 +37,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
       variable = "token.actions.githubusercontent.com:sub"
       values   = [
         "repo:${var.github_owner}/${var.github_repository}:ref:refs/heads/main",
-        "repo:${var.github_owner}/${var.github_repository}:workflow_run:*
-"
+        "repo:${var.github_owner}/${var.github_repository}:workflow_run:*"
       ]
     }
 
