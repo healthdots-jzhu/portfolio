@@ -125,6 +125,12 @@ data "aws_iam_policy_document" "ci_policy_doc" {
     resources = ["arn:aws:kms:${var.aws_region}:${var.aws_account_id}:key/*"]
   }
 
+  # Allow EC2 image lookups used by Terraform when resolving AMIs
+  statement {
+    actions = ["ec2:DescribeImages"]
+    resources = ["*"]
+  }
+
   # Allow passing limited roles (scoped to project-prefixed roles)
   statement {
     actions = ["iam:PassRole"]
