@@ -40,7 +40,8 @@ data "aws_iam_policy_document" "assume_role_policy" {
       variable = "token.actions.githubusercontent.com:sub"
       values   = [
         "repo:${var.github_owner}/${var.github_repository}:ref:refs/heads/main",
-        "repo:${var.github_owner}/${var.github_repository}:workflow_run:*"
+        "repo:${var.github_owner}/${var.github_repository}:workflow_run:*",
+        "repo:${var.github_owner}/${var.github_repository}:environment:*"
       ]
     }
 
@@ -48,7 +49,7 @@ data "aws_iam_policy_document" "assume_role_policy" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:aud"
-      values   = ["sts.amazonaws.com"]
+      values   = ["sts.amazonaws.com", "https://github.com/${var.github_owner}"]
     }
 
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -132,7 +133,12 @@ data "aws_iam_policy_document" "ci_policy_doc" {
 
   # Helpful read-only call for CI debugging
   statement {
-    actions = ["sts:GetCallerIdentity"]
+    actions = [
+      "sts:GetCallerIdentity",
+      "sts:AssumeRole",
+      "sts:AssumeRoleWithWebIdentity",
+      "sts:AssumeRoleWithSAML"
+    ]
     resources = ["*"]
   }
 }
