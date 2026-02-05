@@ -57,13 +57,8 @@ variable "create_repo_aws_role_secret" {
 }
 
 variable "environments" {
-  description = "Map of environments to create. Each key is the environment name and the value is an object with the environment-scoped values. Example: { beta = { tf_state_bucket=.., tf_state_key=.., aws_region=.., tf_state_dynamodb_table=.., ecr_registry=.., s3_bucket_frontend=.., create_aws_role_secret=true } }"
-  type = map(object({
-    tf_state_key       = string
-    aws_region         = string
-    ecr_registry       = string
-    s3_bucket_frontend = string
-  }))
+  description = "Map of environments to create. Each key is the environment name and the value is an object (any) with the environment-scoped values. Extra keys are allowed and will be forwarded to the module resources."
+  type    = map(any)
   default = {}
   validation {
     condition     = length(var.environments) > 0

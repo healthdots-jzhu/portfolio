@@ -64,11 +64,6 @@ variable "create_repo_aws_role_secret" {
 
 variable "environments" {
   description = "Optional map of environments to create. When provided, values will be forwarded to the github_provider module to create multiple environment-scoped variables/secrets in one apply."
-  type = map(object({
-    tf_state_key           = string
-    aws_region             = string
-    ecr_registry           = string
-    s3_bucket_frontend     = string
-  }))
+  type = map(any)
   default = {}
 }

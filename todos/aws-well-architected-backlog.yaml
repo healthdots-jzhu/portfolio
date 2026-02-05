@@ -1,0 +1,246 @@
+version: 1
+project: portfolio
+source: aws-well-architected-review
+items:
+  - id: OPS-1
+    title: Add CloudWatch alarms and dashboards
+    priority: P1
+    pillar: operational-excellence
+    scope:
+      - aws_ecs_service.portfolio_api
+      - aws_lb.main
+      - aws_db_instance.postgres-portfolio
+      - aws_lambda_function.resource_scheduler
+    why: "Detect outages and performance regressions early; create shared visibility for operators."
+    how:
+      - "Create CloudWatch alarms for ALB 5xx/latency, ECS CPU/memory, RDS CPU/storage, Lambda errors."
+      - "Publish alerts to SNS and route to email/Slack."
+      - "Build a dashboard with ALB, ECS, RDS, and Lambda widgets."
+    example: "Terraform: aws_cloudwatch_metric_alarm + aws_cloudwatch_dashboard + aws_sns_topic."
+
+  - id: OPS-2
+    title: Enable ECS service auto-scaling
+    priority: P1
+    pillar: operational-excellence
+    scope:
+      - aws_ecs_service.portfolio_api
+    why: "Prevents saturation and reduces manual intervention during traffic spikes."
+    how:
+      - "Define Application Auto Scaling target for ECS service."
+      - "Add target tracking policies (CPU or ALB request count)."
+      - "Set min/max capacity per environment."
+    example: "Use aws_appautoscaling_target + aws_appautoscaling_policy."
+
+  - id: OPS-3
+    title: Add ALB access logs to S3 with retention
+    priority: P2
+    pillar: operational-excellence
+    scope:
+      - aws_lb.main
+      - aws_s3_bucket.*
+    why: "Enables troubleshooting, traffic analysis, and audit trails."
+    how:
+      - "Create an S3 logs bucket with server-side encryption."
+      - "Enable ALB access logging to the bucket."
+      - "Add S3 lifecycle rules for retention."
+    example: "aws_lb access_logs block + aws_s3_bucket_lifecycle_configuration."
+
+  - id: OPS-4
+    title: Add ECS deployment circuit breaker and rollback
+    priority: P2
+    pillar: operational-excellence
+    scope:
+      - aws_ecs_service.portfolio_api
+    why: "Automatically rolls back failed deployments to reduce downtime."
+    how:
+      - "Enable deploymentCircuitBreaker in ECS service."
+      - "Set rollback=true."
+    example: "deployment_circuit_breaker { enable = true, rollback = true }"
+
+  - id: SEC-1
+    title: Add AWS WAF for ALB
+    priority: P1
+    pillar: security
+    scope:
+      - aws_lb.main
+      - aws_wafv2_web_acl.*
+    why: "Protects against common web exploits and bots."
+    how:
+      - "Create a WAFv2 web ACL with AWS Managed Rules."
+      - "Associate the ACL to the ALB."
+      - "Enable WAF logging."
+    example: "aws_wafv2_web_acl + aws_wafv2_web_acl_association."
+
+  - id: SEC-2
+    title: Restrict ECS/EC2 outbound traffic
+    priority: P2
+    pillar: security
+    scope:
+      - aws_security_group.ecs_tasks
+      - aws_security_group.ec2
+      - aws_security_group.vpc_endpoints
+    why: "Limits blast radius and prevents unintended data exfiltration."
+    how:
+      - "Replace 0.0.0.0/0 egress with endpoint SGs and required CIDRs."
+      - "Allow only ports used (443, 5432)."
+    example: "Use aws_security_group_rule with specific SG or prefix list."
+
+  - id: SEC-3
+    title: Enforce least-privilege on ECS task role and EC2 role
+    priority: P1
+    pillar: security
+    scope:
+      - aws_iam_role.ecs_task
+      - aws_iam_role.ec2_ssm_role
+    why: "Reduces risk of lateral movement or over-privileged access."
+    how:
+      - "Audit policies for wildcard Resource or Action."
+      - "Scope S3/SSM to exact ARNs per environment."
+    example: "Replace Resource='*' with specific ARNs in IAM policy."
+
+  - id: SEC-4
+    title: Rotate Secrets Manager credentials
+    priority: P2
+    pillar: security
+    scope:
+      - aws_secretsmanager_secret.postgres_connection
+      - aws_secretsmanager_secret.github_models_api_token
+    why: "Limits exposure time of compromised credentials."
+    how:
+      - "Enable Secrets Manager rotation for DB secrets."
+      - "Define rotation Lambda or documented manual rotation."
+    example: "aws_secretsmanager_secret_rotation + rotation Lambda."
+
+  - id: REL-1
+    title: Ensure Multi-AZ RDS in production
+    priority: P1
+    pillar: reliability
+    scope:
+      - aws_db_instance.postgres-portfolio
+      - var.rds_multi_az
+    why: "Provides failover during AZ outages."
+    how:
+      - "Set rds_multi_az=true for prod in terraform.tfvars."
+      - "Validate RDS instance reports Multi-AZ."
+    example: "rds_multi_az = true"
+
+  - id: REL-2
+    title: Increase ECS desired_count for production
+    priority: P1
+    pillar: reliability
+    scope:
+      - aws_ecs_service.portfolio_api
+      - var.ecs_service_desired_count
+    why: "Avoids single-task failure and improves availability."
+    how:
+      - "Set desired_count >= 2 for production."
+      - "Ensure tasks spread across app subnets."
+    example: "ecs_service_desired_count = 2"
+
+  - id: REL-3
+    title: Enable RDS deletion protection and backups
+    priority: P1
+    pillar: reliability
+    scope:
+      - aws_db_instance.postgres-portfolio
+      - var.rds_backup_retention_period
+    why: "Prevents accidental deletion and enables recovery."
+    how:
+      - "Enable deletion_protection."
+      - "Set backup_retention_period >= 7 days in prod."
+    example: "deletion_protection = true"
+
+  - id: REL-4
+    title: Remove single-EC2 dependency or make it HA
+    priority: P2
+    pillar: reliability
+    scope:
+      - aws_instance.main
+    why: "Single EC2 instance is a single point of failure."
+    how:
+      - "Replace with SSM Session Manager without EC2, or"
+      - "Move to an Auto Scaling Group across AZs."
+    example: "Use SSM port forwarding or ASG + Launch Template."
+
+  - id: PERF-1
+    title: Consider ARM/Graviton for ECS tasks
+    priority: P2
+    pillar: performance-efficiency
+    scope:
+      - aws_ecs_task_definition.portfolio_api
+    why: "Lower cost and better price/performance for many workloads."
+    how:
+      - "Build ARM64 container image."
+      - "Update task definition runtime platform."
+    example: "runtime_platform { cpu_architecture = \"ARM64\" }"
+
+  - id: PERF-2
+    title: Tune ECS CPU/memory based on load tests
+    priority: P2
+    pillar: performance-efficiency
+    scope:
+      - var.ecs_task_cpu
+      - var.ecs_task_memory
+    why: "Avoids throttling and over-provisioning."
+    how:
+      - "Run load tests and inspect CPU/memory metrics."
+      - "Adjust task size and autoscaling thresholds."
+    example: "ecs_task_cpu = \"512\", ecs_task_memory = \"1024\""
+
+  - id: COST-1
+    title: Add ECS scheduled scaling (optional)
+    priority: P3
+    pillar: cost-optimization
+    scope:
+      - aws_ecs_service.portfolio_api
+    why: "Reduce cost during predictable low-traffic hours."
+    how:
+      - "Create scheduled scaling actions via Application Auto Scaling."
+    example: "aws_appautoscaling_scheduled_action"
+
+  - id: COST-2
+    title: Add S3 lifecycle policies (assets/logs)
+    priority: P2
+    pillar: cost-optimization
+    scope:
+      - aws_s3_bucket.*
+    why: "Reduce storage cost and keep logs manageable."
+    how:
+      - "Add transition to IA/Glacier and expiration rules."
+    example: "aws_s3_bucket_lifecycle_configuration"
+
+  - id: COST-3
+    title: Evaluate Savings Plans for ECS/RDS
+    priority: P3
+    pillar: cost-optimization
+    scope:
+      - aws_ecs_service.portfolio_api
+      - aws_db_instance.postgres-portfolio
+    why: "Reduce recurring costs for steady workloads."
+    how:
+      - "Review usage in Cost Explorer."
+      - "Purchase Savings Plans if utilization is steady."
+    example: "Ops task: review monthly spend and usage patterns."
+
+  - id: SUST-1
+    title: Enable autoscaling to avoid idle capacity
+    priority: P2
+    pillar: sustainability
+    scope:
+      - aws_ecs_service.portfolio_api
+    why: "Minimizes wasted compute and energy."
+    how:
+      - "Use target tracking scaling on CPU or requests."
+    example: "aws_appautoscaling_policy with target tracking."
+
+  - id: SUST-2
+    title: Set minimal log retention periods
+    priority: P3
+    pillar: sustainability
+    scope:
+      - aws_cloudwatch_log_group.ecs_tasks
+      - aws_cloudwatch_log_group.lambda_scheduler
+    why: "Reduces storage and operational overhead."
+    how:
+      - "Lower retention in non-prod; keep prod at required levels."
+    example: "retention_in_days = 7 (non-prod)"
