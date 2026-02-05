@@ -12,3 +12,6 @@ obj/
 **/bin/
 **/obj/
 .vs/
+ 
+# Ignore local Terraform overrides containing secrets
+terraform/terraform.tfvars

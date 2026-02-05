@@ -52,6 +52,141 @@ resource "github_actions_environment_variable" "ecr_registry_env" {
   depends_on    = [github_repository_environment.env]
 }
 
+resource "github_actions_environment_variable" "acm_certificate_arn_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "acm_certificate_arn", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "ACM_CERTIFICATE_ARN"
+  value         = each.value.acm_certificate_arn
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "project_name_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "project_name", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PROJECT_NAME"
+  value         = each.value.project_name
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "vpc_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "vpc_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "VPC_CIDR"
+  value         = each.value.vpc_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "public_subnet_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "public_subnet_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PUBLIC_SUBNET_CIDR"
+  value         = each.value.public_subnet_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "private_subnet_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "private_subnet_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PRIVATE_SUBNET_CIDR"
+  value         = each.value.private_subnet_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "instance_type_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "instance_type", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "INSTANCE_TYPE"
+  value         = each.value.instance_type
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "rds_instance_class_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_instance_class", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "RDS_INSTANCE_CLASS"
+  value         = each.value.rds_instance_class
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "rds_allocated_storage_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_allocated_storage", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "RDS_ALLOCATED_STORAGE"
+  value         = tostring(each.value.rds_allocated_storage)
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "postgres_version_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "postgres_version", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "POSTGRES_VERSION"
+  value         = each.value.postgres_version
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "rds_database_name_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_database_name", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "RDS_DATABASE_NAME"
+  value         = each.value.rds_database_name
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "rds_username_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_username", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "RDS_USERNAME"
+  value         = each.value.rds_username
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "rds_storage_type_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_storage_type", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "RDS_STORAGE_TYPE"
+  value         = each.value.rds_storage_type
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "rds_skip_final_snapshot_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_skip_final_snapshot", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "RDS_SKIP_FINAL_SNAPSHOT"
+  value         = tostring(each.value.rds_skip_final_snapshot)
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "rds_backup_retention_period_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_backup_retention_period", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "RDS_BACKUP_RETENTION_PERIOD"
+  value         = tostring(each.value.rds_backup_retention_period)
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "rds_multi_az_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_multi_az", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "RDS_MULTI_AZ"
+  value         = tostring(each.value.rds_multi_az)
+  depends_on    = [github_repository_environment.env]
+}
+
 # Repository-level Actions variables for shared values
 resource "github_actions_variable" "tf_state_bucket_repo" {
   count         = var.tf_state_bucket != "" ? 1 : 0

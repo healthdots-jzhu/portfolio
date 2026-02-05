@@ -1,0 +1,122 @@
+DETAILED ASCII ARCHITECTURE (Terraform resource ids, names, tags)
+
+LEGEND
+- Resource id: terraform type.name (e.g., aws_vpc.main)
+- Name tag: Name = "${var.project_name}-${var.environment}-..." (see tags)
+- Region: ca-central-1 (from provider)
+
++====================================================================================================+
+|                                      INTERNET / DNS / EDGE                                          |
++====================================================================================================+
+Users
+  | HTTPS
+  v
+[CloudFront CDN]  (configured via docs; frontend assets)
+  | Origin
+  v
+[S3 Bucket - frontend assets]  (S3 bucket name from var.s3_bucket_name, ecs_variables.tf)
+
+Users
+  | HTTPS
+  v
+[api.healthdots.net] -> Route53 -> ALB
+  - ALB: aws_lb.main
+  - ALB Name tag: "${var.project_name}-${var.environment}-alb"
+  - SG: aws_security_group.alb
+  - Listeners: aws_lb_listener.http (80 redirect), aws_lb_listener.https (443)
+  - Target Group: aws_lb_target_group.portfolio_api (health check /api/health)
+
++====================================================================================================+
+|                                       AWS VPC (ca-central-1)                                       |
+|  aws_vpc.main  CIDR: var.vpc_cidr  Name: "${var.project_name}-${var.environment}-vpc"              |
++====================================================================================================+
+
+PUBLIC SUBNETS
+- aws_subnet.public (AZ a) Name: "${var.project_name}-${var.environment}-public1a-subnet"
+- aws_subnet.public_2b (AZ b) Name: "${var.project_name}-${var.environment}-public2b-subnet"
+- aws_internet_gateway.main Name: "${var.project_name}-${var.environment}-igw"
+- aws_route_table.public Name: "${var.project_name}-${var.environment}-public-rt"
+- aws_route_table_association.public / public_2b
+
++-----------------------+                      +-----------------------+
+| ALB (aws_lb.main)     |                      | Internet Gateway      |
+| SG: aws_security_group.alb                   | aws_internet_gateway.main
++-----------------------+                      +-----------------------+
+
+PRIVATE APP SUBNETS (ECS)
+- aws_subnet.private_app_2a Name: "${var.project_name}-${var.environment}-private-app2a-subnet"
+- aws_subnet.private_app_2b Name: "${var.project_name}-${var.environment}-private-app2b-subnet"
+- aws_route_table.private_app Name: "${var.project_name}-${var.environment}-private-app-rt"
+- aws_route_table_association.private_app_2a / private_app_2b
+
+ECS / FARGATE
+- Cluster: aws_ecs_cluster.main  Name: "${var.project_name}-${var.environment}-cluster"
+- Service: aws_ecs_service.portfolio_api  Name: "${var.project_name}-${var.environment}-portfolio-api"
+- Task Definition: aws_ecs_task_definition.portfolio_api  Family: "${var.project_name}-${var.environment}-portfolio-api"
+- SG: aws_security_group.ecs_tasks  Name: "${var.project_name}-${var.environment}-ecs-tasks-sg"
+- Logs: aws_cloudwatch_log_group.ecs_tasks  Name: "/ecs/${var.project_name}-${var.environment}"
+
+Flow: ALB -> Target Group -> ECS Service -> Tasks (containerPort 80)
+
+PRIVATE DB SUBNETS (RDS)
+- aws_subnet.private_2a Name: "${var.project_name}-${var.environment}-private2a-subnet"
+- aws_subnet.private_2b Name: "${var.project_name}-${var.environment}-private2b-subnet"
+- aws_db_subnet_group.postgres Name: "${var.project_name}-${var.environment}-db-subnet-group"
+
+RDS
+- aws_db_instance.postgres-portfolio
+  - Name tag: "${var.project_name}-${var.environment}-${var.rds_database_name}-postgres"
+  - SG: aws_security_group.rds  Name: "${var.project_name}-${var.environment}-rds-sg"
+  - Parameter Group: aws_db_parameter_group.postgres  Name: "${var.project_name}-${var.environment}-postgres-params"
+  - KMS: aws_kms_key.rds  Alias: alias/${var.environment}-${var.project_name}-rds
+
+PRIVATE EC2 SUBNET (SSM)
+- aws_subnet.private Name: "${var.project_name}-${var.environment}-private1a-subnet"
+- EC2: aws_instance.main  Name: "${var.project_name}-${var.environment}-db-access-ec2-instance"
+- SG: aws_security_group.ec2  Name: "${var.project_name}-${var.environment}-ec2-sg"
+- IAM: aws_iam_role.ec2_ssm_role / aws_iam_instance_profile.ec2_profile
+
++====================================================================================================+
+|                                SUPPORTING AWS SERVICES (VPC access)                                |
++====================================================================================================+
+
+ECR
+- aws_ecr_repository.portfolio_api  Name tag: "${var.project_name}-${var.environment}-ecr-portfolio-api"
+- aws_ecr_lifecycle_policy.portfolio_api_untagged
+
+Secrets Manager + KMS
+- aws_kms_key.secrets  Alias: alias/${var.environment}-${var.project_name}-secrets
+- aws_secretsmanager_secret.postgres_connection  Name tag: "${var.project_name}-${var.environment}-postgres-connection"
+- aws_secretsmanager_secret.github_models_api_token  Name tag: "${var.project_name}-${var.environment}-github-models-token"
+
+SSM Parameter Store
+- aws_ssm_parameter.hashids_salt  Name: /${var.environment}/${var.project_name}/hashids/salt
+
+VPC Endpoints (Interface/Gateway)
+- aws_vpc_endpoint.secretsmanager_app  Name: "${var.project_name}-${var.environment}-vpce-secretsmanager"
+- aws_vpc_endpoint.ecr_api_app        Name: "${var.project_name}-${var.environment}-vpce-ecr-api"
+- aws_vpc_endpoint.ecr_dkr_app        Name: "${var.project_name}-${var.environment}-vpce-ecr-dkr"
+- aws_vpc_endpoint.sts_app            Name: "${var.project_name}-${var.environment}-vpce-sts"
+- aws_vpc_endpoint.s3_app             Name: "${var.project_name}-${var.environment}-vpce-s3-app"
+- aws_vpc_endpoint.ssm                Name: "${var.project_name}-${var.environment}-vpce-ssm"
+- aws_vpc_endpoint.ssmmessages        Name: "${var.project_name}-${var.environment}-vpce-ssmmessages"
+- aws_vpc_endpoint.ec2messages        Name: "${var.project_name}-${var.environment}-vpce-ec2messages"
+- SG: aws_security_group.vpc_endpoints  Name: "${var.project_name}-${var.environment}-vpce-sg"
+
++====================================================================================================+
+|                                      SCHEDULER / OPERATIONS                                        |
++====================================================================================================+
+- Lambda: aws_lambda_function.resource_scheduler  Name: "${var.project_name}-${var.environment}-resource-scheduler"
+- IAM: aws_iam_role.lambda_scheduler / aws_iam_role_policy.lambda_scheduler
+- Logs: aws_cloudwatch_log_group.lambda_scheduler
+- EventBridge Rules:
+  - aws_cloudwatch_event_rule.stop_resources  Name: "${var.project_name}-${var.environment}-stop-resources"
+  - aws_cloudwatch_event_rule.start_resources Name: "${var.project_name}-${var.environment}-start-resources"
+
++====================================================================================================+
+|                                         CI/CD (GitHub Actions)                                     |
++====================================================================================================+
+- OIDC + IAM role (see terraform/ci_aws_oidc)
+- Frontend deploy: build -> S3 -> CloudFront invalidation (portfolio-frontend/deployment-guide.md)
+- Backend deploy: build -> push image to ECR
+- Terraform apply: infra provisioning

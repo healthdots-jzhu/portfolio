@@ -328,6 +328,33 @@ resource "aws_ecs_service" "portfolio_api" {
   }
 }
 
+# Application Auto Scaling: keep 1 task normally, scale up to 3 based on CPU
+resource "aws_appautoscaling_target" "portfolio_api" {
+  service_namespace    = "ecs"
+  resource_id          = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.portfolio_api.name}"
+  scalable_dimension   = "ecs:service:DesiredCount"
+  min_capacity         = 1
+  max_capacity         = 3
+}
+
+resource "aws_appautoscaling_policy" "portfolio_api_cpu" {
+  name               = "${var.project_name}-${var.environment}-portfolio-api-cpu-tt"
+  service_namespace  = "ecs"
+  resource_id        = aws_appautoscaling_target.portfolio_api.resource_id
+  scalable_dimension = aws_appautoscaling_target.portfolio_api.scalable_dimension
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+
+    target_value       = 85.0
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
+
 # Application Load Balancer
 resource "aws_lb" "main" {
   name               = "${var.project_name}-${var.environment}-alb"
@@ -409,7 +436,7 @@ resource "aws_lb_target_group" "portfolio_api" {
     healthy_threshold   = 2
     unhealthy_threshold = 3
     timeout             = 5
-    interval            = 30
+    interval            = 300
     matcher             = "200"
   }
 
