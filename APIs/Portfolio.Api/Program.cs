@@ -15,7 +15,7 @@ JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Prefer explicit environment variable `ConnectionStrings__Postgres` when present
+// Prefer explicit environment variable `ConnectionStrings__Postgres` when present (runtime secrets injection)
 var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Postgres")
     ?? builder.Configuration.GetConnectionString("Postgres")
     ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
@@ -148,7 +148,12 @@ builder.Services.AddSingleton<Portfolio.Api.Services.IShortIdGenerator>(sp =>
 builder.Services.AddScoped<Portfolio.Api.Services.ICurrentUserProvider, Portfolio.Api.Services.CurrentUserProvider>();
 builder.Services.AddScoped<Portfolio.Api.Services.IVersionService, Portfolio.Api.Services.VersionService>();
 builder.Services.AddScoped<Portfolio.Api.Services.ILocaleValidator, Portfolio.Api.Services.LocaleValidator>();
-// GitHub Models service registration: register a named HttpClient with a retry handler and scoped service that uses IHttpClientFactory.
+
+// GitHub Models service registration: prefer env var for API token (runtime secrets injection)
+var gitHubModelsApiToken = Environment.GetEnvironmentVariable("GitHubModels__ApiToken")
+    ?? builder.Configuration["GitHubModels:ApiToken"];
+
+// Register a named HttpClient with a retry handler and scoped service that uses IHttpClientFactory.
 builder.Services.AddTransient<Portfolio.Api.Services.GitHubModelsRetryHandler>();
 // Named client "GitHubModels" centralizes default headers, base address and timeout.
 builder.Services.AddHttpClient("GitHubModels", client =>
@@ -161,6 +166,13 @@ builder.Services.AddHttpClient("GitHubModels", client =>
     // Default headers common to GitHub Models / inference hosts
     try { client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json"); } catch { }
     try { client.DefaultRequestHeaders.UserAgent.ParseAdd("Portfolio.Api/1.0"); } catch { }
+    
+    // Add Authorization header if token is present
+    if (!string.IsNullOrWhiteSpace(gitHubModelsApiToken))
+    {
+        try { client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", gitHubModelsApiToken); } catch { }
+    }
+    
     client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 30));
 })
 .AddHttpMessageHandler<Portfolio.Api.Services.GitHubModelsRetryHandler>();
@@ -221,6 +233,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Configure forwarded headers for running behind a proxy (ALB/CloudFront)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 
 app.UseHttpsRedirection();
 

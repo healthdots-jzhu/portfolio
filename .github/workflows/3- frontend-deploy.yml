@@ -17,6 +17,10 @@ on:
           - staging
           - beta
           - prod
+      cloudfront_distribution_id:
+        description: 'Optional: CloudFront distribution ID to store as env-scoped secret'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -47,6 +51,20 @@ jobs:
             echo "DEPLOY_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
           fi
 
+      - name: Optionally update environment secret
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ secrets.PROVISION_GITHUB_TOKEN }}
+          CLOUDFRONT_DISTRIBUTION_ID_INPUT: ${{ github.event.inputs.cloudfront_distribution_id }}
+        run: |
+          if [ -n "${CLOUDFRONT_DISTRIBUTION_ID_INPUT}" ]; then
+            if [ -z "${GH_TOKEN:-}" ]; then
+              echo "ERROR: PROVISION_GITHUB_TOKEN is required to create/update environment secrets." >&2
+              exit 1
+            fi
+            gh secret set CLOUDFRONT_DISTRIBUTION_ID --env "${DEPLOY_ENV}" --body "${CLOUDFRONT_DISTRIBUTION_ID_INPUT}"
+          fi
+
       # Secrets/vars are mapped into the job `env:` block above so shell steps can use $ROLE_ARN, $S3_BUCKET, $CLOUDFRONT_DISTRIBUTION_ID
 
       - name: Setup Node.js
@@ -59,6 +77,43 @@ jobs:
       - name: Install dependencies
         working-directory: portfolio-frontend
         run: npm ci
+
+      - name: Validate CloudFront distribution ID is set
+        env:
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          if [ -z "${CLOUDFRONT_DISTRIBUTION_ID:-}" ]; then
+            echo "ERROR: CLOUDFRONT_DISTRIBUTION_ID is not set in the selected GitHub Environment." >&2
+            exit 1
+          fi
+
+      - name: Write production environment file (safe upsert)
+        working-directory: portfolio-frontend
+        env:
+          DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          touch .env.production
+          python3 - <<'PY'
+          import os, re, pathlib
+
+          p = pathlib.Path('.env.production')
+          lines = p.read_text().splitlines() if p.exists() else []
+
+          def set_key(lines, key, val):
+              pat = re.compile(r'^' + re.escape(key) + r'=')
+              for i, l in enumerate(lines):
+                  if pat.match(l):
+                      lines[i] = f"{key}={val}"
+                      return lines
+              lines.append(f"{key}={val}")
+              return lines
+
+          lines = set_key(lines, 'VITE_API_URL', f"https://api.healthdots.net/portfolio-{os.environ.get('DEPLOY_ENV')}/content")
+          lines = set_key(lines, 'VITE_CDN_URL', f"https://{os.environ.get('CLOUDFRONT_DISTRIBUTION_ID')}.cloudfront.net")
+
+          p.write_text('\n'.join(lines) + ('\n' if lines else ''))
+          PY
 
       - name: Build
         working-directory: portfolio-frontend

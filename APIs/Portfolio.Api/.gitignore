@@ -5,6 +5,3 @@ obj/
 .vs/
 .vscode/
 *.log
-appsettings.*.json
-!appsettings.json
-!appsettings.Development.json
