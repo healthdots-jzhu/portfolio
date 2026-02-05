@@ -96,6 +96,111 @@ resource "aws_subnet" "private_2b" {
   }
 }
 
+# Application-private subnets for ECS tasks (segregated from DB subnets)
+resource "aws_subnet" "private_app_2a" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.176.0/20"
+  availability_zone = "ca-central-1a"
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-private-app2a-subnet"
+  }
+}
+
+resource "aws_subnet" "private_app_2b" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.192.0/20"
+  availability_zone = "ca-central-1b"
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-private-app2b-subnet"
+  }
+}
+
+# Private route table for application subnets (used for S3 gateway endpoint association)
+resource "aws_route_table" "private_app" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-private-app-rt"
+  }
+}
+
+resource "aws_route_table_association" "private_app_2a" {
+  subnet_id      = aws_subnet.private_app_2a.id
+  route_table_id = aws_route_table.private_app.id
+}
+
+resource "aws_route_table_association" "private_app_2b" {
+  subnet_id      = aws_subnet.private_app_2b.id
+  route_table_id = aws_route_table.private_app.id
+}
+
+# VPC Interface Endpoints for ECS app subnets to access AWS services without NAT
+resource "aws_vpc_endpoint" "secretsmanager_app" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-vpce-secretsmanager"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_api_app" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-vpce-ecr-api"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr_app" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-vpce-ecr-dkr"
+  }
+}
+
+resource "aws_vpc_endpoint" "sts_app" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.sts"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-vpce-sts"
+  }
+}
+
+# S3 Gateway Endpoint for app private route table (allows S3 access without NAT)
+resource "aws_vpc_endpoint" "s3_app" {
+  vpc_id       = aws_vpc.main.id
+  service_name = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids = [aws_route_table.private_app.id]
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-vpce-s3-app"
+  }
+}
+
 # Route Table for Public Subnet
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
