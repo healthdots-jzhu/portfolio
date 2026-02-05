@@ -36,9 +36,9 @@ variable "private_subnet_cidr" {
 }
 
 # EC2 Configuration
-variable "instance_type" {
+variable "rds_ssm_ec2_instance_type" {
   type        = string
-  description = "EC2 instance type (t4g.micro uses Graviton2 ARM processor)"
+  description = "EC2 instance type stored in SSM for RDS-related provisioning (e.g., t4g.micro)"
   default     = "t4g.micro"
 }
 

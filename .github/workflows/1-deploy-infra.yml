@@ -2,7 +2,7 @@ name: Deploy Infrastructure (backend stack - vpc, ec2, rds, etc.)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   workflow_dispatch:
     inputs:
       environment:
