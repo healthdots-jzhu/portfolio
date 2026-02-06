@@ -82,15 +82,35 @@ jobs:
             aws secretsmanager put-secret-value --secret-id "$1" --secret-string "$2"
           }
 
+          create_or_put_secret() {
+            # arg1 = secret name, arg2 = secret string
+            if check_secret_exists "$1"; then
+              put_secret_value "$1" "$2"
+              return $?
+            fi
+
+            # Attempt to create the secret (uses AWS-managed KMS key if none provided).
+            if aws secretsmanager create-secret --name "$1" --secret-string "$2" --description "Created by GitHub Actions workflow for ${ENVIRONMENT}" >/dev/null 2>&1; then
+              echo "Created secret $1"
+              return 0
+            else
+              # If create failed because the secret was created concurrently, try putting the value
+              if check_secret_exists "$1"; then
+                put_secret_value "$1" "$2"
+                return $?
+              fi
+              return 1
+            fi
+          }
+
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             echo "Manual run: will update secret values if inputs provided."
 
             if [ -n "$POSTGRES_INPUT" ]; then
-              if check_secret_exists "$SECRET_POSTGRES_NAME"; then
-                put_secret_value "$SECRET_POSTGRES_NAME" "${POSTGRES_INPUT}"
-                echo "Updated secret value for $SECRET_POSTGRES_NAME"
+              if create_or_put_secret "$SECRET_POSTGRES_NAME" "${POSTGRES_INPUT}"; then
+                echo "Stored value for $SECRET_POSTGRES_NAME"
               else
-                echo "ERROR: Secret resource $SECRET_POSTGRES_NAME does not exist. Run the infra workflow first to create secret resources or create the secret manually in AWS Secrets Manager."
+                echo "ERROR: Failed to create or update secret $SECRET_POSTGRES_NAME"
                 exit 1
               fi
             else
@@ -103,11 +123,10 @@ jobs:
             fi
 
             if [ -n "$GITHUB_INPUT" ]; then
-              if check_secret_exists "$SECRET_GITHUB_NAME"; then
-                put_secret_value "$SECRET_GITHUB_NAME" "${GITHUB_INPUT}"
-                echo "Updated secret value for $SECRET_GITHUB_NAME"
+              if create_or_put_secret "$SECRET_GITHUB_NAME" "${GITHUB_INPUT}"; then
+                echo "Stored value for $SECRET_GITHUB_NAME"
               else
-                echo "ERROR: Secret resource $SECRET_GITHUB_NAME does not exist. Run the infra workflow first to create secret resources or create the secret manually in AWS Secrets Manager."
+                echo "ERROR: Failed to create or update secret $SECRET_GITHUB_NAME"
                 exit 1
               fi
             else
