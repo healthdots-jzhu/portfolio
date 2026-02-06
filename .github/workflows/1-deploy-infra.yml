@@ -89,18 +89,29 @@ jobs:
               return $?
             fi
 
-            # Attempt to create the secret (uses AWS-managed KMS key if none provided).
-            if aws secretsmanager create-secret --name "$1" --secret-string "$2" --description "Created by GitHub Actions workflow for ${ENVIRONMENT}" >/dev/null 2>&1; then
-              echo "Created secret $1"
+            # Create the secret using AWS-managed KMS (aws/secretsmanager)
+            TMPERR=$(mktemp)
+
+            if aws secretsmanager create-secret --name "$1" --secret-string "$2" --description "Created by GitHub Actions workflow for ${ENVIRONMENT}" 2> "$TMPERR" >/dev/null; then
+              echo "Created secret $1 with AWS-managed KMS key"
+              rm -f "$TMPERR"
               return 0
-            else
-              # If create failed because the secret was created concurrently, try putting the value
-              if check_secret_exists "$1"; then
-                put_secret_value "$1" "$2"
-                return $?
-              fi
-              return 1
             fi
+
+            # If creation failed, print AWS CLI error for diagnosis. If secret now exists (race), put the value.
+            echo "Create secret failed:"
+            sed -n '1,200p' "$TMPERR" || true
+
+            if check_secret_exists "$1"; then
+              echo "Secret $1 now exists; attempting to put value"
+              put_secret_value "$1" "$2" 2> "$TMPERR" || true
+              sed -n '1,200p' "$TMPERR" || true
+              rm -f "$TMPERR"
+              return 0
+            fi
+
+            rm -f "$TMPERR"
+            return 1
           }
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then

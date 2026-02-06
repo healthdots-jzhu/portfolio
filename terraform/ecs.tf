@@ -52,7 +52,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
 # Additional policy for ECS task execution to read secrets from Secrets Manager
 resource "aws_iam_role_policy" "ecs_secrets_access" {
   name_prefix = "${var.environment}-${var.project_name}-ecs-secrets-"
-  role        = aws_iam_role.ecs_task_execution.id
+  role        = aws_iam_role.ecs_task_execution.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -67,13 +67,6 @@ resource "aws_iam_role_policy" "ecs_secrets_access" {
           aws_secretsmanager_secret.github_models_api_token.arn
         ]
       },
-      {
-        Effect = "Allow"
-        Action = [
-          "kms:Decrypt"
-        ]
-        Resource = aws_kms_key.secrets.arn
-      }
     ]
   })
 }
@@ -103,7 +96,7 @@ resource "aws_iam_role" "ecs_task" {
 # Task role policy for S3, SSM, and other app needs
 resource "aws_iam_role_policy" "ecs_task_permissions" {
   name_prefix = "${var.environment}-${var.project_name}-ecs-task-policy-"
-  role        = aws_iam_role.ecs_task.id
+  role        = aws_iam_role.ecs_task.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -171,27 +164,12 @@ resource "aws_security_group_rule" "rds_from_ecs" {
   description              = "Allow PostgreSQL from ECS tasks"
 }
 
-# KMS Key for Secrets Manager
-resource "aws_kms_key" "secrets" {
-  description             = "KMS key for Secrets Manager encryption"
-  deletion_window_in_days = 7
-  enable_key_rotation     = true
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-secrets-key"
-  }
-}
-
-resource "aws_kms_alias" "secrets" {
-  name          = "alias/${var.environment}-${var.project_name}-secrets"
-  target_key_id = aws_kms_key.secrets.key_id
-}
+# Using AWS-managed KMS for Secrets Manager (aws/secretsmanager). No customer CMK created here.
 
 # Secrets Manager - Postgres Connection String
 resource "aws_secretsmanager_secret" "postgres_connection" {
   name                    = "${var.project_name}-${var.environment}-postgres-connection"
   description             = "PostgreSQL connection string for Portfolio API"
-  kms_key_id              = aws_kms_key.secrets.id
   recovery_window_in_days = 7
 
   tags = {
@@ -208,7 +186,6 @@ resource "aws_secretsmanager_secret" "postgres_connection" {
 resource "aws_secretsmanager_secret" "github_models_api_token" {
   name                    = "${var.project_name}-${var.environment}-github-models-token"
   description             = "GitHub Models API token for Portfolio API"
-  kms_key_id              = aws_kms_key.secrets.id
   recovery_window_in_days = 7
 
   tags = {
@@ -259,11 +236,11 @@ resource "aws_ecs_task_definition" "portfolio_api" {
       secrets = [
         {
           name      = "ConnectionStrings__Postgres"
-          valueFrom = "${aws_secretsmanager_secret.postgres_connection.arn}:connection_string::"
+          valueFrom = "${aws_secretsmanager_secret.postgres_connection.arn}"
         },
         {
           name      = "GitHubModels__ApiToken"
-          valueFrom = "${aws_secretsmanager_secret.github_models_api_token.arn}:api_token::"
+          valueFrom = "${aws_secretsmanager_secret.github_models_api_token.arn}"
         }
       ]
 
