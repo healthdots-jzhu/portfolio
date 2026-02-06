@@ -78,7 +78,7 @@ resource "aws_subnet" "private" {
 # Additional private subnets (pre-existing) to be managed by Terraform
 resource "aws_subnet" "private_2a" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.144.0/20"
+  cidr_block        = var.private_2a_cidr
   availability_zone = "ca-central-1a"
 
   tags = {
@@ -88,7 +88,7 @@ resource "aws_subnet" "private_2a" {
 
 resource "aws_subnet" "private_2b" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.160.0/20"
+  cidr_block        = var.private_2b_cidr
   availability_zone = "ca-central-1b"
 
   tags = {
@@ -99,7 +99,7 @@ resource "aws_subnet" "private_2b" {
 # Application-private subnets for ECS tasks (segregated from DB subnets)
 resource "aws_subnet" "private_app_2a" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.176.0/20"
+  cidr_block        = var.private_app_2a_cidr
   availability_zone = "ca-central-1a"
 
   tags = {
@@ -109,7 +109,7 @@ resource "aws_subnet" "private_app_2a" {
 
 resource "aws_subnet" "private_app_2b" {
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.192.0/20"
+  cidr_block        = var.private_app_2b_cidr
   availability_zone = "ca-central-1b"
 
   tags = {

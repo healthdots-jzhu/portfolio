@@ -187,6 +187,51 @@ resource "github_actions_environment_variable" "rds_multi_az_env" {
   depends_on    = [github_repository_environment.env]
 }
 
+resource "github_actions_environment_variable" "s3_bucket_name_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "s3_bucket_name", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "S3_BUCKET_NAME"
+  value         = each.value.s3_bucket_name
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "ecs_task_cpu_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "ecs_task_cpu", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "ECS_TASK_CPU"
+  value         = each.value.ecs_task_cpu
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "ecs_task_memory_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "ecs_task_memory", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "ECS_TASK_MEMORY"
+  value         = each.value.ecs_task_memory
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "ecs_service_desired_count_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "ecs_service_desired_count", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "ECS_SERVICE_DESIRED_COUNT"
+  value         = tostring(each.value.ecs_service_desired_count)
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "path_base_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "path_base", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PATH_BASE"
+  value         = each.value.path_base
+  depends_on    = [github_repository_environment.env]
+}
+
 # Repository-level Actions variables for shared values
 resource "github_actions_variable" "tf_state_bucket_repo" {
   count         = var.tf_state_bucket != "" ? 1 : 0

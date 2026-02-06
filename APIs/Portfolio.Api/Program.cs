@@ -240,6 +240,21 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
 });
 
+// Respect a path base injected by the ALB (e.g. "/portfolio-beta/content") so existing controllers
+// with routes like "api/[controller]" continue to work without changes.
+var pathBase = Environment.GetEnvironmentVariable("PATH_BASE") ?? app.Configuration["PathBase"];
+if (!string.IsNullOrEmpty(pathBase))
+{
+    try
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Setting PathBase to {PathBase}", pathBase);
+    }
+    catch { }
+
+    app.UsePathBase(new Microsoft.AspNetCore.Http.PathString(pathBase));
+}
+
 app.UseHttpsRedirection();
 
 // Enable routing before applying CORS so the CORS middleware can run with endpoint routing

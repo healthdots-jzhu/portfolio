@@ -22,6 +22,11 @@ environments = {
     rds_skip_final_snapshot = "true"
     rds_backup_retention_period = "7"
     rds_multi_az           = "false"
+    private_2a_cidr        = "10.0.144.0/20"
+    private_2b_cidr        = "10.0.160.0/20"
+    private_app_2a_cidr    = "10.0.176.0/20"
+    private_app_2b_cidr    = "10.0.192.0/20"
+    path_base              = "/portfolio-staging/content"
   }
 
   beta = {
@@ -44,6 +49,11 @@ environments = {
     rds_skip_final_snapshot = "true"
     rds_backup_retention_period = "7"
     rds_multi_az           = "false"
+    private_2a_cidr        = "10.0.144.0/20"
+    private_2b_cidr        = "10.0.160.0/20"
+    private_app_2a_cidr    = "10.0.176.0/20"
+    private_app_2b_cidr    = "10.0.192.0/20"
+    path_base              = "/portfolio-beta/content"
   }
 
   prod = {
@@ -66,5 +76,10 @@ environments = {
     rds_skip_final_snapshot = "true"
     rds_backup_retention_period = "7"
     rds_multi_az           = "false"
+    private_2a_cidr        = "10.0.144.0/20"
+    private_2b_cidr        = "10.0.160.0/20"
+    private_app_2a_cidr    = "10.0.176.0/20"
+    private_app_2b_cidr    = "10.0.192.0/20"
+    path_base              = "/portfolio-prod/content"
   }
 }

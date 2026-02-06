@@ -26,13 +26,57 @@ variable "vpc_cidr" {
 variable "public_subnet_cidr" {
   type        = string
   description = "CIDR block for public subnet (EC2)"
-  default     = "10.0.1.0/24"
+  default     = "10.0.0.0/20"
 }
 
 variable "private_subnet_cidr" {
   type        = string
   description = "CIDR block for private subnet (RDS)"
-  default     = "10.0.2.0/24"
+  default     = "10.0.128.0/20"
+}
+
+# Additional pre-existing subnets managed by Terraform (defaults kept to previous hard-coded values)
+variable "private_2a_cidr" {
+  type        = string
+  description = "CIDR block for additional private subnet 2a"
+  default     = "10.0.144.0/20"
+}
+
+variable "private_2b_cidr" {
+  type        = string
+  description = "CIDR block for additional private subnet 2b"
+  default     = "10.0.160.0/20"
+}
+
+variable "private_app_2a_cidr" {
+  type        = string
+  description = "CIDR block for application-private subnet 2a"
+  default     = "10.0.176.0/20"
+}
+
+variable "private_app_2b_cidr" {
+  type        = string
+  description = "CIDR block for application-private subnet 2b"
+  default     = "10.0.192.0/20"
+}
+
+# Route53 / DNS
+variable "route53_zone_name" {
+  type        = string
+  description = "Parent Route53 zone name (e.g. healthdots.net)"
+  default     = "healthdots.net"
+}
+
+variable "api_subdomain" {
+  type        = string
+  description = "Subdomain for the API (left-hand label, e.g. 'api' for api.healthdots.net)"
+  default     = "api"
+}
+
+variable "path_base" {
+  type        = string
+  description = "Optional PathBase the app is hosted under (e.g. /portfolio-beta/content)"
+  default     = ""
 }
 
 # EC2 Configuration

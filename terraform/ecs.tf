@@ -189,7 +189,7 @@ resource "aws_kms_alias" "secrets" {
 
 # Secrets Manager - Postgres Connection String
 resource "aws_secretsmanager_secret" "postgres_connection" {
-  name_prefix             = "${var.environment}-${var.project_name}-postgres-connection-"
+  name                    = "${var.project_name}-${var.environment}-postgres-connection"
   description             = "PostgreSQL connection string for Portfolio API"
   kms_key_id              = aws_kms_key.secrets.id
   recovery_window_in_days = 7
@@ -200,21 +200,13 @@ resource "aws_secretsmanager_secret" "postgres_connection" {
   }
 }
 
-# Placeholder secret value - update manually or via workflow
-resource "aws_secretsmanager_secret_version" "postgres_connection" {
-  secret_id = aws_secretsmanager_secret.postgres_connection.id
-  secret_string = jsonencode({
-    connection_string = "PLACEHOLDER - Update this value with actual connection string"
-  })
-
-  lifecycle {
-    ignore_changes = [secret_string]
-  }
-}
+# Secret value should be provided at runtime (workflow or operator);
+# leave management of the secret's value to external tooling to avoid
+# storing sensitive data in Terraform state.
 
 # Secrets Manager - GitHub Models API Token
 resource "aws_secretsmanager_secret" "github_models_api_token" {
-  name_prefix             = "${var.environment}-${var.project_name}-github-models-token-"
+  name                    = "${var.project_name}-${var.environment}-github-models-token"
   description             = "GitHub Models API token for Portfolio API"
   kms_key_id              = aws_kms_key.secrets.id
   recovery_window_in_days = 7
@@ -225,17 +217,9 @@ resource "aws_secretsmanager_secret" "github_models_api_token" {
   }
 }
 
-# Placeholder secret value - update manually or via workflow
-resource "aws_secretsmanager_secret_version" "github_models_api_token" {
-  secret_id = aws_secretsmanager_secret.github_models_api_token.id
-  secret_string = jsonencode({
-    api_token = "PLACEHOLDER - Update this value with actual API token"
-  })
-
-  lifecycle {
-    ignore_changes = [secret_string]
-  }
-}
+# Secret value should be provided at runtime (workflow or operator);
+# leave management of the secret's value to external tooling to avoid
+# storing sensitive data in Terraform state.
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "portfolio_api" {
@@ -471,8 +455,13 @@ resource "aws_lb_listener" "https" {
   certificate_arn   = var.acm_certificate_arn
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.portfolio_api.arn
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Not Found"
+      status_code  = "404"
+    }
   }
 }
 
@@ -487,8 +476,34 @@ resource "aws_lb_listener_rule" "portfolio_api" {
   }
 
   condition {
-    path_pattern {
-      values = ["/portfolio-${var.environment}/*"]
+    host_header {
+      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
     }
   }
+
+  condition {
+    path_pattern {
+      values = ["/portfolio-${var.environment}/content/*"]
+    }
+  }
+}
+
+# Route53 record for API subdomain
+data "aws_route53_zone" "selected" {
+  name         = var.route53_zone_name
+  private_zone = false
+}
+
+resource "aws_route53_record" "api" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = var.api_subdomain
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = false
+  }
+
+  ttl = 300
 }

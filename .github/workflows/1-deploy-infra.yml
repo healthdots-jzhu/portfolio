@@ -9,6 +9,14 @@ on:
         description: 'Target environment (staging, beta, prod)'
         required: false
         default: 'beta'
+      postgres_connection_string:
+        description: 'Postgres connection string (optional; only used for manual runs to update secret)'
+        required: false
+        default: ''
+      github_models_api_token:
+        description: 'GitHub Models API token (optional; only used for manual runs to update secret)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -41,6 +49,93 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com
 
+      - name: Verify or update Secrets Manager secret values for environment
+        shell: bash
+        env:
+          POSTGRES_INPUT: "${{ github.event.inputs.postgres_connection_string || '' }}"
+          GITHUB_INPUT: "${{ github.event.inputs.github_models_api_token || '' }}"
+          GITHUB_EVENT_NAME: "${{ github.event_name }}"
+        run: |
+          set -euo pipefail
+          SECRET_POSTGRES_NAME="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-postgres-connection"
+          SECRET_GITHUB_NAME="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-github-models-token"
+
+          echo "Event: $GITHUB_EVENT_NAME"
+
+          check_secret_exists() {
+            # verify the secret resource exists
+            aws secretsmanager describe-secret --secret-id "$1" >/dev/null 2>&1
+          }
+
+          check_secret_has_version() {
+            # return true if the secret has at least one version
+            COUNT=$(aws secretsmanager list-secret-version-ids --secret-id "$1" --query 'length(Versions)' --output text 2>/dev/null || echo 0)
+            if [ "$COUNT" -gt 0 ]; then
+              return 0
+            else
+              return 1
+            fi
+          }
+
+          put_secret_value() {
+            # second arg is the raw secret string
+            aws secretsmanager put-secret-value --secret-id "$1" --secret-string "$2"
+          }
+
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Manual run: will update secret values if inputs provided."
+
+            if [ -n "$POSTGRES_INPUT" ]; then
+              if check_secret_exists "$SECRET_POSTGRES_NAME"; then
+                put_secret_value "$SECRET_POSTGRES_NAME" "${POSTGRES_INPUT}"
+                echo "Updated secret value for $SECRET_POSTGRES_NAME"
+              else
+                echo "ERROR: Secret resource $SECRET_POSTGRES_NAME does not exist. Run the infra workflow first to create secret resources or create the secret manually in AWS Secrets Manager."
+                exit 1
+              fi
+            else
+              if check_secret_has_version "$SECRET_POSTGRES_NAME"; then
+                echo "Secret $SECRET_POSTGRES_NAME has a value/version."
+              else
+                echo "ERROR: Secret $SECRET_POSTGRES_NAME missing a value/version and no value provided. Provide 'postgres_connection_string' when dispatching to update an existing secret."
+                exit 1
+              fi
+            fi
+
+            if [ -n "$GITHUB_INPUT" ]; then
+              if check_secret_exists "$SECRET_GITHUB_NAME"; then
+                put_secret_value "$SECRET_GITHUB_NAME" "${GITHUB_INPUT}"
+                echo "Updated secret value for $SECRET_GITHUB_NAME"
+              else
+                echo "ERROR: Secret resource $SECRET_GITHUB_NAME does not exist. Run the infra workflow first to create secret resources or create the secret manually in AWS Secrets Manager."
+                exit 1
+              fi
+            else
+              if check_secret_has_version "$SECRET_GITHUB_NAME"; then
+                echo "Secret $SECRET_GITHUB_NAME has a value/version."
+              else
+                echo "ERROR: Secret $SECRET_GITHUB_NAME missing a value/version and no value provided. Provide 'github_models_api_token' when dispatching to update an existing secret."
+                exit 1
+              fi
+            fi
+
+          else
+            # Non-manual runs must have the secret resources present
+            if ! check_secret_has_version "$SECRET_POSTGRES_NAME" || ! check_secret_has_version "$SECRET_GITHUB_NAME"; then
+              echo "ERROR: Required Secrets Manager secrets for environment '${{ env.ENVIRONMENT }}' are missing."
+              echo "Missing:"
+              if ! check_secret_has_version "$SECRET_POSTGRES_NAME"; then
+                echo " - Secret missing value/version: $SECRET_POSTGRES_NAME"
+              fi
+              if ! check_secret_has_version "$SECRET_GITHUB_NAME"; then
+                echo " - Secret missing value/version: $SECRET_GITHUB_NAME"
+              fi
+              echo "Please create these secret resources in AWS Secrets Manager before running this workflow."
+              exit 1
+            fi
+            echo "All required secrets exist."
+          fi
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -54,6 +149,41 @@ jobs:
             -backend-config="region=${{ vars.AWS_REGION }}" \
             -backend-config="dynamodb_table=${{ vars.TF_STATE_DYNAMODB_TABLE }}" \
             -backend-config="encrypt=true"
+
+      - name: Export GitHub variables to TF_VAR_*
+        run: |
+          echo "TF_VAR_environment=${{ env.ENVIRONMENT }}" >> $GITHUB_ENV
+          echo "TF_VAR_aws_region=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
+          echo "TF_VAR_ecr_registry=${{ vars.ECR_REGISTRY }}" >> $GITHUB_ENV
+          echo "TF_VAR_s3_bucket_frontend=${{ vars.S3_BUCKET_FRONTEND }}" >> $GITHUB_ENV
+          echo "TF_VAR_acm_certificate_arn=${{ vars.ACM_CERTIFICATE_ARN }}" >> $GITHUB_ENV
+          echo "TF_VAR_project_name=${{ vars.PROJECT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_vpc_cidr=${{ vars.VPC_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_public_subnet_cidr=${{ vars.PUBLIC_SUBNET_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_subnet_cidr=${{ vars.PRIVATE_SUBNET_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_ssm_ec2_instance_type=${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_instance_class=${{ vars.RDS_INSTANCE_CLASS }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_allocated_storage=${{ vars.RDS_ALLOCATED_STORAGE }}" >> $GITHUB_ENV
+          echo "TF_VAR_postgres_version=${{ vars.POSTGRES_VERSION }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_database_name=${{ vars.RDS_DATABASE_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_username=${{ vars.RDS_USERNAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_storage_type=${{ vars.RDS_STORAGE_TYPE }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_skip_final_snapshot=${{ vars.RDS_SKIP_FINAL_SNAPSHOT }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_backup_retention_period=${{ vars.RDS_BACKUP_RETENTION_PERIOD }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_multi_az=${{ vars.RDS_MULTI_AZ }}" >> $GITHUB_ENV
+          echo "TF_VAR_ecs_task_cpu=${{ vars.ECS_TASK_CPU }}" >> $GITHUB_ENV
+          echo "TF_VAR_ecs_task_memory=${{ vars.ECS_TASK_MEMORY }}" >> $GITHUB_ENV
+          echo "TF_VAR_ecs_service_desired_count=${{ vars.ECS_SERVICE_DESIRED_COUNT }}" >> $GITHUB_ENV
+          echo "TF_VAR_s3_bucket_name=${{ vars.S3_BUCKET_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_acm_certificate_arn=${{ vars.ACM_CERTIFICATE_ARN }}" >> $GITHUB_ENV
+          echo "TF_VAR_tf_state_key=${{ vars.TF_STATE_KEY }}" >> $GITHUB_ENV
+          echo "TF_VAR_tf_state_bucket=${{ vars.TF_STATE_BUCKET }}" >> $GITHUB_ENV
+          echo "TF_VAR_tf_state_dynamodb_table=${{ vars.TF_STATE_DYNAMODB_TABLE }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_2a_cidr=${{ vars.PRIVATE_2A_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_2b_cidr=${{ vars.PRIVATE_2B_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_app_2a_cidr=${{ vars.PRIVATE_APP_2A_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_app_2b_cidr=${{ vars.PRIVATE_APP_2B_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_path_base=${{ vars.PATH_BASE }}" >> $GITHUB_ENV
 
       - name: Terraform plan
         run: |

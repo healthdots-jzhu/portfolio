@@ -149,7 +149,7 @@ I've implemented a complete portfolio management system with versioning, staging
 ### ✅ 8. Preview Functionality
 - Preview live version in new tab
 - Preview staged versions (authenticated)
-- Preview URL: `/{personId}?preview={versionId}`
+- Preview URL: `/{personId}OKpreview={versionId}`
 - Compare multiple staged versions
 
 ## Security Features
@@ -164,7 +164,7 @@ I've implemented a complete portfolio management system with versioning, staging
 
 ### Frontend Preview Integration
 The frontend portfolio pages (PersonHome.jsx, etc.) need to be updated to:
-1. Check for `?preview=` query parameter
+1. Check for `OKpreview=` query parameter
 2. Load content from preview endpoint when present
 3. Show a "Preview Mode" banner when viewing a preview
 
@@ -252,7 +252,7 @@ Draft → Staged → Published → Archived
 - Live: Uses PortfolioLocales (current published)
 - Preview: Uses PortfolioVersion.LocaleSnapshot
 - Requires authentication for preview
-- Query parameter: `?preview={versionId}`
+- Query parameter: `OKpreview={versionId}`
 
 ## Next Steps for Production
 
