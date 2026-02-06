@@ -47,7 +47,7 @@ const Navbar = () => {
   });
 
   return (
-    <nav className="navbar">
+    <nav className="navbar" data-testid="portfolio-navbar">
       <Link to={currentPersonId ? basePrefix : '/'} className="navbar-logo">{t('common.siteName')}</Link>
       <div className="navbar-controls"></div>
       <div className="navbar-right">
@@ -58,6 +58,7 @@ const Navbar = () => {
             className="language-select"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
+            data-testid="portfolio-language-select"
           >
             {availableLanguages.map((lang) => (
               <option key={lang} value={lang}>

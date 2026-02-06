@@ -30,10 +30,10 @@ const PersonHome = () => {
   };
 
   return (
-    <main className="home-page">
+    <main className="home-page" data-testid="person-home">
       {/* Hero Section */}
       <section className="home-hero">
-        <h1>{hero.title}</h1>
+        <h1 data-testid="person-hero-title">{hero.title}</h1>
         <p className="home-hero-subtitle">{hero.subtitle}</p>
         <p className="home-hero-intro">{parseColorTags(hero.intro)}</p>
       </section>

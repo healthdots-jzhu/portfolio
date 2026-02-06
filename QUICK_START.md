@@ -33,6 +33,16 @@ npm install
 npm run dev
 ```
 
+### 4. Run E2E Tests (Frontend)
+Assumes the frontend dev server is already running at `http://localhost:5173`.
+```powershell
+Set-Location portfolio-frontend
+npm run test:e2e
+```
+Notes:
+- The public portfolio test hits `/p/jason-zhu-EU1O` and requires the API to be running (Step 2).
+- Override the base URL with `E2E_BASE_URL` if needed.
+
 ## Environment Variables
 Frontend (`portfolio-frontend/.env`):
 ```

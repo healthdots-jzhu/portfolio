@@ -71,7 +71,7 @@ const Landing = () => {
       <main className="landing-main">
         <section className="landing-hero">
           <div className="hero-content">
-            <h1>{locale.landing.heroTitle}</h1>
+            <h1 data-testid="landing-hero-title">{locale.landing.heroTitle}</h1>
             <p className="hero-subtitle">{locale.landing.heroSubtitle}</p>
             <p className="hero-description">
               {locale.landing.heroDescription}
@@ -79,26 +79,26 @@ const Landing = () => {
             <div className="cta-buttons">
               {isAuthenticated ? (
                 <>
-                  <Link to="/portfolios" className="cta-primary">
+                  <Link to="/portfolios" className="cta-primary" data-testid="landing-cta-primary">
                     {locale.landing.managePortfolios}
                   </Link>
                   <button className="cta-secondary">{locale.landing.learnMore}</button>
                 </>
               ) : error ? (
                 <>
-                  <button className="cta-primary" disabled title="Error loading auth config">{locale.landing.registerPortfolio}</button>
+                  <button className="cta-primary" data-testid="landing-cta-primary" disabled title="Error loading auth config">{locale.landing.registerPortfolio}</button>
                   <button className="cta-secondary">{locale.landing.learnMore}</button>
                 </>
               ) : authUrl ? (
                 <>
-                  <a href={authUrl} className="cta-primary">
+                  <a href={authUrl} className="cta-primary" data-testid="landing-cta-primary">
                     {locale.landing.registerPortfolio}
                   </a>
                   <button className="cta-secondary">{locale.landing.learnMore}</button>
                 </>
               ) : (
                 <>
-                  <button className="cta-primary" disabled style={{ cursor: 'wait', opacity: 0.7 }}>
+                  <button className="cta-primary" data-testid="landing-cta-primary" disabled style={{ cursor: 'wait', opacity: 0.7 }}>
                     {locale.landing.loading}
                   </button>
                   <button className="cta-secondary">{locale.landing.learnMore}</button>
@@ -133,9 +133,9 @@ const Landing = () => {
 
       <footer className="landing-footer">
         <div className="footer-links">
-          <Link to="/privacy">{locale.landing.privacyPolicy}</Link>
+          <Link to="/privacy" data-testid="landing-footer-privacy">{locale.landing.privacyPolicy}</Link>
           <span>•</span>
-          <Link to="/terms">{locale.landing.termsOfUse}</Link>
+          <Link to="/terms" data-testid="landing-footer-terms">{locale.landing.termsOfUse}</Link>
         </div>
         <p>{locale.landing.copyright}</p>
       </footer>
