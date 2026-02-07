@@ -305,7 +305,7 @@ resource "aws_appautoscaling_policy" "portfolio_api_cpu" {
   scalable_dimension = aws_appautoscaling_target.portfolio_api.scalable_dimension
   policy_type        = "TargetTrackingScaling"
 
-  target_tracking_configuration {
+  target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
@@ -481,6 +481,4 @@ resource "aws_route53_record" "api" {
     zone_id                = aws_lb.main.zone_id
     evaluate_target_health = false
   }
-
-  ttl = 300
 }

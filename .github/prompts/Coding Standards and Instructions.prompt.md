@@ -10,3 +10,4 @@ Define the task to achieve, including specific requirements, constraints, and su
 6. Always scan the change(s) for better configurability, reusability, maintainability, security, testability and scalability in mind when making changes.
 7. If the change causes errors, analyze, debug and fix them. As the last resort, revert the change(s) and explain why.
 8. Always use powershell commands for any development actions to be taken since I am using Windows OS unless the commands are for the remote server/service running linux.
+9. PowerShell line-continuation should use backticks instead of backslashes.
