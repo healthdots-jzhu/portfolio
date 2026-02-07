@@ -144,6 +144,26 @@ data "aws_iam_policy_document" "ci_policy_doc" {
     resources = ["*"]
   }
 
+  # Allow various read/list/describe actions Terraform uses during plan
+  statement {
+    actions = [
+      "route53:ListHostedZones",
+      "route53:ListHostedZonesByName",
+      "route53:ListResourceRecordSets",
+      "route53:GetHostedZone",
+      "ec2:DescribeVpcs",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeSecurityGroups",
+      "iam:GetRole",
+      "rds:DescribeDBParameterGroups",
+      "rds:DescribeDBInstances",
+      "kms:DescribeKey",
+      "ecr:ListTagsForResource",
+      "events:DescribeRule"
+    ]
+    resources = ["*"]
+  }
+
   # Allow passing limited roles (scoped to project-prefixed roles)
   statement {
     actions = ["iam:PassRole"]
