@@ -119,6 +119,19 @@ data "aws_iam_policy_document" "ci_policy_doc" {
     ]
   }
 
+  # Allow CI to create and update Secrets Manager secrets used during bootstrap and workflow runs
+  statement {
+    actions = [
+      "secretsmanager:CreateSecret",
+      "secretsmanager:PutSecretValue",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:ListSecretVersionIds"
+    ]
+    resources = [
+      "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:*"
+    ]
+  }
+
   # Allow KMS decrypt / data key generation for keys used to encrypt secrets/state
   statement {
     actions = ["kms:Decrypt", "kms:GenerateDataKey"]
