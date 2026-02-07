@@ -151,15 +151,24 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "route53:ListHostedZonesByName",
       "route53:ListResourceRecordSets",
       "route53:GetHostedZone",
+      "route53:ListTagsForResource",
       "ec2:DescribeVpcs",
+      "ec2:DescribeVpcAttribute",
       "ec2:DescribeSubnets",
       "ec2:DescribeSecurityGroups",
+      "ec2:DescribeRouteTables",
       "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:ListRoles",
       "rds:DescribeDBParameterGroups",
+      "rds:DescribeDBParameters",
       "rds:DescribeDBInstances",
       "kms:DescribeKey",
+      "kms:GetKeyPolicy",
       "ecr:ListTagsForResource",
-      "events:DescribeRule"
+      "ecr:GetLifecyclePolicy",
+      "events:DescribeRule",
+      "events:ListTagsForResource"
     ]
     resources = ["*"]
   }
