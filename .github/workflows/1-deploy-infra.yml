@@ -215,6 +215,52 @@ jobs:
           echo "TF_VAR_private_app_2b_cidr=${{ vars.PRIVATE_APP_2B_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_path_base=${{ vars.PATH_BASE }}" >> $GITHUB_ENV
 
+      - name: Validate TF vars and required CIDRs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Ensure ecs desired count is numeric; default to 1 if empty
+          if [[ -z "${TF_VAR_ecs_service_desired_count:-}" ]]; then
+            echo "TF_VAR_ecs_service_desired_count is empty; setting default to 1"
+            echo "TF_VAR_ecs_service_desired_count=1" >> $GITHUB_ENV
+          elif ! [[ "$TF_VAR_ecs_service_desired_count" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: TF_VAR_ecs_service_desired_count ('$TF_VAR_ecs_service_desired_count') is not a number"
+            exit 1
+          fi
+
+          # Validate required CIDR variables using pure bash (format + octet/prefix checks)
+          validate_cidr() {
+            local name="$1"
+            local v="${!name:-}"
+            if [[ -z "$v" ]]; then
+              echo "ERROR: $name is empty"
+              return 1
+            fi
+            if [[ ! "$v" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+              echo "ERROR: $name has invalid CIDR '$v' (bad format)"
+              return 1
+            fi
+            IFS='/' read -r ip prefix <<< "$v"
+            IFS='.' read -r o1 o2 o3 o4 <<< "$ip"
+            for o in "$o1" "$o2" "$o3" "$o4"; do
+              if (( o < 0 || o > 255 )); then
+                echo "ERROR: $name has invalid octet in '$v'"
+                return 1
+              fi
+            done
+            if (( prefix < 0 || prefix > 32 )); then
+              echo "ERROR: $name has invalid prefix in '$v'"
+              return 1
+            fi
+            return 0
+          }
+
+          for var in TF_VAR_private_2a_cidr TF_VAR_private_2b_cidr TF_VAR_private_app_2a_cidr TF_VAR_private_app_2b_cidr; do
+            validate_cidr "$var" || exit 1
+          done
+          echo 'CIDR validation passed'
+
       - name: Terraform plan
         run: |
           terraform plan -out=plan.tfplan
