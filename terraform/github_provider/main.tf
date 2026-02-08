@@ -97,6 +97,42 @@ resource "github_actions_environment_variable" "private_subnet_cidr_env" {
   depends_on    = [github_repository_environment.env]
 }
 
+resource "github_actions_environment_variable" "private_2a_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "private_2a_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PRIVATE_2A_CIDR"
+  value         = each.value.private_2a_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "private_2b_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "private_2b_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PRIVATE_2B_CIDR"
+  value         = each.value.private_2b_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "private_app_2a_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "private_app_2a_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PRIVATE_APP_2A_CIDR"
+  value         = each.value.private_app_2a_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "private_app_2b_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "private_app_2b_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PRIVATE_APP_2B_CIDR"
+  value         = each.value.private_app_2b_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
 resource "github_actions_environment_variable" "instance_type_env" {
   for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_ssm_ec2_instance_type", "") != "" }
   repository    = var.repository
