@@ -498,7 +498,7 @@ resource "aws_kms_key" "rds" {
 }
 
 resource "aws_kms_alias" "rds" {
-  name          = "alias/${var.environment}-${var.project_name}-rds"
+  name          = "alias/${var.project_name}-${var.environment}-rds"
   target_key_id = aws_kms_key.rds.key_id
   lifecycle {
     prevent_destroy = true
