@@ -63,6 +63,10 @@ const Cherish = () => {
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     document.title = browserTabName;
   }, [browserTabName]);
 

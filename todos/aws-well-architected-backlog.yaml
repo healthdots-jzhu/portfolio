@@ -1,0 +1,310 @@
+version: 1
+project: portfolio
+source: aws-well-architected-review
+items:
+- id: OPS-1
+  title: Add CloudWatch alarms and dashboards
+  priority: P1
+  pillar: operational-excellence
+  scope:
+  - aws_ecs_service.portfolio_api
+  - aws_lb.main
+  - aws_db_instance.postgres-portfolio
+  - aws_lambda_function.resource_scheduler
+  why: Detect outages and performance regressions early; create shared visibility
+    for operators.
+  how:
+  - Create CloudWatch alarms for ALB 5xx/latency, ECS CPU/memory, RDS CPU/storage,
+    Lambda errors.
+  - Publish alerts to SNS and route to email/Slack.
+  - Build a dashboard with ALB, ECS, RDS, and Lambda widgets.
+  example: 'Terraform: aws_cloudwatch_metric_alarm + aws_cloudwatch_dashboard + aws_sns_topic.'
+  aiPrompt: 'Add CloudWatch alarms + dashboard + SNS notifications for ALB/ECS/RDS/Lambda.
+    Use Terraform in this repo. Suggested new file: `terraform/monitoring.tf`. Reference
+    resources in `terraform/ecs.tf` (ECS service/log group/ALB) and `terraform/main.tf`
+    (RDS, Lambda). Create `aws_sns_topic` + `aws_sns_topic_subscription` (email).
+    Add `aws_cloudwatch_metric_alarm` for ALB 5xx and TargetResponseTime, ECS CPU/Memory
+    (ContainerInsights), RDS CPUUtilization + FreeStorageSpace, Lambda Errors/Throttles.
+    Add `aws_cloudwatch_dashboard` aggregating these. Keep tags consistent with existing
+    `default_tags`.'
+- id: OPS-2
+  title: Enable ECS service auto-scaling
+  priority: P1
+  pillar: operational-excellence
+  scope:
+  - aws_ecs_service.portfolio_api
+  why: Prevents saturation and reduces manual intervention during traffic spikes.
+  how:
+  - Define Application Auto Scaling target for ECS service.
+  - Add target tracking policies (CPU or ALB request count).
+  - Set min/max capacity per environment.
+  example: Use aws_appautoscaling_target + aws_appautoscaling_policy.
+  aiPrompt: Implement ECS service auto-scaling for `aws_ecs_service.portfolio_api`
+    in `terraform/ecs.tf` using `aws_appautoscaling_target` and `aws_appautoscaling_policy`
+    (target tracking on CPU or ALB RequestCountPerTarget). Put in new file `terraform/ecs_autoscaling.tf`.
+    Use variables for min/max capacity and per-environment values (see `terraform/ecs_variables.tf`
+    and `terraform/terraform.tfvars`).
+- id: OPS-3
+  title: Add ALB access logs to S3 with retention
+  priority: P2
+  pillar: operational-excellence
+  scope:
+  - aws_lb.main
+  - aws_s3_bucket.*
+  why: Enables troubleshooting, traffic analysis, and audit trails.
+  how:
+  - Create an S3 logs bucket with server-side encryption.
+  - Enable ALB access logging to the bucket.
+  - Add S3 lifecycle rules for retention.
+  example: aws_lb access_logs block + aws_s3_bucket_lifecycle_configuration.
+  aiPrompt: Enable ALB access logs to S3. Create a logs bucket resource in Terraform
+    (new `terraform/logs.tf`) with encryption + lifecycle rules. Update `aws_lb.main`
+    in `terraform/ecs.tf` to add `access_logs` block. Add bucket policy allowing ALB
+    to write logs. Ensure retention lifecycle is set. Follow existing tag conventions
+    in `terraform/main.tf`.
+- id: OPS-4
+  title: Add ECS deployment circuit breaker and rollback
+  priority: P2
+  pillar: operational-excellence
+  scope:
+  - aws_ecs_service.portfolio_api
+  why: Automatically rolls back failed deployments to reduce downtime.
+  how:
+  - Enable deploymentCircuitBreaker in ECS service.
+  - Set rollback=true.
+  example: deployment_circuit_breaker { enable = true, rollback = true }
+  aiPrompt: Add ECS deployment circuit breaker and rollback. Modify `aws_ecs_service.portfolio_api`
+    in `terraform/ecs.tf` to include `deployment_circuit_breaker { enable = true,
+    rollback = true }`. Ensure no other behavior changes.
+- id: SEC-1
+  title: Add AWS WAF for ALB
+  priority: P1
+  pillar: security
+  scope:
+  - aws_lb.main
+  - aws_wafv2_web_acl.*
+  why: Protects against common web exploits and bots.
+  how:
+  - Create a WAFv2 web ACL with AWS Managed Rules.
+  - Associate the ACL to the ALB.
+  - Enable WAF logging.
+  example: aws_wafv2_web_acl + aws_wafv2_web_acl_association.
+  aiPrompt: Add AWS WAFv2 for the ALB. Create `aws_wafv2_web_acl` with AWS Managed
+    Rules (CommonRuleSet) and associate it to `aws_lb.main` using `aws_wafv2_web_acl_association`.
+    Place in new file `terraform/waf.tf`. Optionally add WAF logging to CloudWatch.
+    Keep tags consistent.
+- id: SEC-2
+  title: Restrict ECS/EC2 outbound traffic
+  priority: P2
+  pillar: security
+  scope:
+  - aws_security_group.ecs_tasks
+  - aws_security_group.ec2
+  - aws_security_group.vpc_endpoints
+  why: Limits blast radius and prevents unintended data exfiltration.
+  how:
+  - Replace 0.0.0.0/0 egress with endpoint SGs and required CIDRs.
+  - Allow only ports used (443, 5432).
+  example: Use aws_security_group_rule with specific SG or prefix list.
+  aiPrompt: Restrict outbound traffic for `aws_security_group.ecs_tasks` (in `terraform/ecs.tf`)
+    and `aws_security_group.ec2` (in `terraform/main.tf`). Replace 0.0.0.0/0 egress
+    with specific destination SGs (e.g., VPC endpoint SG `aws_security_group.vpc_endpoints`)
+    and required ports (443 for AWS services, 5432 for RDS). Ensure ECS still reaches
+    ECR/Secrets/STS/S3 via VPC endpoints in `terraform/main.tf`.
+- id: SEC-3
+  title: Enforce least-privilege on ECS task role and EC2 role
+  priority: P1
+  pillar: security
+  scope:
+  - aws_iam_role.ecs_task
+  - aws_iam_role.ec2_ssm_role
+  why: Reduces risk of lateral movement or over-privileged access.
+  how:
+  - Audit policies for wildcard Resource or Action.
+  - Scope S3/SSM to exact ARNs per environment.
+  example: Replace Resource='*' with specific ARNs in IAM policy.
+  aiPrompt: Audit IAM policies for least privilege. In `terraform/ecs.tf`, review
+    `aws_iam_role_policy.ecs_task_permissions` and `aws_iam_role_policy.ecs_secrets_access`
+    to scope Resource ARNs as tightly as possible. In `terraform/main.tf`, review
+    `aws_iam_role.ec2_ssm_role` attachments. Update policies to avoid wildcard where
+    feasible while keeping functionality.
+- id: SEC-4
+  title: Rotate Secrets Manager credentials
+  priority: P2
+  pillar: security
+  scope:
+  - aws_secretsmanager_secret.postgres_connection
+  - aws_secretsmanager_secret.github_models_api_token
+  why: Limits exposure time of compromised credentials.
+  how:
+  - Enable Secrets Manager rotation for DB secrets.
+  - Define rotation Lambda or documented manual rotation.
+  example: aws_secretsmanager_secret_rotation + rotation Lambda.
+  aiPrompt: Implement Secrets Manager rotation for DB connection secret. Decide whether
+    to rotate the RDS-managed secret (from `manage_master_user_password`) or the custom
+    `aws_secretsmanager_secret.postgres_connection` in `terraform/ecs.tf`. If custom,
+    add a rotation Lambda (new `terraform/lambda/rotation.py` + `aws_lambda_function`
+    + `aws_secretsmanager_secret_rotation`). If not, document manual rotation in `SECRETS_MANAGER_SETUP.md`
+    and add a reminder in Terraform comments.
+- id: REL-1
+  title: Ensure Multi-AZ RDS in production
+  priority: P1
+  pillar: reliability
+  scope:
+  - aws_db_instance.postgres-portfolio
+  - var.rds_multi_az
+  why: Provides failover during AZ outages.
+  how:
+  - Set rds_multi_az=true for prod in terraform.tfvars.
+  - Validate RDS instance reports Multi-AZ.
+  example: rds_multi_az = true
+  aiPrompt: Ensure Multi-AZ RDS for production. Update `terraform/terraform.tfvars`
+    to set `rds_multi_az = true` for prod. Verify `aws_db_instance.postgres-portfolio`
+    in `terraform/main.tf` already uses `var.rds_multi_az`.
+- id: REL-2
+  title: Increase ECS desired_count for production
+  priority: P1
+  pillar: reliability
+  scope:
+  - aws_ecs_service.portfolio_api
+  - var.ecs_service_desired_count
+  why: Avoids single-task failure and improves availability.
+  how:
+  - Set desired_count >= 2 for production.
+  - Ensure tasks spread across app subnets.
+  example: ecs_service_desired_count = 2
+  aiPrompt: Increase ECS desired_count for production. Update `terraform/terraform.tfvars`
+    to set `ecs_service_desired_count >= 2` for prod. Ensure ECS service uses that
+    variable in `terraform/ecs.tf`.
+- id: REL-3
+  title: Enable RDS deletion protection and backups
+  priority: P1
+  pillar: reliability
+  scope:
+  - aws_db_instance.postgres-portfolio
+  - var.rds_backup_retention_period
+  why: Prevents accidental deletion and enables recovery.
+  how:
+  - Enable deletion_protection.
+  - Set backup_retention_period >= 7 days in prod.
+  example: deletion_protection = true
+  aiPrompt: Enable RDS deletion protection and backups. Add `deletion_protection =
+    true` to `aws_db_instance.postgres-portfolio` in `terraform/main.tf` (guarded
+    by a new variable, e.g., `var.rds_deletion_protection`). Ensure `var.rds_backup_retention_period`
+    is >= 7 in prod `terraform.tfvars`.
+- id: REL-4
+  title: Remove single-EC2 dependency or make it HA
+  priority: P2
+  pillar: reliability
+  scope:
+  - aws_instance.main
+  why: Single EC2 instance is a single point of failure.
+  how:
+  - Replace with SSM Session Manager without EC2, or
+  - Move to an Auto Scaling Group across AZs.
+  example: Use SSM port forwarding or ASG + Launch Template.
+  aiPrompt: Remove single-EC2 dependency or make it HA. Review `aws_instance.main`
+    usage in `terraform/main.tf` (used for DB admin/SSM). Prefer removing it and using
+    SSM Session Manager without a dedicated instance. If still needed, move to Auto
+    Scaling Group across AZs (new launch template + ASG). Update docs to reflect the
+    change.
+- id: PERF-1
+  title: Consider ARM/Graviton for ECS tasks
+  priority: P2
+  pillar: performance-efficiency
+  scope:
+  - aws_ecs_task_definition.portfolio_api
+  why: Lower cost and better price/performance for many workloads.
+  how:
+  - Build ARM64 container image.
+  - Update task definition runtime platform.
+  example: runtime_platform { cpu_architecture = "ARM64" }
+  aiPrompt: Move ECS tasks to ARM64/Graviton. Update `aws_ecs_task_definition.portfolio_api`
+    in `terraform/ecs.tf` with `runtime_platform { cpu_architecture = "ARM64" }`.
+    Update CI workflow `.github/workflows/2-backend-build-and-push.yml` to build/push
+    ARM64 or multi-arch images (docker buildx). Ensure ECR images are ARM64-compatible.
+- id: PERF-2
+  title: Tune ECS CPU/memory based on load tests
+  priority: P2
+  pillar: performance-efficiency
+  scope:
+  - var.ecs_task_cpu
+  - var.ecs_task_memory
+  why: Avoids throttling and over-provisioning.
+  how:
+  - Run load tests and inspect CPU/memory metrics.
+  - Adjust task size and autoscaling thresholds.
+  example: ecs_task_cpu = "512", ecs_task_memory = "1024"
+  aiPrompt: Right-size ECS CPU/memory. Update defaults in `terraform/ecs_variables.tf`
+    and per-env values in `terraform/terraform.tfvars` based on load tests. Ensure
+    task definition uses these vars in `terraform/ecs.tf`.
+- id: COST-1
+  title: Add ECS scheduled scaling (optional)
+  priority: P3
+  pillar: cost-optimization
+  scope:
+  - aws_ecs_service.portfolio_api
+  why: Reduce cost during predictable low-traffic hours.
+  how:
+  - Create scheduled scaling actions via Application Auto Scaling.
+  example: aws_appautoscaling_scheduled_action
+  aiPrompt: Add ECS scheduled scaling for off-hours. Use `aws_appautoscaling_scheduled_action`
+    tied to the ECS autoscaling target (see OPS-2). Put into `terraform/ecs_autoscaling.tf`.
+    Configure schedules for non-prod environments.
+- id: COST-2
+  title: Add S3 lifecycle policies (assets/logs)
+  priority: P2
+  pillar: cost-optimization
+  scope:
+  - aws_s3_bucket.*
+  why: Reduce storage cost and keep logs manageable.
+  how:
+  - Add transition to IA/Glacier and expiration rules.
+  example: aws_s3_bucket_lifecycle_configuration
+  aiPrompt: Add S3 lifecycle policies for assets/logs. If frontend bucket is managed
+    in Terraform, create `aws_s3_bucket_lifecycle_configuration` (new `terraform/s3_frontend.tf`).
+    Otherwise, update `portfolio-frontend/deployment-guide.md` with the exact lifecycle
+    rules to configure manually.
+- id: COST-3
+  title: Evaluate Savings Plans for ECS/RDS
+  priority: P3
+  pillar: cost-optimization
+  scope:
+  - aws_ecs_service.portfolio_api
+  - aws_db_instance.postgres-portfolio
+  why: Reduce recurring costs for steady workloads.
+  how:
+  - Review usage in Cost Explorer.
+  - Purchase Savings Plans if utilization is steady.
+  example: 'Ops task: review monthly spend and usage patterns.'
+  aiPrompt: Document Savings Plans evaluation. Add a short section to a docs file
+    (e.g., `PORTFOLIO_SYSTEM_SUMMARY.md` or new `docs/cost-optimization.md`) with
+    steps to review usage and decide on Savings Plans. No Terraform change required.
+- id: SUST-1
+  title: Enable autoscaling to avoid idle capacity
+  priority: P2
+  pillar: sustainability
+  scope:
+  - aws_ecs_service.portfolio_api
+  why: Minimizes wasted compute and energy.
+  how:
+  - Use target tracking scaling on CPU or requests.
+  example: aws_appautoscaling_policy with target tracking.
+  aiPrompt: Enable autoscaling to reduce idle capacity (reuse OPS-2). Ensure ECS autoscaling
+    exists and is active in non-prod/prod. If already added, document the policy in
+    `PORTFOLIO_SYSTEM_SUMMARY.md`.
+- id: SUST-2
+  title: Set minimal log retention periods
+  priority: P3
+  pillar: sustainability
+  scope:
+  - aws_cloudwatch_log_group.ecs_tasks
+  - aws_cloudwatch_log_group.lambda_scheduler
+  why: Reduces storage and operational overhead.
+  how:
+  - Lower retention in non-prod; keep prod at required levels.
+  example: retention_in_days = 7 (non-prod)
+  aiPrompt: Parameterize CloudWatch log retention. Add variables for log retention
+    in `terraform/ecs_variables.tf` / `terraform/variables.tf` and use them in `aws_cloudwatch_log_group.ecs_tasks`
+    (ecs.tf) and `aws_cloudwatch_log_group.lambda_scheduler` (main.tf). Set shorter
+    retention in non-prod via tfvars.

@@ -6,6 +6,8 @@ using Microsoft.OpenApi.Models;
 using Portfolio.Api.Data;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
+using Amazon.Runtime;
+using Amazon.Runtime.CredentialManagement;
 using System.IdentityModel.Tokens.Jwt;
 
 // Prevent claim type mapping (keep "sub" as "sub", not transform to ClaimTypes.NameIdentifier)
@@ -13,7 +15,9 @@ JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("Postgres")
+// Prefer explicit environment variable `ConnectionStrings__Postgres` when present (runtime secrets injection)
+var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__Postgres")
+    ?? builder.Configuration.GetConnectionString("Postgres")
     ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
 
 builder.Services.AddCors(options =>
@@ -63,10 +67,46 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-// Register AWS clients (region from config)
-var awsRegion = builder.Configuration["Aws:Region"] ?? "us-east-1";
-builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(new Amazon.S3.AmazonS3Client(Amazon.RegionEndpoint.GetBySystemName(awsRegion)));
-builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(new AmazonSimpleSystemsManagementClient(Amazon.RegionEndpoint.GetBySystemName(awsRegion)));
+// Register AWS clients. Pick up region from configuration if provided so clients can be constructed
+// with a RegionEndpoint to avoid runtime errors when no default region is present in the environment.
+// Ensure the SDK will load profiles from shared config (supports SSO profiles)
+Environment.SetEnvironmentVariable("AWS_SDK_LOAD_CONFIG", "1");
+
+var awsRegionName = builder.Configuration["Aws:Region"];
+var awsProfileName = builder.Configuration["Aws:Profile"] ?? Environment.GetEnvironmentVariable("AWS_PROFILE");
+Amazon.RegionEndpoint? awsRegion = null;
+if (!string.IsNullOrWhiteSpace(awsRegionName))
+{
+    awsRegion = Amazon.RegionEndpoint.GetBySystemName(awsRegionName);
+}
+
+AWSCredentials? awsCredentials = null;
+if (!string.IsNullOrWhiteSpace(awsProfileName))
+{
+    try
+    {
+        var chain = new CredentialProfileStoreChain();
+        if (chain.TryGetAWSCredentials(awsProfileName, out var resolved))
+        {
+            awsCredentials = resolved;
+        }
+    }
+    catch
+    {
+        // If profile lookup fails, leave credentials null so the SDK falls back to other sources.
+    }
+}
+
+var s3Client = awsCredentials is not null
+    ? (awsRegion is not null ? new Amazon.S3.AmazonS3Client(awsCredentials, awsRegion) : new Amazon.S3.AmazonS3Client(awsCredentials))
+    : (awsRegion is not null ? new Amazon.S3.AmazonS3Client(awsRegion) : new Amazon.S3.AmazonS3Client());
+
+var ssmClient = awsCredentials is not null
+    ? (awsRegion is not null ? new AmazonSimpleSystemsManagementClient(awsCredentials, awsRegion) : new AmazonSimpleSystemsManagementClient(awsCredentials))
+    : (awsRegion is not null ? new AmazonSimpleSystemsManagementClient(awsRegion) : new AmazonSimpleSystemsManagementClient());
+
+builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(s3Client);
+builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(ssmClient);
 builder.Services.AddScoped<Portfolio.Api.Services.IS3Service, Portfolio.Api.Services.S3Service>();
 
 // Register ShortIdGenerator for Portfolio ID generation; prefer Parameter Store salt if configured
@@ -106,6 +146,38 @@ builder.Services.AddSingleton<Portfolio.Api.Services.IShortIdGenerator>(sp =>
     return new Portfolio.Api.Services.ShortIdGenerator(salt, logger);
 });
 builder.Services.AddScoped<Portfolio.Api.Services.ICurrentUserProvider, Portfolio.Api.Services.CurrentUserProvider>();
+builder.Services.AddScoped<Portfolio.Api.Services.IVersionService, Portfolio.Api.Services.VersionService>();
+builder.Services.AddScoped<Portfolio.Api.Services.ILocaleValidator, Portfolio.Api.Services.LocaleValidator>();
+
+// GitHub Models service registration: prefer env var for API token (runtime secrets injection)
+var gitHubModelsApiToken = Environment.GetEnvironmentVariable("GitHubModels__ApiToken")
+    ?? builder.Configuration["GitHubModels:ApiToken"];
+
+// Register a named HttpClient with a retry handler and scoped service that uses IHttpClientFactory.
+builder.Services.AddTransient<Portfolio.Api.Services.GitHubModelsRetryHandler>();
+// Named client "GitHubModels" centralizes default headers, base address and timeout.
+builder.Services.AddHttpClient("GitHubModels", client =>
+{
+    var baseUrl = builder.Configuration["GitHubModels:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        try { client.BaseAddress = new Uri(baseUrl); } catch { }
+    }
+    // Default headers common to GitHub Models / inference hosts
+    try { client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json"); } catch { }
+    try { client.DefaultRequestHeaders.UserAgent.ParseAdd("Portfolio.Api/1.0"); } catch { }
+    
+    // Add Authorization header if token is present
+    if (!string.IsNullOrWhiteSpace(gitHubModelsApiToken))
+    {
+        try { client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", gitHubModelsApiToken); } catch { }
+    }
+    
+    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 30));
+})
+.AddHttpMessageHandler<Portfolio.Api.Services.GitHubModelsRetryHandler>();
+
+builder.Services.AddScoped<Portfolio.Api.Services.IGitHubModelsService, Portfolio.Api.Services.GitHubModelsService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -145,13 +217,48 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Log credential resolution for easier debugging in dev
+try
+{
+    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+    startupLogger.LogInformation("Aws:Region={Region}, Aws:Profile={Profile}, CredentialsResolved={Resolved}", awsRegionName ?? "(none)", awsProfileName ?? "(none)", awsCredentials is not null);
+}
+catch
+{
+    // swallow logging errors during startup diagnostic logging
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Configure forwarded headers for running behind a proxy (ALB/CloudFront)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
+// Respect a path base injected by the ALB (e.g. "/portfolio-beta/content") so existing controllers
+// with routes like "api/[controller]" continue to work without changes.
+var pathBase = Environment.GetEnvironmentVariable("PATH_BASE") ?? app.Configuration["PathBase"];
+if (!string.IsNullOrEmpty(pathBase))
+{
+    try
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Setting PathBase to {PathBase}", pathBase);
+    }
+    catch { }
+
+    app.UsePathBase(new Microsoft.AspNetCore.Http.PathString(pathBase));
+}
+
 app.UseHttpsRedirection();
+
+// Enable routing before applying CORS so the CORS middleware can run with endpoint routing
+app.UseRouting();
 
 app.UseCors("AppCors");
 

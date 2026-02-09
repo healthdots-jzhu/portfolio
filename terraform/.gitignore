@@ -24,3 +24,6 @@ Thumbs.db
 .env.local
 *.pem
 *.key
+
+# Lambda deployment packages
+lambda/*.zip

@@ -1,0 +1,1 @@
+{"statusCode": 200, "body": "{\"action\": \"start\", \"ec2\": {\"instance_id\": \"i-033cb58cea4ce4dfc\", \"previous_state\": \"stopped\", \"action\": \"started\", \"status\": \"success\"}, \"rds\": {\"instance_id\": \"healthdots-postgres-20260109164746330200000002\", \"state\": \"stopping\", \"action\": \"skipped\", \"status\": \"not_stopped_stopping\"}}"}

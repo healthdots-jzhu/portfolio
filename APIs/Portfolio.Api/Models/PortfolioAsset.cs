@@ -5,6 +5,7 @@ namespace Portfolio.Api.Models;
 
 public class PortfolioAsset
 {
+    public long FileSize { get; set; }
     public Guid Id { get; set; }
 
     [MaxLength(6)]
@@ -15,12 +16,6 @@ public class PortfolioAsset
 
     [MaxLength(255)]
     public string AssetKey { get; set; } = string.Empty;
-
-    [MaxLength(500)]
-    public string S3Url { get; set; } = string.Empty;
-
-    [MaxLength(500)]
-    public string CloudFrontUrl { get; set; } = string.Empty;
 
     [MaxLength(50)]
     public string FileType { get; set; } = string.Empty;

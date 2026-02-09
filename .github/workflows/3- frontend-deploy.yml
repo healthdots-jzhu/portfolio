@@ -1,0 +1,154 @@
+name: Deploy Frontend to S3 and Invalidate CloudFront
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'portfolio-frontend/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment target (staging, beta, prod)'
+        required: false
+        default: 'beta'
+        type: choice
+        options:
+          - staging
+          - beta
+          - prod
+      cloudfront_distribution_id:
+        description: 'Optional: CloudFront distribution ID to store as env-scoped secret'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: "${{ github.event_name == 'push' && 'beta' || github.event.inputs.environment }}"
+    env:
+      AWS_REGION: ca-central-1
+      S3_BUCKET: ${{ vars.S3_BUCKET_FRONTEND }}
+      ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Determine DEPLOY_ENV
+        id: determine-env
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "DEPLOY_ENV=beta" >> $GITHUB_ENV
+          else
+            echo "DEPLOY_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          fi
+
+      - name: Optionally update environment secret
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ secrets.PROVISION_GITHUB_TOKEN }}
+          CLOUDFRONT_DISTRIBUTION_ID_INPUT: ${{ github.event.inputs.cloudfront_distribution_id }}
+        run: |
+          if [ -n "${CLOUDFRONT_DISTRIBUTION_ID_INPUT}" ]; then
+            if [ -z "${GH_TOKEN:-}" ]; then
+              echo "ERROR: PROVISION_GITHUB_TOKEN is required to create/update environment secrets." >&2
+              exit 1
+            fi
+            gh secret set CLOUDFRONT_DISTRIBUTION_ID --env "${DEPLOY_ENV}" --body "${CLOUDFRONT_DISTRIBUTION_ID_INPUT}"
+          fi
+
+      # Secrets/vars are mapped into the job `env:` block above so shell steps can use $ROLE_ARN, $S3_BUCKET, $CLOUDFRONT_DISTRIBUTION_ID
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: portfolio-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: portfolio-frontend
+        run: npm ci
+
+      - name: Validate CloudFront distribution ID is set
+        env:
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          if [ -z "${CLOUDFRONT_DISTRIBUTION_ID:-}" ]; then
+            echo "ERROR: CLOUDFRONT_DISTRIBUTION_ID is not set in the selected GitHub Environment." >&2
+            exit 1
+          fi
+
+      - name: Write production environment file (safe upsert)
+        working-directory: portfolio-frontend
+        env:
+          DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          touch .env.production
+          python3 - <<'PY'
+          import os, re, pathlib
+
+          p = pathlib.Path('.env.production')
+          lines = p.read_text().splitlines() if p.exists() else []
+
+          def set_key(lines, key, val):
+              pat = re.compile(r'^' + re.escape(key) + r'=')
+              for i, l in enumerate(lines):
+                  if pat.match(l):
+                      lines[i] = f"{key}={val}"
+                      return lines
+              lines.append(f"{key}={val}")
+              return lines
+
+          lines = set_key(lines, 'VITE_API_URL', f"https://api.healthdots.net/portfolio-{os.environ.get('DEPLOY_ENV')}/content")
+          lines = set_key(lines, 'VITE_CDN_URL', f"https://{os.environ.get('CLOUDFRONT_DISTRIBUTION_ID')}.cloudfront.net")
+
+          p.write_text('\n'.join(lines) + ('\n' if lines else ''))
+          PY
+
+      - name: Build
+        working-directory: portfolio-frontend
+        run: npm run build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5.1.1
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
+
+      - name: Validate S3_BUCKET is set
+        run: |
+          if [ -z "${S3_BUCKET:-}" ]; then
+            echo "ERROR: S3_BUCKET is not set. Provide S3_BUCKET as an environment variable in the selected GitHub Environment." >&2
+            exit 1
+          fi
+
+      - name: Sync build to S3
+        run: |
+          aws s3 sync ./portfolio-frontend/dist s3://${S3_BUCKET} \
+            --delete \
+            --cache-control "public, max-age=31536000" \
+            --exclude "index.html" && \
+          aws s3 cp ./portfolio-frontend/dist/index.html s3://${S3_BUCKET}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} \
+            --paths "/*"
+
+      - name: Post-deploy output
+        run: |
+          echo "Deployed to S3: s3://${S3_BUCKET}";
+          echo "CloudFront Distribution: ${CLOUDFRONT_DISTRIBUTION_ID}"

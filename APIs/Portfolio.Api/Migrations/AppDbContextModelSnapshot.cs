@@ -87,13 +87,11 @@ namespace Portfolio.Api.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<string>("CloudFrontUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("FileType")
                         .IsRequired()
@@ -104,11 +102,6 @@ namespace Portfolio.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(6)
                         .HasColumnType("character varying(6)");
-
-                    b.Property<string>("S3Url")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
 
                     b.HasKey("Id");
 
@@ -126,7 +119,7 @@ namespace Portfolio.Api.Migrations
 
                     b.Property<string>("ContentJson")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasColumnType("text");
 
                     b.Property<string>("Language")
                         .IsRequired()
@@ -147,6 +140,72 @@ namespace Portfolio.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("PortfolioLocales");
+                });
+
+            modelBuilder.Entity("Portfolio.Api.Models.PortfolioVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChangeDescription")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsCurrentPublished")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LocaleSnapshot")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<string>("PortfolioId")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("PublishedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("PortfolioId", "IsCurrentPublished");
+
+                    b.HasIndex("PortfolioId", "Status");
+
+                    b.HasIndex("PortfolioId", "VersionNumber")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "PortfolioId", "VersionNumber" }, "IX_PortfolioVersions_PortfolioId_VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("PortfolioVersions");
                 });
 
             modelBuilder.Entity("Portfolio.Api.Models.User", b =>
@@ -223,6 +282,25 @@ namespace Portfolio.Api.Migrations
                         .HasForeignKey("PortfolioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Portfolio");
+                });
+
+            modelBuilder.Entity("Portfolio.Api.Models.PortfolioVersion", b =>
+                {
+                    b.HasOne("Portfolio.Api.Models.User", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Portfolio.Api.Models.Portfolio", "Portfolio")
+                        .WithMany()
+                        .HasForeignKey("PortfolioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
 
                     b.Navigation("Portfolio");
                 });

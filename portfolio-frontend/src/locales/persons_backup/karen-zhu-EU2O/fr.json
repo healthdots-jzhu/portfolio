@@ -1,0 +1,90 @@
+{
+  "common": {
+    "siteName": "Karen Zhu",
+    "baseTitle": "Karen Zhu",
+    "nav": [
+      {
+        "label": "Marketing",
+        "path": "specialties"
+      },
+      {
+        "label": "À Propos de Moi",
+        "path": "about"
+      }
+    ],
+    "languageLabel": "Langue",
+    "languages": {
+      "en": "English",
+      "fr": "Français"
+    },
+    "toggleNavMenu": "Basculer le menu de navigation",
+    "footer": "© 2026 Karen Zhu | Marketing des médias sociaux",
+    "showcases": [
+      {
+        "title": "Club du Pain et des Petits Pains",
+        "subtitle": "Une expérience confortable de café conçue du concept à la réalité",
+        "cta_label": "Voir Plus",
+        "cta_url": "https://example.com",
+        "carouselImages": [
+          {
+            "imageSrc": "/img/{person_id}/showcase1_carousel_1.png",
+            "imageAlt": "Vue extérieure du Club du Pain et des Petits Pains"
+          },
+          {
+            "imageSrc": "/img/{person_id}/showcase1_carousel_2.png",
+            "imageAlt": "Zone de sièges intérieures du Club du Pain et des Petits Pains"
+          },
+          {
+            "imageSrc": "/img/{person_id}/showcase1_carousel_3.png",
+            "imageAlt": "Présentation du menu du Club du Pain et des Petits Pains"
+          }
+        ],
+        "features": [
+          {
+            "title": "Identité de Marque",
+            "description": "J'ai créé une identité de marque chaleureuse et accueillante avec une palette de couleurs cohérente et un logo qui reflète les valeurs du café de confort et de communauté. Le design souligne la nature artisanale des produits de boulangerie frais."
+          },
+          {
+            "title": "Design d'Intérieur",
+            "description": "J'ai collaboré sur la mise en page intérieure du café et l'esthétique, en veillant à ce que l'espace favorise une atmosphère accueillante pour que les clients se détendent et apprécient leur expérience."
+          },
+          {
+            "title": "Matériel de Marketing",
+            "description": "J'ai conçu des supports marketing complets incluant des cartes de visite, des dépliants et des graphiques de réseaux sociaux pour lancer le café et construire une notoriété de marque initiale dans la communauté locale."
+          },
+          {
+            "title": "Stratégie Réseaux Sociaux",
+            "description": "J'ai développé et exécuté une stratégie de marketing sur les réseaux sociaux pour développer la présence en ligne du café et s'engager avec les clients grâce à des publications régulières et des interactions communautaires."
+          }
+        ],
+        "stories": [
+          {
+            "title": "Du Concept au Lancement",
+            "subtitle": "Le Parcours de la Création du Club du Pain et des Petits Pains",
+            "description": "Travailler sur ce projet a été incroyablement gratifiant car j'ai pu voir le café se transformer d'une idée en une entreprise prospère. Les propriétaires avaient une vision claire mais avaient besoin d'aide pour la traduire en designs visuels et en stratégie marketing.",
+            "images": [
+              {
+                "imageSrc": "/img/{person_id}/showcase1_story1_1.png",
+                "imageAlt": "Croquis initiaux et session de brainstorming"
+              },
+              {
+                "imageSrc": "/img/{person_id}/showcase1_story1_2.png",
+                "imageAlt": "Maquettes de conception finales et directives de marque"
+              }
+            ],
+            "footer": "Cette expérience m'a enseigné l'importance de comprendre la vision du client et de la traduire en solutions de conception pratiques et belles qui résonnent avec leur public cible."
+          }
+        ]
+      }
+    ]
+  },
+  "theme": {
+    "fontFamily": "Poppins"
+  },
+  "home": {
+    "hero": {
+      "title": "Karen Zhu",
+      "subtitle": "Étudiante | Designer | Marketeur | Artiste"
+    }
+  }
+}

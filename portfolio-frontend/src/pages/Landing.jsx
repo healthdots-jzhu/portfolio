@@ -1,50 +1,131 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getAuthConfig, getAccessToken, clearTokens } from '../services/authService';
+import { useAppLocale } from '../hooks/useAppLocale';
 import '../App.css';
 import './Landing.css';
 
 const Landing = () => {
+  const [authUrl, setAuthUrl] = useState(null);
+  const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const locale = useAppLocale();
+
+  useEffect(() => {
+    const checkAuthAndLoadUrl = async () => {
+      // Check if user is authenticated
+      const token = getAccessToken();
+      setIsAuthenticated(!!token);
+
+      // Always load auth URL for the Register button
+      try {
+        const config = await getAuthConfig();
+        
+        // Store the current URL for redirect after auth
+        sessionStorage.setItem('preAuthUrl', window.location.href);
+        
+        // Build the Cognito authorization URL
+        const params = new URLSearchParams({
+          client_id: config.clientId,
+          response_type: 'code',
+          scope: 'email openid phone',
+          redirect_uri: config.redirectUri
+        });
+        setAuthUrl(`https://${config.domain}/oauth2/authorize?${params.toString()}`);
+      } catch (err) {
+        console.error('Failed to load auth config:', err);
+        setError(err.message);
+      }
+    };
+
+    checkAuthAndLoadUrl();
+  }, []);
+
+  const handleLogout = () => {
+    clearTokens();
+    window.location.href = '/';
+  };
+
   return (
     <div className="landing-container">
       <nav className="navbar">
-        <Link to="/" className="navbar-logo">HealthDots Portfolios</Link>
+        <Link to="/" className="navbar-logo">{locale.landing.siteTitle}</Link>
         <div className="navbar-controls"></div>
+        <div className="navbar-right">
+          {isAuthenticated ? (
+            <button className="login-button" onClick={handleLogout}>
+              {locale.nav.logout}
+            </button>
+          ) : authUrl ? (
+            <a href={authUrl} className="login-button">
+              {locale.nav.login}
+            </a>
+          ) : (
+            <span className="login-button" style={{ cursor: 'wait', opacity: 0.6 }}>
+              {locale.landing.loading}
+            </span>
+          )}
+        </div>
       </nav>
 
       <main className="landing-main">
         <section className="landing-hero">
           <div className="hero-content">
-            <h1>Welcome to HealthDots Portfolios</h1>
-            <p className="hero-subtitle">Showcase Your Unique Story</p>
+            <h1 data-testid="landing-hero-title">{locale.landing.heroTitle}</h1>
+            <p className="hero-subtitle">{locale.landing.heroSubtitle}</p>
             <p className="hero-description">
-              Create a beautiful, personalized portfolio site powered by HealthDots. 
-              Share your projects, experiences, and passion with the world.
+              {locale.landing.heroDescription}
             </p>
             <div className="cta-buttons">
-              <button className="cta-primary">Register Your Portfolio</button>
-              <button className="cta-secondary">Learn More</button>
+              {isAuthenticated ? (
+                <>
+                  <Link to="/portfolios" className="cta-primary" data-testid="landing-cta-primary">
+                    {locale.landing.managePortfolios}
+                  </Link>
+                  <button className="cta-secondary">{locale.landing.learnMore}</button>
+                </>
+              ) : error ? (
+                <>
+                  <button className="cta-primary" data-testid="landing-cta-primary" disabled title="Error loading auth config">{locale.landing.registerPortfolio}</button>
+                  <button className="cta-secondary">{locale.landing.learnMore}</button>
+                </>
+              ) : authUrl ? (
+                <>
+                  <a href={authUrl} className="cta-primary" data-testid="landing-cta-primary">
+                    {locale.landing.registerPortfolio}
+                  </a>
+                  <button className="cta-secondary">{locale.landing.learnMore}</button>
+                </>
+              ) : (
+                <>
+                  <button className="cta-primary" data-testid="landing-cta-primary" disabled style={{ cursor: 'wait', opacity: 0.7 }}>
+                    {locale.landing.loading}
+                  </button>
+                  <button className="cta-secondary">{locale.landing.learnMore}</button>
+                </>
+              )}
             </div>
           </div>
         </section>
 
         <section className="landing-features">
-          <h2>Why Choose HealthDots Portfolios?</h2>
+          <h2>{locale.landing.featuresTitle}</h2>
           <div className="features-grid">
             <div className="feature-card">
-              <h3>📱 Fully Responsive</h3>
-              <p>Your portfolio looks amazing on every device, from mobile to desktop.</p>
+              <h3>{locale.landing.feature1Title}</h3>
+              <p>{locale.landing.feature1Desc}</p>
             </div>
             <div className="feature-card">
-              <h3>🌍 Multi-Language Support</h3>
-              <p>Reach a global audience by presenting your work in multiple languages.</p>
+              <h3>{locale.landing.feature2Title}</h3>
+              <p>{locale.landing.feature2Desc}</p>
             </div>
             <div className="feature-card">
-              <h3>🎨 Customizable Design</h3>
-              <p>Express your unique style with flexible, modern design templates.</p>
+              <h3>{locale.landing.feature3Title}</h3>
+              <p>{locale.landing.feature3Desc}</p>
             </div>
             <div className="feature-card">
-              <h3>⚡ Fast & Reliable</h3>
-              <p>Built on modern technology for optimal performance and reliability.</p>
+              <h3>{locale.landing.feature4Title}</h3>
+              <p>{locale.landing.feature4Desc}</p>
             </div>
           </div>
         </section>
@@ -52,11 +133,11 @@ const Landing = () => {
 
       <footer className="landing-footer">
         <div className="footer-links">
-          <Link to="/privacy">Privacy Policy</Link>
+          <Link to="/privacy" data-testid="landing-footer-privacy">{locale.landing.privacyPolicy}</Link>
           <span>•</span>
-          <Link to="/terms">Terms of Use</Link>
+          <Link to="/terms" data-testid="landing-footer-terms">{locale.landing.termsOfUse}</Link>
         </div>
-        <p>&copy; 2026 HealthDots | Empower Your Portfolio</p>
+        <p>{locale.landing.copyright}</p>
       </footer>
     </div>
   );

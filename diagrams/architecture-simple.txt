@@ -1,0 +1,50 @@
++----------------------------------------------------------------------------------+
+|                                   Users                                          |
++----------------------------------------------------------------------------------+
+         |                                    |
+         | HTTPS                              | HTTPS
+         v                                    v
++----------------------+               +--------------------------+
+|  CloudFront CDN      |               |  api.healthdots.net      |
+|  (Frontend SPA)      |               |  (Custom Domain)         |
++----------+-----------+               +------------+-------------+
+           |                                            |
+           | Origin                                     | Route 53 DNS
+           v                                            v
++----------------------+                       +-------------------+
+|  S3 Bucket           |                       |  ALB (HTTPS 443)  |
+|  Static SPA Assets   |                       +---------+---------+
++----------------------+                                 |
+                                                         v
+                                              +---------------------+
+                                              | ECS Fargate Service |
+                                              | Portfolio API       |
+                                              +----------+----------+
+                                                         |
+                                                         v
+                                              +---------------------+
+                                              | RDS PostgreSQL      |
+                                              +---------------------+
+
+                           +-------------------------------------------+
+                           | AWS VPC (ca-central-1, 10.0.0.0/16)        |
+                           | - Public Subnets (ALB)                     |
+                           | - Private App Subnets (ECS)                |
+                           | - Private DB Subnets (RDS)                 |
+                           | - Private EC2 Subnet (SSM)                 |
+                           +-------------------------------------------+
+
+Supporting Services (private access via VPC endpoints)
+- ECR (container images)
+- Secrets Manager (DB + API tokens)
+- SSM Parameter Store (app params / salts)
+- KMS (encryption for RDS + Secrets)
+- VPC Endpoints: Secrets, ECR API/DKR, STS, S3, SSM
+
+Scheduler
+- EventBridge rules -> Lambda Scheduler -> Start/Stop EC2 + RDS
+
+CI/CD (GitHub Actions, OIDC)
+- Frontend build -> S3 deploy -> CloudFront invalidate
+- Backend build -> Push image to ECR
+- Terraform apply -> Provision/Update AWS resources

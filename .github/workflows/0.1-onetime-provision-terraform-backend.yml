@@ -1,0 +1,169 @@
+name: OneTime Provision Terraform Backend for State (S3 + DynamoDB)
+
+on:
+  workflow_dispatch:
+    inputs:
+      provision_AWS_ROLE_ARN_note:
+        description: 'NOTE: create repo secret AWS_ROLE_ARN under Settings → Secrets and variables → Actions → New repository secret before running. This assume role must be created in aws first and have permissions to create S3 buckets and DynamoDB tables. The OIDC trust relationship must also be configured to allow GitHub Actions to assume the role.'
+        required: false
+        default: 'N/A - note only'
+      aws_region:
+        description: "AWS region to deploy backend resources"
+        required: true
+        default: "ca-central-1"
+      bucket_name:
+        description: "Explicit S3 bucket name (must be lowercase, globally unique)"
+        required: true
+      table_name:
+        description: "DynamoDB table name (must be provided)"
+        required: true
+      # removed: sse_algorithm and kms_key_id (not used by terraform/state-init)
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Cache Terraform plugins
+        uses: actions/cache@v5.0.1
+        with:
+          path: ${{ env.HOME }}/.terraform.d/plugin-cache
+          key: terraform-plugin-cache-${{ runner.os }}-${{ inputs.aws_region }}
+          restore-keys: |
+            terraform-plugin-cache-${{ runner.os }}-
+
+      - name: Ensure Terraform plugin cache dir
+        run: |
+          mkdir -p "$RUNNER_TEMP/.terraform.d/plugin-cache"
+        shell: bash
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5.1.1
+        with:
+          aws-region: ${{ inputs.aws_region }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3.1.2
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Fmt (show diffs)
+        working-directory: terraform/state-init
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          echo "Showing terraform fmt diffs (if any)"
+          terraform fmt -diff -recursive || true
+
+      - name: Terraform Fmt (auto-fix)
+        working-directory: terraform/state-init
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          echo "Auto-formatting Terraform files"
+          terraform fmt -recursive
+
+      - name: Terraform Fmt (check)
+        working-directory: terraform/state-init
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          echo "Verifying terraform formatting"
+          terraform fmt -check -recursive
+
+      - name: Terraform Init
+        working-directory: terraform/state-init
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: terraform/state-init
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          terraform validate -no-color
+
+      - name: Pre-check backend resources
+        working-directory: terraform/state-init
+        env:
+          AWS_REGION: ${{ inputs.aws_region }}
+        run: |
+          set -euo pipefail
+          if [ -z "${{ inputs.bucket_name }}" ] || [ -z "${{ inputs.table_name }}" ]; then
+            echo "Error: 'bucket_name' and 'table_name' must be provided to run this workflow safely." >&2
+            exit 1
+          fi
+          BUCKET='${{ inputs.bucket_name }}'
+          TABLE='${{ inputs.table_name }}'
+          echo "Checking S3 bucket '${BUCKET}'..."
+          set +e
+          HB_OUT=$(aws s3api head-bucket --bucket "${BUCKET}" 2>&1)
+          HB_RC=$?
+          set -e
+          if [ $HB_RC -eq 0 ]; then
+            echo "Pre-existing S3 bucket detected: ${BUCKET}. Aborting to avoid accidental reuse/collision." >&2
+            exit 1
+          else
+            # If head-bucket reports Not Found/404, it's safe to proceed; otherwise treat as ambiguous/existing.
+            if echo "$HB_OUT" | grep -qi "not found\|404\|NoSuchBucket"; then
+              echo "S3 bucket ${BUCKET} not found. OK to proceed."
+            else
+              echo "S3 head-bucket returned non-success indicating possible existing or inaccessible bucket:" >&2
+              echo "$HB_OUT" >&2
+              echo "Aborting to avoid accidental reuse/collision." >&2
+              exit 1
+            fi
+          fi
+
+          echo "Checking DynamoDB table '${TABLE}'..."
+          set +e
+          DT_OUT=$(aws dynamodb describe-table --table-name "${TABLE}" 2>&1)
+          DT_RC=$?
+          set -e
+          if [ $DT_RC -eq 0 ]; then
+            echo "Pre-existing DynamoDB table detected: ${TABLE}. Aborting to avoid accidental reuse/collision." >&2
+            exit 1
+          else
+            if echo "$DT_OUT" | grep -qi "ResourceNotFoundException\|not found\|NotFound"; then
+              echo "DynamoDB table ${TABLE} not found. OK to proceed."
+            else
+              echo "DynamoDB describe-table returned non-success indicating possible existing or inaccessible table:" >&2
+              echo "$DT_OUT" >&2
+              echo "Aborting to avoid accidental reuse/collision." >&2
+              exit 1
+            fi
+          fi
+          echo "No pre-existing backend resources detected. Continuing."
+
+      - name: Terraform Plan
+        working-directory: terraform/state-init
+        env:
+          AWS_REGION: ${{ inputs.aws_region }}
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          TF_VAR_aws_region='${{ inputs.aws_region }}' \
+          TF_VAR_bucket_name='${{ inputs.bucket_name }}' \
+          TF_VAR_lock_table_name='${{ inputs.table_name }}' \
+          terraform plan -input=false -out=tfplan
+
+      - name: Terraform Apply (one-time provisioning)
+        working-directory: terraform/state-init
+        env:
+          AWS_REGION: ${{ inputs.aws_region }}
+          TF_PLUGIN_CACHE_DIR: ${{ runner.temp }}/.terraform.d/plugin-cache
+        run: |
+          terraform apply -auto-approve -input=false tfplan
+
+      - name: Show outputs
+        working-directory: terraform/state-init
+        run: |
+          terraform output -json

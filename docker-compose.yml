@@ -1,0 +1,24 @@
+version: '3.9'
+services:
+  api:
+    build:
+      context: ./APIs/Portfolio.Api
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Aws__Profile: ${AWS_PROFILE}
+      # Connection string (preferred override for containers)
+      #ConnectionStrings__Postgres: ${ConnectionStrings__Postgres}
+      # AWS / SSM settings
+      Aws__Region: ${AWS_REGION}
+      AWS_REGION: ${AWS_REGION}
+      AWS_SDK_LOAD_CONFIG: ${AWS_SDK_LOAD_CONFIG:1}
+      #Aws__S3__BucketName: ${AWS_S3_BUCKET}
+      #Hashids__ParameterName: ${HASHIDS_PARAMETER}
+      # Direct AWS credentials (optional; prefer AWS_PROFILE or IAM role)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+    restart: unless-stopped

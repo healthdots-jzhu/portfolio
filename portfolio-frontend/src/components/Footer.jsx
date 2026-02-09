@@ -5,7 +5,7 @@ import './Footer.css';
 const Footer = () => {
   const { t } = useTranslations();
   return (
-    <footer className="footer">
+    <footer className="footer" data-testid="portfolio-footer">
       <p>{t('common.footer')}</p>
     </footer>
   );

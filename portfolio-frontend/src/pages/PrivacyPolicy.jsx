@@ -11,7 +11,7 @@ const PrivacyPolicy = () => {
   const content = language === 'fr' ? privacyPolicyFr : privacyPolicyEn;
 
   return (
-    <div className="legal-page">
+    <div className="legal-page" data-testid="legal-page">
       <nav className="legal-navbar">
         <Link to="/" className="navbar-logo">HealthDots Portfolios</Link>
         <div className="language-selector">
@@ -36,11 +36,11 @@ const PrivacyPolicy = () => {
 
       <footer className="legal-footer">
         <div className="footer-links">
-          <Link to="/privacy">Privacy Policy</Link>
+          <Link to="/privacy" data-testid="legal-footer-privacy">Privacy Policy</Link>
           <span>•</span>
-          <Link to="/terms">Terms of Use</Link>
+          <Link to="/terms" data-testid="legal-footer-terms">Terms of Use</Link>
           <span>•</span>
-          <Link to="/">Home</Link>
+          <Link to="/" data-testid="legal-footer-home">Home</Link>
         </div>
         <p>&copy; 2026 HealthDots Portfolios</p>
       </footer>

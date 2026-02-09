@@ -1,0 +1,103 @@
+{
+  "common": {
+    "siteName": "Jason Zhu",
+    "baseTitle": "Jason Zhu",
+    "nav": [
+      {
+        "label": "Réalisations",
+        "path": "engagements"
+      },
+      {
+        "label": "À propos de moi",
+        "path": "about"
+      }
+    ],
+    "languageLabel": "Langue",
+    "languages": {
+      "en": "English",
+      "fr": "Français",
+      "zh": "中文"
+    },
+    "toggleNavMenu": "Basculer le menu de navigation",
+    "footer": "© 2026 par Jason Zhu | Leader en ingénierie logicielle senior",
+    "showcases": [
+      {
+        "title": "Initiative de Modernisation de la Plateforme",
+        "subtitle": "Direction d'une migration cloud à grande échelle et d'une transformation en microservices",
+        "cta_label": "Voir les Détails",
+        "cta_url": "https://example.com",
+        "carouselImages": [
+          {
+            "imageSrc": "/img/{person_id}/platform_arch_1.png",
+            "imageAlt": "Architecture système héritée"
+          },
+          {
+            "imageSrc": "/img/{person_id}/platform_arch_2.png",
+            "imageAlt": "Architecture moderne basée sur le cloud"
+          },
+          {
+            "imageSrc": "/img/{person_id}/platform_metrics.png",
+            "imageAlt": "Tableau de bord des améliorations de performance"
+          }
+        ],
+        "features": [
+          {
+            "title": "Conception d'Architecture",
+            "description": "J'ai conçu et mis en œuvre une architecture cloud-native moderne et évolutive utilisant les principes des microservices, la containerisation avec Docker/Kubernetes, et les modèles basés sur les événements pour remplacer le système monolithique hérité."
+          },
+          {
+            "title": "Direction d'Équipe",
+            "description": "J'ai dirigé des équipes multidisciplinaires de développeurs, d'architectes et d'ingénieurs DevOps tout au long du processus de migration complexe, en assurant une communication claire et un alignement sur les décisions techniques et les calendriers."
+          },
+          {
+            "title": "Gestion des Risques",
+            "description": "J'ai mis en place des stratégies complètes d'atténuation des risques incluant l'exécution parallèle, les déploiements canary, et les procédures de restauration pour assurer un temps d'arrêt zéro et l'intégrité des données lors de la transition."
+          },
+          {
+            "title": "Optimisation des Performances",
+            "description": "J'ai réalisé une réduction de 60% de la latence, des économies de coûts de 40%, et une disponibilité de 99,99% grâce à des stratégies de mise en cache optimisées, l'équilibrage de charge, et les capacités de mise à l'échelle automatique dans la nouvelle infrastructure cloud."
+          }
+        ],
+        "stories": [
+          {
+            "title": "Le Défi",
+            "subtitle": "Passer du Monolithe aux Microservices",
+            "description": "L'organisation fonctionnait sur une application monolithique vieille de 15 ans qui était devenue de plus en plus difficile à mettre à l'échelle et à maintenir. Le système subissait des pannes fréquentes, avait des cycles de déploiement longs, et ne pouvait pas soutenir les ambitions de croissance de l'entreprise.",
+            "images": [
+              {
+                "imageSrc": "/img/{person_id}/legacy_system.png",
+                "imageAlt": "Diagramme d'architecture du système monolithique hérité"
+              }
+            ],
+            "footer": "Cette transformation a nécessité une planification minutieuse, la gestion des parties prenantes, et une approche progressive pour minimiser l'impact commercial tout en maximisant les améliorations techniques."
+          },
+          {
+            "title": "La Solution",
+            "subtitle": "Construire la Plateforme de l'Avenir",
+            "description": "Nous avons mis en œuvre une stratégie de modernisation complète qui comprenait la décomposition du monolithe en microservices indépendamment déployables, l'adoption de la containerisation pour la cohérence, et l'exploitation des services AWS pour la scalabilité et la fiabilité.",
+            "images": [
+              {
+                "imageSrc": "/img/{person_id}/microservices_arch.png",
+                "imageAlt": "Architecture des microservices avec flux d'événements"
+              },
+              {
+                "imageSrc": "/img/{person_id}/kubernetes_deployment.png",
+                "imageAlt": "Diagramme de déploiement du cluster Kubernetes"
+              }
+            ],
+            "footer": "La nouvelle plateforme a réduit les frais opérationnels, amélioré la productivité des développeurs, et permis à l'organisation de déployer des mises à jour plusieurs fois par jour en toute confiance."
+          }
+        ]
+      }
+    ]
+  },
+  "theme": {
+    "fontFamily": "Comic Neue"
+  },
+  "home": {
+    "hero": {
+      "title": "Jason Zhu",
+      "subtitle": "Gestion technologique | Ingénierie logicielle | Constructeur d'équipes et de plateformes"
+    }
+  }
+}

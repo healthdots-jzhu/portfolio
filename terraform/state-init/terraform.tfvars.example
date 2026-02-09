@@ -1,0 +1,5 @@
+# Example terraform.tfvars for state-init
+# Copy to terraform.tfvars or use with -var-file=terraform.tfvars
+
+bucket_name     = "your-terraform-state-bucket-name"
+lock_table_name = "portfolio-terraform-locks"
