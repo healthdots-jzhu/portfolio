@@ -208,6 +208,10 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "lambda:GetFunction",
       "lambda:GetFunctionConfiguration",
       "lambda:GetPolicy",
+      "lambda:ListVersionsByFunction",
+      "lambda:ListTags",
+      "lambda:ListAliases",
+      "lambda:ListLayerVersions",
       "application-autoscaling:DescribeScalableTargets",
       "application-autoscaling:DescribeScalingPolicies",
       "sts:GetCallerIdentity"
