@@ -2,7 +2,7 @@ name: Deploy Infrastructure (backend stack - vpc, ec2, rds, etc.)
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       environment:
@@ -17,6 +17,9 @@ on:
         description: 'GitHub Models API token (optional; only used for manual runs to update secret)'
         required: false
         default: ''
+  workflow_run:
+    workflows: ["Onetime Provision: AWS CI Role + GitHub Secrets & Variables"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -49,14 +52,32 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com
 
+      - name: Preset dispatch inputs when triggered by CI Role workflow
+        if: >-
+          github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Onetime Provision: AWS CI Role + GitHub Secrets & Variables'
+        run: |
+          echo "Presetting inputs from CI Role workflow"
+          echo 'POSTGRES_INPUT=Host=healthdots-postgres-20260109164746330200000002.clw2owae6kbt.ca-central-1.rds.amazonaws.com;Port=5432;Database=portfoliodb;Username=postgres;Password=TNObr~X:sZ1_-MV$sdh?4aoJj|G:;Include Error Detail=true' >> $GITHUB_ENV
+          echo 'GITHUB_INPUT=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' >> $GITHUB_ENV
+
       - name: Verify or update Secrets Manager secret values for environment
         shell: bash
         env:
-          POSTGRES_INPUT: "${{ github.event.inputs.postgres_connection_string || '' }}"
-          GITHUB_INPUT: "${{ github.event.inputs.github_models_api_token || '' }}"
           GITHUB_EVENT_NAME: "${{ github.event_name }}"
         run: |
           set -euo pipefail
+          # Prefer explicit dispatch inputs; otherwise honor any presets written to GITHUB_ENV
+          if [ -n "${{ github.event.inputs.postgres_connection_string }}" ]; then
+            POSTGRES_INPUT="${{ github.event.inputs.postgres_connection_string }}"
+          else
+            POSTGRES_INPUT="${POSTGRES_INPUT:-}"
+          fi
+          if [ -n "${{ github.event.inputs.github_models_api_token }}" ]; then
+            GITHUB_INPUT="${{ github.event.inputs.github_models_api_token }}"
+          else
+            GITHUB_INPUT="${GITHUB_INPUT:-}"
+          fi
+
           SECRET_POSTGRES_NAME="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-postgres-connection"
           SECRET_GITHUB_NAME="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-github-models-token"
 
@@ -267,7 +288,9 @@ jobs:
 
       - name: Terraform apply on master
         if: |
-          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request') ||
+          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
           (github.event_name == 'workflow_dispatch')
         run: |
           terraform apply -auto-approve plan.tfplan
+
+  

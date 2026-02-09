@@ -450,7 +450,6 @@ resource "aws_instance" "main" {
   ]
 
   lifecycle {
-    prevent_destroy = true
     create_before_destroy = true
     ignore_changes = [
       # Prevent routine deployments or tag/user-data updates from forcing instance replacement
