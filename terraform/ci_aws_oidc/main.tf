@@ -154,6 +154,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "route53:GetHostedZone",
       "route53:ListTagsForResource",
       "ec2:DescribeVpcs",
+      "ec2:DescribeSecurityGroupRules",
       "ec2:DescribeInstanceTypes",
       "ec2:DescribeVpcAttribute",
       "ec2:DescribeSubnets",
