@@ -15,9 +15,6 @@ on:
         description: 'GitHub Models API token (optional; only used for manual runs to update secret)'
         required: false
         default: ''
-  workflow_run:
-    workflows: ["Onetime Provision: AWS CI Role + GitHub Secrets & Variables"]
-    types: [completed]
 
 permissions:
   contents: read
