@@ -212,6 +212,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "lambda:ListTags",
       "lambda:ListAliases",
       "lambda:ListLayerVersions",
+      "lambda:GetFunctionCodeSigningConfig",
       "application-autoscaling:DescribeScalableTargets",
       "application-autoscaling:DescribeScalingPolicies",
       "sts:GetCallerIdentity"
