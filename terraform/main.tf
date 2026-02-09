@@ -500,6 +500,9 @@ resource "aws_kms_key" "rds" {
 resource "aws_kms_alias" "rds" {
   name          = "alias/${var.environment}-${var.project_name}-rds"
   target_key_id = aws_kms_key.rds.key_id
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Generate random salt for Hashids (only once, then reused from state)
