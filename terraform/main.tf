@@ -422,10 +422,6 @@ resource "aws_iam_role_policy" "ec2_ssm_ssmmessages" {
 resource "aws_iam_instance_profile" "ec2_profile" {
   name_prefix = "${var.environment}-${var.project_name}-ec2-profile-"
   role        = aws_iam_role.ec2_ssm_role.name
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # EC2 Instance (t4g.micro with Graviton2 processor)
@@ -503,10 +499,6 @@ resource "aws_db_parameter_group" "postgres" {
   tags = {
     Name = "${var.project_name}-${var.environment}-postgres-params"
   }
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # DB Subnet Group for RDS
@@ -516,10 +508,6 @@ resource "aws_db_subnet_group" "postgres" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-db-subnet-group"
-  }
-
-  lifecycle {
-    prevent_destroy = true
   }
 }
 
