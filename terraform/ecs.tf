@@ -351,7 +351,7 @@ resource "aws_lb" "main" {
 # Additional public subnet in second AZ for ALB
 resource "aws_subnet" "public_2b" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.3.0/24"
+  cidr_block              = var.public_2b_cidr
   availability_zone       = "ca-central-1b"
   map_public_ip_on_launch = true
 

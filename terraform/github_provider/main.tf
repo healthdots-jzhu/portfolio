@@ -88,6 +88,15 @@ resource "github_actions_environment_variable" "public_subnet_cidr_env" {
   depends_on    = [github_repository_environment.env]
 }
 
+resource "github_actions_environment_variable" "public_2b_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "public_2b_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PUBLIC_2B_CIDR"
+  value         = each.value.public_2b_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
 resource "github_actions_environment_variable" "private_subnet_cidr_env" {
   for_each      = { for k, v in local.envs : k => v if lookup(v, "private_subnet_cidr", "") != "" }
   repository    = var.repository

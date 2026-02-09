@@ -30,6 +30,7 @@ environments = {
     private_app_2a_cidr    = "10.0.176.0/20"
     private_app_2b_cidr    = "10.0.192.0/20"
     path_base              = "/portfolio-staging/content"
+    public_2b_cidr         = "10.0.16.0/24"
   }
 
   beta = {
@@ -60,6 +61,7 @@ environments = {
     private_app_2a_cidr    = "10.0.176.0/20"
     private_app_2b_cidr    = "10.0.192.0/20"
     path_base              = "/portfolio-beta/content"
+    public_2b_cidr         = "10.0.16.0/24"
   }
 
   prod = {
@@ -90,5 +92,6 @@ environments = {
     private_app_2a_cidr    = "10.0.176.0/20"
     private_app_2b_cidr    = "10.0.192.0/20"
     path_base              = "/portfolio-prod/content"
+    public_2b_cidr         = "10.0.16.0/24"
   }
 }

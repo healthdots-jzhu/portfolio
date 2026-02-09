@@ -48,6 +48,12 @@ variable "private_2b_cidr" {
   default     = "10.0.160.0/20"
 }
 
+variable "public_2b_cidr" {
+  type        = string
+  description = "CIDR block for additional public subnet in AZ 2 (public_2b)"
+  default     = "10.0.16.0/24"
+}
+
 variable "private_app_2a_cidr" {
   type        = string
   description = "CIDR block for application-private subnet 2a"
