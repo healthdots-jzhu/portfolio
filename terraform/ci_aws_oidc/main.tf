@@ -163,6 +163,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "ec2:DescribeInternetGateways",
       "ec2:DescribeNetworkInterfaces",
       "ec2:DescribeInstances",
+      "ec2:DescribeTags",
       "ec2:DescribePrefixLists",
       "iam:GetRole",
       "iam:ListRolePolicies",
