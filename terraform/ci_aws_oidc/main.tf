@@ -95,28 +95,18 @@ data "aws_iam_policy_document" "ci_policy_doc" {
   statement {
     actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket", "s3:DeleteObject"]
     resources = [
-      "arn:aws:s3:::${var.tf_state_bucket}",
-      "arn:aws:s3:::${var.tf_state_bucket}/*"
-    ]
-  }
-
-  statement {
-    actions   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:DeleteItem", "dynamodb:UpdateItem", "dynamodb:Query"]
-    resources = ["arn:aws:dynamodb:${var.aws_region}:${var.aws_account_id}:table/${var.tf_state_dynamodb_table}"]
-  }
-
-  # Allow CI to describe the DynamoDB lock table
-  statement {
-    actions   = ["dynamodb:DescribeTable"]
-    resources = ["arn:aws:dynamodb:${var.aws_region}:${var.aws_account_id}:table/${var.tf_state_dynamodb_table}"]
-  }
-
-  # Allow reading SSM parameters and Secrets Manager secrets used by pipelines
-  statement {
-    actions = ["ssm:GetParameter", "ssm:GetParameters", "secretsmanager:GetSecretValue"]
-    resources = [
-      "arn:aws:ssm:${var.aws_region}:${var.aws_account_id}:parameter/*",
-      "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:*"
+      "ec2:*",
+      "kms:DescribeKey",
+      "kms:GetKeyPolicy",
+      "kms:GetKeyRotationStatus",
+      "kms:ListAliases",
+      "kms:ListResourceTags",
+      "kms:ListKeys",
+      "kms:Encrypt",
+      "ecr:*",
+      "elasticloadbalancing:*",
+      "logs:*",
+      "ecs:*",
     ]
   }
 
@@ -153,28 +143,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "route53:ListResourceRecordSets",
       "route53:GetHostedZone",
       "route53:ListTagsForResource",
-      "ec2:DescribeVpcs",
-      "ec2:DescribeSecurityGroupRules",
-      "ec2:DescribeInstanceTypes",
-      "ec2:DescribeVpcAttribute",
-      "ec2:DescribeSubnets",
-      "ec2:DescribeSecurityGroups",
-      "ec2:DescribeRouteTables",
-      "ec2:DescribeAvailabilityZones",
-      "ec2:DescribeVpcEndpoints",
-      "ec2:DescribeInternetGateways",
-      "ec2:DescribeNetworkInterfaces",
-      "ec2:DescribeInstances",
-      "ec2:DescribeTags",
-      "ec2:DescribeInstanceAttribute",
-      "ec2:DescribeInstanceStatus",
-      "ec2:DescribeInstanceCreditSpecifications",
-      "ec2:DescribePlacementGroups",
-      "ec2:DescribeSnapshots",
-      "ec2:DescribeVolumes",
-      "ec2:DescribeKeyPairs",
-      "ec2:DescribeTargetHealth",
-      "ec2:DescribePrefixLists",
+      "ec2:Describe*",
       "iam:GetRole",
       "iam:PutRolePolicy",
       "iam:TagInstanceProfile",
@@ -198,20 +167,8 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "ssm:GetParametersByPath",
       "ssm:GetParameterHistory",
       "ssm:DescribeInstanceInformation",
-      "kms:DescribeKey",
-      "kms:GetKeyPolicy",
-      "kms:GetKeyRotationStatus",
-      "kms:ListAliases",
-      "kms:ListResourceTags",
-      "kms:ListKeys",
-      "kms:Encrypt",
-      "ecr:ListTagsForResource",
-      "ecr:GetLifecyclePolicy",
-      "ecr:PutLifecyclePolicy",
-      "ecr:DeleteLifecyclePolicy",
-      "ecr:BatchDeleteImage",
-      "ecr:DeleteRepository",
-      "ecr:TagResource",
+      "kms:*",
+      "ecr:*",
       "events:DescribeRule",
       "events:ListTagsForResource",
       "events:ListTargetsByRule",
