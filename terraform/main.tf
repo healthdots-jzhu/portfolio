@@ -28,6 +28,9 @@ provider "aws" {
   }
 }
 
+# Resolve current account information for scoped IAM resources
+data "aws_caller_identity" "current" {}
+
 # VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -354,6 +357,27 @@ resource "aws_iam_role" "ec2_ssm_role" {
 resource "aws_iam_role_policy_attachment" "ssm_policy" {
   role       = aws_iam_role.ec2_ssm_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Inline policy to allow SSM Messages data/control channel operations
+resource "aws_iam_role_policy" "ec2_ssm_ssmmessages" {
+  name_prefix = "${var.environment}-${var.project_name}-ec2-ssmmessages-"
+  role        = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "arn:aws:ssmmessages:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+      }
+    ]
+  })
 }
 
 # IAM Instance Profile
