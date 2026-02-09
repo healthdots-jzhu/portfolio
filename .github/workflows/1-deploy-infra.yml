@@ -267,7 +267,7 @@ jobs:
 
       - name: Terraform apply on master
         if: |
-          github.ref == 'refs/heads/main' && github.event_name == 'push' ||
-          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+          github.ref == 'refs/heads/master' && github.event_name == 'push' ||
+          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master')
         run: |
           terraform apply -auto-approve plan.tfplan
