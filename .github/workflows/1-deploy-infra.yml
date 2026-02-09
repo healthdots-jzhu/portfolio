@@ -2,7 +2,7 @@ name: Deploy Infrastructure (backend stack - vpc, ec2, rds, etc.)
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       environment:
@@ -265,9 +265,9 @@ jobs:
         run: |
           terraform plan -out=plan.tfplan
 
-      - name: Terraform apply on master
+      - name: Terraform apply on main
         if: |
-          github.ref == 'refs/heads/master' && github.event_name == 'push' ||
-          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master')
+          github.ref == 'refs/heads/main' && github.event_name == 'push' ||
+          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
         run: |
           terraform apply -auto-approve plan.tfplan
