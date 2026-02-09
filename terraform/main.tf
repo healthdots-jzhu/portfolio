@@ -65,6 +65,9 @@ resource "aws_subnet" "public" {
   tags = {
     Name = "${var.project_name}-${var.environment}-public1a-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Private Subnet for EC2/RDS
@@ -75,6 +78,9 @@ resource "aws_subnet" "private" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-private1a-subnet"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -87,6 +93,9 @@ resource "aws_subnet" "private_2a" {
   tags = {
     Name = "${var.project_name}-${var.environment}-private2a-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_subnet" "private_2b" {
@@ -96,6 +105,9 @@ resource "aws_subnet" "private_2b" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-private2b-subnet"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -108,6 +120,9 @@ resource "aws_subnet" "private_app_2a" {
   tags = {
     Name = "${var.project_name}-${var.environment}-private-app2a-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_subnet" "private_app_2b" {
@@ -117,6 +132,9 @@ resource "aws_subnet" "private_app_2b" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-private-app2b-subnet"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -239,6 +257,9 @@ resource "aws_security_group" "ec2" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ec2-sg"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Security Group for RDS
@@ -264,6 +285,9 @@ resource "aws_security_group" "rds" {
   tags = {
     Name = "${var.project_name}-${var.environment}-rds-sg"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Security Group for VPC Interface Endpoints (allow EC2 to reach endpoints over HTTPS)
@@ -288,6 +312,9 @@ resource "aws_security_group" "vpc_endpoints" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-vpce-sg"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -351,12 +378,19 @@ resource "aws_iam_role" "ec2_ssm_role" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ec2-ssm-role"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Attach SSM managed policy to EC2 role
 resource "aws_iam_role_policy_attachment" "ssm_policy" {
   role       = aws_iam_role.ec2_ssm_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Inline policy to allow SSM Messages data/control channel operations
@@ -378,12 +412,20 @@ resource "aws_iam_role_policy" "ec2_ssm_ssmmessages" {
       }
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # IAM Instance Profile
 resource "aws_iam_instance_profile" "ec2_profile" {
   name_prefix = "${var.environment}-${var.project_name}-ec2-profile-"
   role        = aws_iam_role.ec2_ssm_role.name
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # EC2 Instance (t4g.micro with Graviton2 processor)
@@ -461,6 +503,10 @@ resource "aws_db_parameter_group" "postgres" {
   tags = {
     Name = "${var.project_name}-${var.environment}-postgres-params"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # DB Subnet Group for RDS
@@ -470,6 +516,10 @@ resource "aws_db_subnet_group" "postgres" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-db-subnet-group"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -545,6 +595,10 @@ resource "aws_ssm_parameter" "hashids_salt" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-hashids-salt"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -694,6 +748,9 @@ resource "aws_iam_role_policy" "lambda_scheduler" {
       }
     ]
   })
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # CloudWatch Log Group for Lambda

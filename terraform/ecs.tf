@@ -10,6 +10,10 @@ resource "aws_ecs_cluster" "main" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-cluster"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # CloudWatch Log Group for ECS tasks
@@ -19,6 +23,10 @@ resource "aws_cloudwatch_log_group" "ecs_tasks" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-logs"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -42,11 +50,19 @@ resource "aws_iam_role" "ecs_task_execution" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-exec-role"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   role       = aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Additional policy for ECS task execution to read secrets from Secrets Manager
@@ -63,12 +79,16 @@ resource "aws_iam_role_policy" "ecs_secrets_access" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.postgres_connection.arn,
-          aws_secretsmanager_secret.github_models_api_token.arn
+          data.aws_secretsmanager_secret.postgres_connection.arn,
+          data.aws_secretsmanager_secret.github_models_api_token.arn
         ]
       },
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # ECS Task Role (for application runtime permissions like S3, SSM)
@@ -90,6 +110,10 @@ resource "aws_iam_role" "ecs_task" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-task-role"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -124,6 +148,10 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
       }
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Security Group for ECS tasks
@@ -151,6 +179,10 @@ resource "aws_security_group" "ecs_tasks" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-tasks-sg"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Allow ECS tasks to connect to RDS
@@ -167,36 +199,15 @@ resource "aws_security_group_rule" "rds_from_ecs" {
 # Using AWS-managed KMS for Secrets Manager (aws/secretsmanager). No customer CMK created here.
 
 # Secrets Manager - Postgres Connection String
-resource "aws_secretsmanager_secret" "postgres_connection" {
-  name                    = "${var.project_name}-${var.environment}-postgres-connection"
-  description             = "PostgreSQL connection string for Portfolio API"
-  recovery_window_in_days = 7
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-postgres-connection"
-    Environment = var.environment
-  }
+# Use data lookup to avoid attempting creation when the secret already exists.
+data "aws_secretsmanager_secret" "postgres_connection" {
+  name = "${var.project_name}-${var.environment}-postgres-connection"
 }
-
-# Secret value should be provided at runtime (workflow or operator);
-# leave management of the secret's value to external tooling to avoid
-# storing sensitive data in Terraform state.
 
 # Secrets Manager - GitHub Models API Token
-resource "aws_secretsmanager_secret" "github_models_api_token" {
-  name                    = "${var.project_name}-${var.environment}-github-models-token"
-  description             = "GitHub Models API token for Portfolio API"
-  recovery_window_in_days = 7
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-github-models-token"
-    Environment = var.environment
-  }
+data "aws_secretsmanager_secret" "github_models_api_token" {
+  name = "${var.project_name}-${var.environment}-github-models-token"
 }
-
-# Secret value should be provided at runtime (workflow or operator);
-# leave management of the secret's value to external tooling to avoid
-# storing sensitive data in Terraform state.
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "portfolio_api" {
@@ -236,11 +247,11 @@ resource "aws_ecs_task_definition" "portfolio_api" {
       secrets = [
         {
           name      = "ConnectionStrings__Postgres"
-          valueFrom = "${aws_secretsmanager_secret.postgres_connection.arn}"
+          valueFrom = data.aws_secretsmanager_secret.postgres_connection.arn
         },
         {
           name      = "GitHubModels__ApiToken"
-          valueFrom = "${aws_secretsmanager_secret.github_models_api_token.arn}"
+          valueFrom = data.aws_secretsmanager_secret.github_models_api_token.arn
         }
       ]
 
@@ -257,6 +268,10 @@ resource "aws_ecs_task_definition" "portfolio_api" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-portfolio-api-task"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -286,6 +301,10 @@ resource "aws_ecs_service" "portfolio_api" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-portfolio-api-service"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 

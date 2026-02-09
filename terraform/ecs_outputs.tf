@@ -20,12 +20,13 @@ output "alb_zone_id" {
 
 output "postgres_connection_secret_arn" {
   description = "ARN of Postgres connection string secret in Secrets Manager"
-  value       = aws_secretsmanager_secret.postgres_connection.arn
+  value       = data.aws_secretsmanager_secret.postgres_connection.arn
   sensitive   = true
 }
 
 output "github_models_token_secret_arn" {
   description = "ARN of GitHub Models API token secret in Secrets Manager"
-  value       = aws_secretsmanager_secret.github_models_api_token.arn
+  value       = data.aws_secretsmanager_secret.github_models_api_token.arn
+  
   sensitive   = true
 }
