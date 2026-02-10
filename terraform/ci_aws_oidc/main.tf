@@ -132,17 +132,6 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "iam:DeleteRolePolicy",
       "iam:PassRole",
 
-      # SSM
-      "ssm:DescribeParameters",
-      "ssm:ListTagsForResource",
-      "ssm:GetParametersByPath",
-      "ssm:GetParameterHistory",
-      "ssm:DescribeInstanceInformation",
-      "ssm:AddTagsToResource",
-      "ssm:PutParameter",
-      "ssm:DeleteParameter",
-      "ssm:GetParameter",
-
       # KMS
       "kms:DescribeKey",
       "kms:GetKeyPolicy",
@@ -241,7 +230,8 @@ data "aws_iam_policy_document" "ci_policy_doc_extra" {
       "elasticloadbalancing:*",
       "logs:*",
       "ecr:*",
-      "dynamodb:*"
+      "dynamodb:*",
+      "ssm:*"
     ]
     resources = ["*"]
   }
