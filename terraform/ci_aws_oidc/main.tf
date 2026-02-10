@@ -131,6 +131,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "iam:DeleteRole",
       "iam:DeleteRolePolicy",
       "iam:PassRole",
+      "iam:CreateServiceLinkedRole",
 
       # KMS
       "kms:DescribeKey",
