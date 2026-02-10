@@ -141,6 +141,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "ssm:AddTagsToResource",
       "ssm:PutParameter",
       "ssm:DeleteParameter",
+      "ssm:GetParameter",
 
       # KMS
       "kms:DescribeKey",
