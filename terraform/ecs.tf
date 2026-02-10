@@ -451,7 +451,8 @@ locals {
   acm_count = length(var.acm_certificate_arns)
 
   # clamp the API index into 0..acm_count-1 when there are ARNs
-  api_index = acm_count == 0 ? 0 : (var.api_certificate_arn_index < 0 ? 0 : (var.api_certificate_arn_index >= acm_count ? acm_count - 1 : var.api_certificate_arn_index))
+  # Use min/max to avoid nested ternary parser issues
+  api_index = acm_count > 0 ? min(max(var.api_certificate_arn_index, 0), acm_count - 1) : 0
 
   # ordered list: put the selected API certificate first, then the remaining ARNs in their original order
   ordered_acm_certificate_arns = acm_count == 0 ? [] : concat([element(var.acm_certificate_arns, local.api_index)], [for i, a in var.acm_certificate_arns : a if i != local.api_index])
