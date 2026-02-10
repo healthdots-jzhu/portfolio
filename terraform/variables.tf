@@ -147,3 +147,9 @@ variable "rds_storage_type" {
   description = "Storage type for RDS (gp2, gp3, io1, io2)"
   default     = "gp2"
 }
+
+variable "db_subnet_group_name" {
+  type        = string
+  description = "Optional explicit DB subnet group name to use. If empty, Terraform will create one using name_prefix. Provide the existing subnet-group name to avoid replacing the DB."
+  default     = ""
+}

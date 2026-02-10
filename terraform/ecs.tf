@@ -485,6 +485,12 @@ resource "aws_lb_listener_certificate" "extra" {
   certificate_arn = each.value
 }
 
+# Ensure ECS service-linked role exists so ECS can create services
+resource "aws_iam_service_linked_role" "ecs" {
+  aws_service_name = "ecs.amazonaws.com"
+  description      = "Service-linked role for Amazon ECS"
+}
+
 # Listener rule for path-based routing (portfolio-{environment})
 resource "aws_lb_listener_rule" "portfolio_api" {
   listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""

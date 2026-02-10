@@ -502,7 +502,8 @@ resource "aws_db_parameter_group" "postgres" {
 
 # DB Subnet Group for RDS
 resource "aws_db_subnet_group" "postgres" {
-  name_prefix = "${var.project_name}-db-"
+  name        = var.db_subnet_group_name != "" ? var.db_subnet_group_name : null
+  name_prefix = var.db_subnet_group_name == "" ? "${var.project_name}-db-" : null
   subnet_ids  = [aws_subnet.private_2a.id, aws_subnet.private_2b.id]
 
   tags = {
