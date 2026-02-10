@@ -235,7 +235,7 @@ jobs:
           echo "TF_VAR_route53_zone_name=${{ vars.ROUTE53_ZONE_NAME }}" >> $GITHUB_ENV
           # Export ACM certificate ARNs as a JSON list (repo variable `ACM_CERTIFICATE_ARNS`), or empty list.
           if [ -n "${{ vars.ACM_CERTIFICATE_ARNS }}" ]; then
-            echo "TF_VAR_acm_certificate_arns=${{ vars.ACM_CERTIFICATE_ARNS }}" >> $GITHUB_ENV
+            echo 'TF_VAR_acm_certificate_arns=${{ vars.ACM_CERTIFICATE_ARNS }}' >> $GITHUB_ENV
           else
             echo "TF_VAR_acm_certificate_arns=[]" >> $GITHUB_ENV
           fi

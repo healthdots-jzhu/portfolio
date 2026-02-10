@@ -241,6 +241,10 @@ resource "aws_ecs_task_definition" "portfolio_api" {
         {
           name  = "ASPNETCORE_URLS"
           value = "http://+:80"
+        },
+        {
+          name  = "PATH_BASE"
+          value = var.path_base
         }
       ]
 
