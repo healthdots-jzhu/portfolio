@@ -273,10 +273,6 @@ resource "aws_ecs_task_definition" "portfolio_api" {
   tags = {
     Name = "${var.project_name}-${var.environment}-portfolio-api-task"
   }
-
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 # ECS Service
@@ -452,7 +448,7 @@ locals {
 
   # clamp the API index into 0..acm_count-1 when there are ARNs
   # Use min/max and reference local.acm_count to avoid parser errors
-  api_index = local.acm_count > 0 ? min([max([var.api_certificate_arn_index, 0]), local.acm_count - 1]) : 0
+  api_index = local.acm_count > 0 ? min(max(var.api_certificate_arn_index, 0), local.acm_count - 1) : 0
 
   # ordered list: put the selected API certificate first, then the remaining ARNs in their original order
   ordered_acm_certificate_arns = local.acm_count == 0 ? [] : concat([element(var.acm_certificate_arns, local.api_index)], [for i, a in var.acm_certificate_arns : a if i != local.api_index])
