@@ -101,48 +101,88 @@ data "aws_iam_policy_document" "ci_policy_doc" {
   # Allow various read/list/describe actions Terraform uses during plan
   statement {
     actions = [
+      # Route53
       "route53:ListHostedZones",
       "route53:ListHostedZonesByName",
       "route53:ListResourceRecordSets",
       "route53:GetHostedZone",
       "route53:ListTagsForResource",
+
+      # IAM (read and role lifecycle helpers)
       "iam:GetRole",
-      "iam:PutRolePolicy",
-      "iam:TagInstanceProfile",
-      "iam:ListRolePolicies",
-      "iam:DetachRolePolicy",
       "iam:ListRoles",
-      "iam:GetRolePolicy",
-      "iam:GetInstanceProfile",
+      "iam:ListRolePolicies",
       "iam:ListAttachedRolePolicies",
       "iam:GetPolicy",
       "iam:GetPolicyVersion",
+      "iam:GetRolePolicy",
+      "iam:GetInstanceProfile",
+      "iam:ListInstanceProfiles",
+      "iam:ListInstanceProfileTags",
+      "iam:ListInstanceProfilesForRole",
+      "iam:PutRolePolicy",
+      "iam:TagInstanceProfile",
+      "iam:TagRole",
+      "iam:CreateRole",
+      "iam:AttachRolePolicy",
+      "iam:CreateInstanceProfile",
+      "iam:AddRoleToInstanceProfile",
+      "iam:RemoveRoleFromInstanceProfile",
+      "iam:DeleteRole",
+      "iam:DeleteRolePolicy",
       "iam:PassRole",
-      "rds:DescribeDBParameterGroups",
-      "rds:DescribeDBParameters",
-      "rds:ListTagsForResource",
-      "rds:DescribeDBInstances",
-      "rds:DescribeDBSubnetGroups",
-      "rds:DescribeDBSnapshots",
-      "rds:ModifyDBParameterGroup",
+
+      # SSM
       "ssm:DescribeParameters",
       "ssm:ListTagsForResource",
       "ssm:GetParametersByPath",
       "ssm:GetParameterHistory",
       "ssm:DescribeInstanceInformation",
+      "ssm:AddTagsToResource",
+      "ssm:PutParameter",
+      "ssm:DeleteParameter",
+
+      # KMS
       "kms:DescribeKey",
       "kms:GetKeyPolicy",
       "kms:GetKeyRotationStatus",
       "kms:ListAliases",
       "kms:ListResourceTags",
       "kms:ListKeys",
+      "kms:ListGrants",
       "kms:Encrypt",
+
+      # RDS
+      "rds:DescribeDBParameterGroups",
+      "rds:DescribeDBParameters",
+      "rds:ListTagsForResource",
+      "rds:DescribeDBInstances",
+      "rds:DescribeDBSubnetGroups",
+      "rds:DescribeDBSnapshots",
+      "rds:CreateDBParameterGroup",
+      "rds:ModifyDBParameterGroup",
+      "rds:ModifyDBInstance",
+      "rds:CreateDBSubnetGroup",
+      "rds:AddTagsToResource",
+
+      # Secrets Manager
+      "secretsmanager:ListSecrets",
+      "secretsmanager:CreateSecret",
+      "secretsmanager:PutSecretValue",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:ListSecretVersionIds",
+      "secretsmanager:TagResource",
+      "secretsmanager:GetResourcePolicy",
+
+      # EventBridge / rules
       "events:DescribeRule",
+      "events:ListRules",
       "events:ListTagsForResource",
       "events:ListTargetsByRule",
-      "events:ListRules",
       "events:PutRule",
       "events:PutTargets",
+
+      # Lambda
       "lambda:ListFunctions",
       "lambda:GetFunction",
       "lambda:GetFunctionConfiguration",
@@ -154,34 +194,15 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "lambda:GetFunctionCodeSigningConfig",
       "lambda:GetLayerVersion",
       "lambda:GetLayerVersionPolicy",
+
+      # Application Auto Scaling
       "application-autoscaling:DescribeScalableTargets",
       "application-autoscaling:DescribeScalingPolicies",
-      "rds:CreateDBParameterGroup",
-      "rds:ModifyDBInstance",
-      "rds:CreateDBSubnetGroup",
-      "rds:AddTagsToResource",
-      "secretsmanager:TagResource",
-      "secretsmanager:GetResourcePolicy",
-      "ssm:AddTagsToResource",
-      "ssm:DeleteParameter",
-      "ssm:PutParameter",
-      "iam:ListInstanceProfilesForRole",
-      "iam:CreateRole",
-      "iam:TagRole",
-      "iam:AttachRolePolicy",
-      "iam:CreateInstanceProfile",
-      "iam:PutRolePolicy",
-      "iam:TagInstanceProfile",
-      "iam:AddRoleToInstanceProfile",
-      "iam:RemoveRoleFromInstanceProfile",
-      "iam:DeleteRole",
-      "iam:DeleteRolePolicy",
-      "kms:ListGrants",
-      "iam:ListInstanceProfiles",
-      "iam:ListInstanceProfileTags",
+
+      # S3 helper
       "s3:GetBucketLocation",
-      "secretsmanager:ListSecrets",
-      "events:ListRules",
+
+      # STS helper
       "sts:GetCallerIdentity"
     ]
     resources = ["*"]
@@ -218,7 +239,8 @@ data "aws_iam_policy_document" "ci_policy_doc_extra" {
       "ecs:*",
       "elasticloadbalancing:*",
       "logs:*",
-      "ecr:*"
+      "ecr:*",
+      "dynamodb:*"
     ]
     resources = ["*"]
   }
