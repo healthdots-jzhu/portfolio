@@ -451,11 +451,11 @@ locals {
   acm_count = length(var.acm_certificate_arns)
 
   # clamp the API index into 0..acm_count-1 when there are ARNs
-  # Use min/max to avoid nested ternary parser issues
-  api_index = acm_count > 0 ? min(max(var.api_certificate_arn_index, 0), acm_count - 1) : 0
+  # Use min/max and reference local.acm_count to avoid parser errors
+  api_index = local.acm_count > 0 ? min([max([var.api_certificate_arn_index, 0]), local.acm_count - 1]) : 0
 
   # ordered list: put the selected API certificate first, then the remaining ARNs in their original order
-  ordered_acm_certificate_arns = acm_count == 0 ? [] : concat([element(var.acm_certificate_arns, local.api_index)], [for i, a in var.acm_certificate_arns : a if i != local.api_index])
+  ordered_acm_certificate_arns = local.acm_count == 0 ? [] : concat([element(var.acm_certificate_arns, local.api_index)], [for i, a in var.acm_certificate_arns : a if i != local.api_index])
 }
 
 # HTTPS Listener (requires ACM certificate - see variable)
@@ -465,13 +465,10 @@ resource "aws_lb_listener" "https" {
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-
-  dynamic "certificate" {
-    for_each = local.ordered_acm_certificate_arns
-    content {
-      certificate_arn = certificate.value
-    }
-  }
+  # Attach the selected API certificate (first in ordered list).
+  # The resource is created only when there are ACM ARNs (see count above),
+  # so referencing element(var.acm_certificate_arns, local.api_index) is safe.
+  certificate_arn = element(var.acm_certificate_arns, local.api_index)
 
   default_action {
     type = "fixed-response"
@@ -482,6 +479,14 @@ resource "aws_lb_listener" "https" {
       status_code  = "404"
     }
   }
+}
+
+# Attach remaining ACM certs to the listener (SNI)
+resource "aws_lb_listener_certificate" "extra" {
+  for_each = { for idx, arn in var.acm_certificate_arns : idx => arn if idx != local.api_index }
+
+  listener_arn    = aws_lb_listener.https[0].arn
+  certificate_arn = each.value
 }
 
 # Listener rule for path-based routing (portfolio-{environment})
