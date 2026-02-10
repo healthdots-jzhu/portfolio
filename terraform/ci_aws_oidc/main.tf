@@ -67,46 +67,15 @@ resource "aws_iam_role" "github_actions_role" {
 
 # IAM policy granting necessary permissions for CI: ECR push, S3 state access, DynamoDB lock access
 data "aws_iam_policy_document" "ci_policy_doc" {
-  statement {
-    actions = [
-      "ecr:GetAuthorizationToken",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:CompleteLayerUpload",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
-    ]
-    resources = ["*"]
-  }
+  # (ECR push/read actions are provided by the extra policy wildcard)
 
-  # Allow repository inspection/creation and image reads
-  statement {
-    actions = [
-      "ecr:DescribeRepositories",
-      "ecr:CreateRepository",
-        "ecr:BatchDeleteImage",
-      "ecr:BatchGetImage",
-      "ecr:DescribeImages"
-    ]
-    resources = ["arn:aws:ecr:${var.aws_region}:${var.aws_account_id}:repository/*"]
-  }
+  # (ECR repository actions are covered by the extra policy wildcard)
 
   statement {
     actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket", "s3:DeleteObject"]
     resources = [
-      "ec2:*",
-      "kms:DescribeKey",
-      "kms:GetKeyPolicy",
-      "kms:GetKeyRotationStatus",
-      "kms:ListAliases",
-      "kms:ListResourceTags",
-      "kms:ListKeys",
-      "kms:Encrypt",
-      "ecr:*",
-      "elasticloadbalancing:*",
-      "logs:*",
-      "ecs:*",
+      "arn:aws:s3:::${var.tf_state_bucket}",
+      "arn:aws:s3:::${var.tf_state_bucket}/*"
     ]
   }
 
@@ -129,12 +98,6 @@ data "aws_iam_policy_document" "ci_policy_doc" {
     resources = ["arn:aws:kms:${var.aws_region}:${var.aws_account_id}:key/*"]
   }
 
-  # Allow EC2 image lookups used by Terraform when resolving AMIs
-  statement {
-    actions = ["ec2:DescribeImages"]
-    resources = ["*"]
-  }
-
   # Allow various read/list/describe actions Terraform uses during plan
   statement {
     actions = [
@@ -143,7 +106,6 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "route53:ListResourceRecordSets",
       "route53:GetHostedZone",
       "route53:ListTagsForResource",
-      "ec2:Describe*",
       "iam:GetRole",
       "iam:PutRolePolicy",
       "iam:TagInstanceProfile",
@@ -161,40 +123,26 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "rds:ListTagsForResource",
       "rds:DescribeDBInstances",
       "rds:DescribeDBSubnetGroups",
+      "rds:DescribeDBSnapshots",
       "rds:ModifyDBParameterGroup",
       "ssm:DescribeParameters",
       "ssm:ListTagsForResource",
       "ssm:GetParametersByPath",
       "ssm:GetParameterHistory",
       "ssm:DescribeInstanceInformation",
-      "kms:*",
-      "ecr:*",
+      "kms:DescribeKey",
+      "kms:GetKeyPolicy",
+      "kms:GetKeyRotationStatus",
+      "kms:ListAliases",
+      "kms:ListResourceTags",
+      "kms:ListKeys",
+      "kms:Encrypt",
       "events:DescribeRule",
       "events:ListTagsForResource",
       "events:ListTargetsByRule",
       "events:ListRules",
       "events:PutRule",
       "events:PutTargets",
-      "elasticloadbalancing:DescribeLoadBalancers",
-      "elasticloadbalancing:DescribeTargetGroupAttributes",
-      "elasticloadbalancing:DescribeTargetGroups",
-      "elasticloadbalancing:DescribeListeners",
-      "elasticloadbalancing:DescribeRules",
-      "elasticloadbalancing:DescribeTags",
-      "elasticloadbalancing:CreateLoadBalancer",
-      "elasticloadbalancing:CreateTargetGroup",
-      "elasticloadbalancing:CreateListener",
-      "elasticloadbalancing:CreateRule",
-      "elasticloadbalancing:DeleteTargetGroup",
-      "elasticloadbalancing:ModifyTargetGroupAttributes",
-      "elasticloadbalancing:AddTags",
-      "logs:DescribeLogGroups",
-      "logs:DescribeLogStreams",
-      "logs:GetLogEvents",
-      "logs:ListTagsForResource",
-      "logs:CreateLogGroup",
-      "logs:PutRetentionPolicy",
-      "logs:TagResource",
       "lambda:ListFunctions",
       "lambda:GetFunction",
       "lambda:GetFunctionConfiguration",
@@ -208,18 +156,6 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "lambda:GetLayerVersionPolicy",
       "application-autoscaling:DescribeScalableTargets",
       "application-autoscaling:DescribeScalingPolicies",
-      "ecs:CreateCluster",
-      "ecs:CreateService",
-      "ecs:RegisterTaskDefinition",
-      "ecs:DescribeClusters",
-      "ecs:ListClusters",
-      "ecs:DescribeServices",
-      "ecs:ListServices",
-      "ecs:DescribeTaskDefinition",
-      "ecs:ListTaskDefinitions",
-      "ecs:DescribeTasks",
-      "ecs:ListTasks",
-      "ecs:TagResource",
       "rds:CreateDBParameterGroup",
       "rds:ModifyDBInstance",
       "rds:CreateDBSubnetGroup",
@@ -240,37 +176,11 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "iam:RemoveRoleFromInstanceProfile",
       "iam:DeleteRole",
       "iam:DeleteRolePolicy",
-      "ec2:CreateSubnet",
-      "ec2:ModifySubnetAttribute",
-      "ec2:CreateVpcEndpoint",
-      "ec2:CreateSecurityGroup",
-      "ec2:CreateRouteTable",
-      "ec2:AssociateRouteTable",
-      "ec2:DeleteSecurityGroup",
-      "ec2:RevokeSecurityGroupIngress",
-      "ec2:DeleteRouteTableAssociation",
-      "ec2:RevokeSecurityGroupEgress",
-      "ec2:AuthorizeSecurityGroupIngress",
-      "ec2:AuthorizeSecurityGroupEgress",
-      "ec2:CreateTags",
-      "ecs:DescribeClusters",
-      "ecs:ListClusters",
-      "ecs:DescribeServices",
-      "ecs:ListServices",
-      "ecs:DescribeTaskDefinition",
-      "ecs:ListTaskDefinitions",
-      "ecs:DescribeTasks",
-      "ecs:ListTasks",
-      "rds:DescribeDBSnapshots",
-      "ecr:ListImages",
-      "ecr:DescribeImageScanFindings",
       "kms:ListGrants",
       "iam:ListInstanceProfiles",
       "iam:ListInstanceProfileTags",
       "s3:GetBucketLocation",
       "secretsmanager:ListSecrets",
-      "logs:DescribeMetricFilters",
-      "logs:TestMetricFilter",
       "events:ListRules",
       "sts:GetCallerIdentity"
     ]
@@ -298,6 +208,30 @@ data "aws_iam_policy_document" "ci_policy_doc" {
 resource "aws_iam_policy" "ci_policy" {
   name   = "${local.computed_role_name}-policy"
   policy = data.aws_iam_policy_document.ci_policy_doc.json
+}
+
+# Extra policy to hold large service wildcards so we don't exceed single-policy size limits
+data "aws_iam_policy_document" "ci_policy_doc_extra" {
+  statement {
+    actions = [
+      "ec2:*",
+      "ecs:*",
+      "elasticloadbalancing:*",
+      "logs:*",
+      "ecr:*"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "ci_policy_extra" {
+  name   = "${local.computed_role_name}-policy-extra"
+  policy = data.aws_iam_policy_document.ci_policy_doc_extra.json
+}
+
+resource "aws_iam_role_policy_attachment" "attach_ci_policy_extra" {
+  role       = aws_iam_role.github_actions_role.name
+  policy_arn = aws_iam_policy.ci_policy_extra.arn
 }
 
 resource "aws_iam_role_policy_attachment" "attach_ci_policy" {
