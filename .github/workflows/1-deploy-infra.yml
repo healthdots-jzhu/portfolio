@@ -202,7 +202,7 @@ jobs:
           echo "TF_VAR_aws_region=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
           echo "TF_VAR_ecr_registry=${{ vars.ECR_REGISTRY }}" >> $GITHUB_ENV
           echo "TF_VAR_s3_bucket_frontend=${{ vars.S3_BUCKET_FRONTEND }}" >> $GITHUB_ENV
-          echo "TF_VAR_acm_certificate_arn=${{ vars.ACM_CERTIFICATE_ARN }}" >> $GITHUB_ENV
+          # TF_VAR_acm_certificate_arn removed; use list `ACM_CERTIFICATE_ARNS` instead.
           echo "TF_VAR_project_name=${{ vars.PROJECT_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_vpc_cidr=${{ vars.VPC_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_public_subnet_cidr=${{ vars.PUBLIC_SUBNET_CIDR }}" >> $GITHUB_ENV
@@ -231,6 +231,20 @@ jobs:
           echo "TF_VAR_private_app_2a_cidr=${{ vars.PRIVATE_APP_2A_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_private_app_2b_cidr=${{ vars.PRIVATE_APP_2B_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_path_base=${{ vars.PATH_BASE }}" >> $GITHUB_ENV
+          echo "TF_VAR_api_subdomain=${{ vars.API_SUBDOMAIN }}" >> $GITHUB_ENV
+          echo "TF_VAR_route53_zone_name=${{ vars.ROUTE53_ZONE_NAME }}" >> $GITHUB_ENV
+          # Export ACM certificate ARNs as a JSON list (repo variable `ACM_CERTIFICATE_ARNS`), or empty list.
+          if [ -n "${{ vars.ACM_CERTIFICATE_ARNS }}" ]; then
+            echo "TF_VAR_acm_certificate_arns=${{ vars.ACM_CERTIFICATE_ARNS }}" >> $GITHUB_ENV
+          else
+            echo "TF_VAR_acm_certificate_arns=[]" >> $GITHUB_ENV
+          fi
+          # Export API certificate index (repo variable if available)
+          if [ -n "${{ vars.API_CERTIFICATE_ARN_INDEX }}" ]; then
+            echo "TF_VAR_api_certificate_arn_index=${{ vars.API_CERTIFICATE_ARN_INDEX }}" >> $GITHUB_ENV
+          else
+            echo "TF_VAR_api_certificate_arn_index=0" >> $GITHUB_ENV
+          fi
 
       - name: Validate TF vars and required CIDRs
         shell: bash

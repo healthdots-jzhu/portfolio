@@ -101,13 +101,6 @@ data "aws_iam_policy_document" "ci_policy_doc" {
   # Allow various read/list/describe actions Terraform uses during plan
   statement {
     actions = [
-      # Route53
-      "route53:ListHostedZones",
-      "route53:ListHostedZonesByName",
-      "route53:ListResourceRecordSets",
-      "route53:GetHostedZone",
-      "route53:ListTagsForResource",
-
       # IAM (read and role lifecycle helpers)
       "iam:GetRole",
       "iam:ListRoles",
@@ -232,7 +225,8 @@ data "aws_iam_policy_document" "ci_policy_doc_extra" {
       "logs:*",
       "ecr:*",
       "dynamodb:*",
-      "ssm:*"
+      "ssm:*",
+      "route53:*"
     ]
     resources = ["*"]
   }

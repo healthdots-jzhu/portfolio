@@ -442,13 +442,31 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+locals {
+  # number of configured certificate ARNs
+  acm_count = length(var.acm_certificate_arns)
+
+  # clamp the API index into 0..acm_count-1 when there are ARNs
+  api_index = acm_count == 0 ? 0 : (var.api_certificate_arn_index < 0 ? 0 : (var.api_certificate_arn_index >= acm_count ? acm_count - 1 : var.api_certificate_arn_index))
+
+  # ordered list: put the selected API certificate first, then the remaining ARNs in their original order
+  ordered_acm_certificate_arns = acm_count == 0 ? [] : concat([element(var.acm_certificate_arns, local.api_index)], [for i, a in var.acm_certificate_arns : a if i != local.api_index])
+}
+
 # HTTPS Listener (requires ACM certificate - see variable)
 resource "aws_lb_listener" "https" {
+  count             = length(var.acm_certificate_arns) > 0 ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = var.acm_certificate_arn
+
+  dynamic "certificate" {
+    for_each = local.ordered_acm_certificate_arns
+    content {
+      certificate_arn = certificate.value
+    }
+  }
 
   default_action {
     type = "fixed-response"
@@ -463,7 +481,7 @@ resource "aws_lb_listener" "https" {
 
 # Listener rule for path-based routing (portfolio-{environment})
 resource "aws_lb_listener_rule" "portfolio_api" {
-  listener_arn = aws_lb_listener.https.arn
+  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
   priority     = 100
 
   action {
