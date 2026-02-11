@@ -1,8 +1,6 @@
 name: Build and push Docker images (APIs) to ECR and other backend tasks
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
@@ -48,8 +46,7 @@ jobs:
             echo "Derived ECR_REGISTRY=${ECR_REGISTRY}"
           fi
           aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
-        env:
-          ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push image
         id: build
@@ -58,10 +55,10 @@ jobs:
           context: ./APIs/Portfolio.Api
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}:latest
-            ${{ env.ECR_REGISTRY }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}:latest
+            ${{ steps.ecr-login.outputs.registry }}:${{ github.sha }}
 
       - name: Set job output image
         id: set-image
         run: |
-          echo "image=${{ env.ECR_REGISTRY }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "image=${{ steps.ecr-login.outputs.registry }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
