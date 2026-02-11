@@ -424,9 +424,8 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role        = aws_iam_role.ec2_ssm_role.name
 }
 
-# EC2 Instance (t4g.micro with Graviton2 processor)
 resource "aws_instance" "main" {
-  ami                    = data.aws_ami.amazon_linux_2.id
+  ami                    = local.amazon_linux_2_ami
   instance_type          = var.rds_ssm_ec2_instance_type
   subnet_id              = aws_subnet.private.id
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
@@ -462,8 +461,8 @@ resource "aws_instance" "main" {
 # Trigger EC2 replacement when the latest Amazon Linux 2 AMI changes
 ## Removed terraform_data `ec2_replace_when_ami_changes` to avoid replacement cycles.
 
-# Get latest Amazon Linux 2 AMI (ARM-based for t4g)
-data "aws_ami" "amazon_linux_2" {
+# Get latest Amazon Linux 2 AMIs for ARM and x86, and choose based on instance type
+data "aws_ami" "amazon_linux_2_arm" {
   most_recent = true
   owners      = ["amazon"]
 
@@ -481,6 +480,34 @@ data "aws_ami" "amazon_linux_2" {
     name   = "virtualization-type"
     values = ["hvm"]
   }
+}
+
+data "aws_ami" "amazon_linux_2_x86" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+locals {
+  # Detect Graviton/ARM instance types by the 'g' family (e.g. t4g, m6g)
+  ec2_is_arm = contains(var.rds_ssm_ec2_instance_type, "g")
+
+  # Select the appropriate AMI for the instance architecture
+  amazon_linux_2_ami = local.ec2_is_arm ? data.aws_ami.amazon_linux_2_arm.id : data.aws_ami.amazon_linux_2_x86.id
 }
 
 # DB Parameter Group for PostgreSQL

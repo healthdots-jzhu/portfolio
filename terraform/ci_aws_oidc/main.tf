@@ -166,28 +166,6 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "events:PutRule",
       "events:PutTargets",
 
-      # Lambda
-      "lambda:ListFunctions",
-      "lambda:GetFunction",
-      "lambda:GetFunctionConfiguration",
-      "lambda:GetPolicy",
-      "lambda:ListVersionsByFunction",
-      "lambda:ListTags",
-      "lambda:ListAliases",
-      "lambda:ListLayerVersions",
-      "lambda:GetFunctionCodeSigningConfig",
-      "lambda:GetLayerVersion",
-      "lambda:GetLayerVersionPolicy",
-
-      # Application Auto Scaling
-      # Application Auto Scaling - allow registering/deregistering targets and scaling policies
-      "application-autoscaling:RegisterScalableTarget",
-      "application-autoscaling:DeregisterScalableTarget",
-      "application-autoscaling:PutScalingPolicy",
-      "application-autoscaling:DeleteScalingPolicy",
-      "application-autoscaling:DescribeScalableTargets",
-      "application-autoscaling:DescribeScalingPolicies",
-
       # CloudWatch Alarms for autoscaling
       "cloudwatch:PutMetricAlarm",
       "cloudwatch:DeleteAlarms",
@@ -236,7 +214,9 @@ data "aws_iam_policy_document" "ci_policy_doc_extra" {
       "ecr:*",
       "dynamodb:*",
       "ssm:*",
-      "route53:*"
+      "route53:*",
+      "application-autoscaling:*",
+      "lambda:*"
     ]
     resources = ["*"]
   }
