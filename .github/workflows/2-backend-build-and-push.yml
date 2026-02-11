@@ -25,6 +25,7 @@ jobs:
     environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'beta' }}
     env:
       ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+      IMAGE_REPOSITORY: ${{ format('{0}-healthdots-portfolio-api', github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'beta') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -48,6 +49,16 @@ jobs:
           aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
           echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
 
+      - name: ECR debug & ensure repo
+        run: |
+          echo "Caller identity:"; aws sts get-caller-identity
+          echo "Checking repository ${IMAGE_REPOSITORY}";
+          aws ecr describe-repositories --repository-names "${IMAGE_REPOSITORY}" || \
+            aws ecr create-repository --repository-name "${IMAGE_REPOSITORY}" --image-scanning-configuration scanOnPush=true
+          aws ecr describe-repositories --repository-names "${IMAGE_REPOSITORY}"
+        env:
+          IMAGE_REPOSITORY: ${{ env.IMAGE_REPOSITORY }}
+
       - name: Build and push image
         id: build
         uses: docker/build-push-action@v4
@@ -55,10 +66,10 @@ jobs:
           context: ./APIs/Portfolio.Api
           push: true
           tags: |
-            ${{ steps.ecr-login.outputs.registry }}:latest
-            ${{ steps.ecr-login.outputs.registry }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_REPOSITORY }}:latest
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}
 
       - name: Set job output image
         id: set-image
         run: |
-          echo "image=${{ steps.ecr-login.outputs.registry }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "image=${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
