@@ -42,17 +42,6 @@ resource "github_actions_environment_variable" "aws_region_env" {
   depends_on    = [github_repository_environment.env]
 }
 
-
-resource "github_actions_environment_variable" "ecr_registry_env" {
-  for_each      = { for k, v in local.envs : k => v if v.ecr_registry != "" }
-  repository    = var.repository
-  environment   = each.key
-  variable_name = "ECR_REGISTRY"
-  value         = each.value.ecr_registry
-  depends_on    = [github_repository_environment.env]
-}
-
-
 resource "github_actions_environment_variable" "acm_certificate_arns_env" {
   for_each      = { for k, v in local.envs : k => v if length(lookup(v, "acm_certificate_arns", [])) > 0 }
   repository    = var.repository
