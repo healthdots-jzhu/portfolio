@@ -1,8 +1,6 @@
 name: Deploy Infrastructure (backend stack - vpc, ec2, rds, etc.)
 
 on:
-  push:
-    branches: [ master ]
   workflow_dispatch:
     inputs:
       environment:
@@ -17,6 +15,10 @@ on:
         description: 'GitHub Models API token (optional; only used for manual runs to update secret)'
         required: false
         default: ''
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'terraform/**'
 
 permissions:
   contents: read
@@ -24,7 +26,7 @@ permissions:
 
 env:
   AWS_REGION: ca-central-1
-  ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'beta' }}
+  ENVIRONMENT: ${{ github.event.inputs.environment || 'beta' }}
 
 jobs:
   terraform:
@@ -49,14 +51,32 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com
 
+      - name: Preset dispatch inputs when triggered by CI Role workflow
+        if: >-
+          github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Onetime Provision: AWS CI Role + GitHub Secrets & Variables'
+        run: |
+          echo "Presetting inputs from CI Role workflow"
+          echo 'POSTGRES_INPUT=Host=healthdots-postgres-20260109164746330200000002.clw2owae6kbt.ca-central-1.rds.amazonaws.com;Port=5432;Database=portfoliodb;Username=postgres;Password=TNObr~X:sZ1_-MV$sdh?4aoJj|G:;Include Error Detail=true' >> $GITHUB_ENV
+          echo 'GITHUB_INPUT=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' >> $GITHUB_ENV
+
       - name: Verify or update Secrets Manager secret values for environment
         shell: bash
         env:
-          POSTGRES_INPUT: "${{ github.event.inputs.postgres_connection_string || '' }}"
-          GITHUB_INPUT: "${{ github.event.inputs.github_models_api_token || '' }}"
           GITHUB_EVENT_NAME: "${{ github.event_name }}"
         run: |
           set -euo pipefail
+          # Prefer explicit dispatch inputs; otherwise honor any presets written to GITHUB_ENV
+          if [ -n "${{ github.event.inputs.postgres_connection_string }}" ]; then
+            POSTGRES_INPUT="${{ github.event.inputs.postgres_connection_string }}"
+          else
+            POSTGRES_INPUT="${POSTGRES_INPUT:-}"
+          fi
+          if [ -n "${{ github.event.inputs.github_models_api_token }}" ]; then
+            GITHUB_INPUT="${{ github.event.inputs.github_models_api_token }}"
+          else
+            GITHUB_INPUT="${GITHUB_INPUT:-}"
+          fi
+
           SECRET_POSTGRES_NAME="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-postgres-connection"
           SECRET_GITHUB_NAME="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-github-models-token"
 
@@ -169,7 +189,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.5.7"
+          terraform_version: "1.14.3"
 
       - name: Terraform init (S3 backend)
         run: |
@@ -184,14 +204,18 @@ jobs:
         run: |
           echo "TF_VAR_environment=${{ env.ENVIRONMENT }}" >> $GITHUB_ENV
           echo "TF_VAR_aws_region=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
-          echo "TF_VAR_ecr_registry=${{ vars.ECR_REGISTRY }}" >> $GITHUB_ENV
+          # TF_VAR_ecr_registry removed (not used)
           echo "TF_VAR_s3_bucket_frontend=${{ vars.S3_BUCKET_FRONTEND }}" >> $GITHUB_ENV
-          echo "TF_VAR_acm_certificate_arn=${{ vars.ACM_CERTIFICATE_ARN }}" >> $GITHUB_ENV
+          # TF_VAR_acm_certificate_arn removed; use list `ACM_CERTIFICATE_ARNS` instead.
           echo "TF_VAR_project_name=${{ vars.PROJECT_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_vpc_cidr=${{ vars.VPC_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_public_subnet_cidr=${{ vars.PUBLIC_SUBNET_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_public_2b_cidr=${{ vars.PUBLIC_2B_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_private_subnet_cidr=${{ vars.PRIVATE_SUBNET_CIDR }}" >> $GITHUB_ENV
-          echo "TF_VAR_rds_ssm_ec2_instance_type=${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" >> $GITHUB_ENV
+          # Only export if the repo variable is set; otherwise let Terraform use its variable default
+          if [ -n "${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" ]; then
+            echo "TF_VAR_rds_ssm_ec2_instance_type=${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" >> $GITHUB_ENV
+          fi
           echo "TF_VAR_rds_instance_class=${{ vars.RDS_INSTANCE_CLASS }}" >> $GITHUB_ENV
           echo "TF_VAR_rds_allocated_storage=${{ vars.RDS_ALLOCATED_STORAGE }}" >> $GITHUB_ENV
           echo "TF_VAR_postgres_version=${{ vars.POSTGRES_VERSION }}" >> $GITHUB_ENV
@@ -214,6 +238,20 @@ jobs:
           echo "TF_VAR_private_app_2a_cidr=${{ vars.PRIVATE_APP_2A_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_private_app_2b_cidr=${{ vars.PRIVATE_APP_2B_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_path_base=${{ vars.PATH_BASE }}" >> $GITHUB_ENV
+          echo "TF_VAR_api_subdomain=${{ vars.API_SUBDOMAIN }}" >> $GITHUB_ENV
+          echo "TF_VAR_route53_zone_name=${{ vars.ROUTE53_ZONE_NAME }}" >> $GITHUB_ENV
+          # Export ACM certificate ARNs as a JSON list (repo variable `ACM_CERTIFICATE_ARNS`), or empty list.
+          if [ -n "${{ vars.ACM_CERTIFICATE_ARNS }}" ]; then
+            echo 'TF_VAR_acm_certificate_arns=${{ vars.ACM_CERTIFICATE_ARNS }}' >> $GITHUB_ENV
+          else
+            echo "TF_VAR_acm_certificate_arns=[]" >> $GITHUB_ENV
+          fi
+          # Export API certificate index (repo variable if available)
+          if [ -n "${{ vars.API_CERTIFICATE_ARN_INDEX }}" ]; then
+            echo "TF_VAR_api_certificate_arn_index=${{ vars.API_CERTIFICATE_ARN_INDEX }}" >> $GITHUB_ENV
+          else
+            echo "TF_VAR_api_certificate_arn_index=0" >> $GITHUB_ENV
+          fi
 
       - name: Validate TF vars and required CIDRs
         shell: bash
@@ -265,9 +303,14 @@ jobs:
         run: |
           terraform plan -out=plan.tfplan
 
+      - name: Upload TF plan to S3
+        run: |
+          set -euo pipefail
+          # Upload the generated plan to the TF state bucket for auditing
+          aws s3 cp plan.tfplan "s3://${{ vars.TF_STATE_BUCKET }}/terraform-plans/${{ env.ENVIRONMENT }}/plan-${{ github.run_id }}.tfplan" --region "${{ env.AWS_REGION }}"
+
       - name: Terraform apply on master
-        if: |
-          github.ref == 'refs/heads/master' && github.event_name == 'push' ||
-          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master')
         run: |
           terraform apply -auto-approve plan.tfplan
+
+  

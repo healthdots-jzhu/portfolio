@@ -42,22 +42,21 @@ resource "github_actions_environment_variable" "aws_region_env" {
   depends_on    = [github_repository_environment.env]
 }
 
-
-resource "github_actions_environment_variable" "ecr_registry_env" {
-  for_each      = { for k, v in local.envs : k => v if v.ecr_registry != "" }
+resource "github_actions_environment_variable" "acm_certificate_arns_env" {
+  for_each      = { for k, v in local.envs : k => v if length(lookup(v, "acm_certificate_arns", [])) > 0 }
   repository    = var.repository
   environment   = each.key
-  variable_name = "ECR_REGISTRY"
-  value         = each.value.ecr_registry
+  variable_name = "ACM_CERTIFICATE_ARNS"
+  value         = jsonencode(each.value.acm_certificate_arns)
   depends_on    = [github_repository_environment.env]
 }
 
-resource "github_actions_environment_variable" "acm_certificate_arn_env" {
-  for_each      = { for k, v in local.envs : k => v if lookup(v, "acm_certificate_arn", "") != "" }
+resource "github_actions_environment_variable" "api_certificate_arn_index_env" {
+  for_each      = local.envs
   repository    = var.repository
   environment   = each.key
-  variable_name = "ACM_CERTIFICATE_ARN"
-  value         = each.value.acm_certificate_arn
+  variable_name = "API_CERTIFICATE_ARN_INDEX"
+  value         = tostring(lookup(each.value, "api_certificate_arn_index", 0))
   depends_on    = [github_repository_environment.env]
 }
 
@@ -85,6 +84,15 @@ resource "github_actions_environment_variable" "public_subnet_cidr_env" {
   environment   = each.key
   variable_name = "PUBLIC_SUBNET_CIDR"
   value         = each.value.public_subnet_cidr
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "public_2b_cidr_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "public_2b_cidr", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "PUBLIC_2B_CIDR"
+  value         = each.value.public_2b_cidr
   depends_on    = [github_repository_environment.env]
 }
 
@@ -137,7 +145,7 @@ resource "github_actions_environment_variable" "instance_type_env" {
   for_each      = { for k, v in local.envs : k => v if lookup(v, "rds_ssm_ec2_instance_type", "") != "" }
   repository    = var.repository
   environment   = each.key
-  variable_name = "INSTANCE_TYPE"
+  variable_name = "RDS_SSM_EC2_INSTANCE_TYPE"
   value         = each.value.rds_ssm_ec2_instance_type
   depends_on    = [github_repository_environment.env]
 }
@@ -265,6 +273,24 @@ resource "github_actions_environment_variable" "path_base_env" {
   environment   = each.key
   variable_name = "PATH_BASE"
   value         = each.value.path_base
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "api_subdomain_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "api_subdomain", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "API_SUBDOMAIN"
+  value         = each.value.api_subdomain
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "route53_zone_name_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "route53_zone_name", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "ROUTE53_ZONE_NAME"
+  value         = each.value.route53_zone_name
   depends_on    = [github_repository_environment.env]
 }
 

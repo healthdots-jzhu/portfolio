@@ -28,6 +28,9 @@ provider "aws" {
   }
 }
 
+# Resolve current account information for scoped IAM resources
+data "aws_caller_identity" "current" {}
+
 # VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -62,6 +65,9 @@ resource "aws_subnet" "public" {
   tags = {
     Name = "${var.project_name}-${var.environment}-public1a-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Private Subnet for EC2/RDS
@@ -72,6 +78,9 @@ resource "aws_subnet" "private" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-private1a-subnet"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -84,6 +93,9 @@ resource "aws_subnet" "private_2a" {
   tags = {
     Name = "${var.project_name}-${var.environment}-private2a-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_subnet" "private_2b" {
@@ -93,6 +105,9 @@ resource "aws_subnet" "private_2b" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-private2b-subnet"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -105,6 +120,9 @@ resource "aws_subnet" "private_app_2a" {
   tags = {
     Name = "${var.project_name}-${var.environment}-private-app2a-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_subnet" "private_app_2b" {
@@ -114,6 +132,9 @@ resource "aws_subnet" "private_app_2b" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-private-app2b-subnet"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -236,6 +257,9 @@ resource "aws_security_group" "ec2" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ec2-sg"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Security Group for RDS
@@ -261,6 +285,9 @@ resource "aws_security_group" "rds" {
   tags = {
     Name = "${var.project_name}-${var.environment}-rds-sg"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Security Group for VPC Interface Endpoints (allow EC2 to reach endpoints over HTTPS)
@@ -285,6 +312,9 @@ resource "aws_security_group" "vpc_endpoints" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-vpce-sg"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -348,12 +378,44 @@ resource "aws_iam_role" "ec2_ssm_role" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ec2-ssm-role"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Attach SSM managed policy to EC2 role
 resource "aws_iam_role_policy_attachment" "ssm_policy" {
   role       = aws_iam_role.ec2_ssm_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Inline policy to allow SSM Messages data/control channel operations
+resource "aws_iam_role_policy" "ec2_ssm_ssmmessages" {
+  name_prefix = "${var.environment}-${var.project_name}-ec2-ssmmessages-"
+  role        = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "arn:aws:ssmmessages:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+      }
+    ]
+  })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # IAM Instance Profile
@@ -362,9 +424,8 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role        = aws_iam_role.ec2_ssm_role.name
 }
 
-# EC2 Instance (t4g.micro with Graviton2 processor)
 resource "aws_instance" "main" {
-  ami                    = data.aws_ami.amazon_linux_2.id
+  ami                    = local.amazon_linux_2_ami
   instance_type          = var.rds_ssm_ec2_instance_type
   subnet_id              = aws_subnet.private.id
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
@@ -376,7 +437,7 @@ resource "aws_instance" "main" {
   }))
 
   monitoring              = true
-  associate_public_ip_address = true
+  associate_public_ip_address = false
 
   tags = {
     Name = "${var.project_name}-${var.environment}-db-access-ec2-instance"
@@ -388,7 +449,6 @@ resource "aws_instance" "main" {
   ]
 
   lifecycle {
-    prevent_destroy = true
     create_before_destroy = true
     ignore_changes = [
       # Prevent routine deployments or tag/user-data updates from forcing instance replacement
@@ -401,14 +461,15 @@ resource "aws_instance" "main" {
 # Trigger EC2 replacement when the latest Amazon Linux 2 AMI changes
 ## Removed terraform_data `ec2_replace_when_ami_changes` to avoid replacement cycles.
 
-# Get latest Amazon Linux 2 AMI (ARM-based for t4g)
-data "aws_ami" "amazon_linux_2" {
+# Get latest Amazon Linux 2 AMIs for ARM and x86, and choose based on instance type
+data "aws_ami" "amazon_linux_2_arm" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-arm64-gp2"]
+    # match common Amazon Linux 2 ARM naming across regions (gp2/gp3 variants)
+    values = ["amzn2-ami-hvm-*-arm64*"]
   }
 
   filter {
@@ -420,6 +481,46 @@ data "aws_ami" "amazon_linux_2" {
     name   = "virtualization-type"
     values = ["hvm"]
   }
+  filter {
+    name   = "architecture"
+    values = ["arm64"]
+  }
+}
+
+data "aws_ami" "amazon_linux_2_x86" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    # match common Amazon Linux 2 x86 naming across regions
+    values = ["amzn2-ami-hvm-*-x86_64*"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+}
+
+locals {
+  # Detect Graviton/ARM instance types by the 'g' family (e.g. t4g, m6g)
+  # Extract the instance family (prefix before the '.') and check its suffix.
+  # This avoids false matches and handles empty values safely.
+  instance_family = length(var.rds_ssm_ec2_instance_type) > 0 ? split(".", var.rds_ssm_ec2_instance_type)[0] : ""
+  ec2_is_arm      = length(local.instance_family) > 0 ? endswith(local.instance_family, "g") : false
+
+  # Select the appropriate AMI for the instance architecture
+  amazon_linux_2_ami = local.ec2_is_arm ? data.aws_ami.amazon_linux_2_arm.id : data.aws_ami.amazon_linux_2_x86.id
 }
 
 # DB Parameter Group for PostgreSQL
@@ -441,7 +542,8 @@ resource "aws_db_parameter_group" "postgres" {
 
 # DB Subnet Group for RDS
 resource "aws_db_subnet_group" "postgres" {
-  name_prefix = "${var.environment}-${var.project_name}-db-"
+  name        = var.db_subnet_group_name != "" ? var.db_subnet_group_name : null
+  name_prefix = var.db_subnet_group_name == "" ? "${var.project_name}-db-" : null
   subnet_ids  = [aws_subnet.private_2a.id, aws_subnet.private_2b.id]
 
   tags = {
@@ -498,8 +600,11 @@ resource "aws_kms_key" "rds" {
 }
 
 resource "aws_kms_alias" "rds" {
-  name          = "alias/${var.environment}-${var.project_name}-rds"
+  name          = "alias/${var.project_name}-${var.environment}-rds"
   target_key_id = aws_kms_key.rds.key_id
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Generate random salt for Hashids (only once, then reused from state)
@@ -518,6 +623,10 @@ resource "aws_ssm_parameter" "hashids_salt" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-hashids-salt"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -667,6 +776,9 @@ resource "aws_iam_role_policy" "lambda_scheduler" {
       }
     ]
   })
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # CloudWatch Log Group for Lambda

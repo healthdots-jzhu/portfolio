@@ -10,6 +10,10 @@ resource "aws_ecs_cluster" "main" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-cluster"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # CloudWatch Log Group for ECS tasks
@@ -19,6 +23,10 @@ resource "aws_cloudwatch_log_group" "ecs_tasks" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-logs"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -42,11 +50,19 @@ resource "aws_iam_role" "ecs_task_execution" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-exec-role"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   role       = aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Additional policy for ECS task execution to read secrets from Secrets Manager
@@ -63,12 +79,16 @@ resource "aws_iam_role_policy" "ecs_secrets_access" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.postgres_connection.arn,
-          aws_secretsmanager_secret.github_models_api_token.arn
+          data.aws_secretsmanager_secret.postgres_connection.arn,
+          data.aws_secretsmanager_secret.github_models_api_token.arn
         ]
       },
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # ECS Task Role (for application runtime permissions like S3, SSM)
@@ -90,6 +110,10 @@ resource "aws_iam_role" "ecs_task" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-task-role"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -124,6 +148,10 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
       }
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Security Group for ECS tasks
@@ -151,6 +179,10 @@ resource "aws_security_group" "ecs_tasks" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-tasks-sg"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Allow ECS tasks to connect to RDS
@@ -167,36 +199,15 @@ resource "aws_security_group_rule" "rds_from_ecs" {
 # Using AWS-managed KMS for Secrets Manager (aws/secretsmanager). No customer CMK created here.
 
 # Secrets Manager - Postgres Connection String
-resource "aws_secretsmanager_secret" "postgres_connection" {
-  name                    = "${var.project_name}-${var.environment}-postgres-connection"
-  description             = "PostgreSQL connection string for Portfolio API"
-  recovery_window_in_days = 7
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-postgres-connection"
-    Environment = var.environment
-  }
+# Use data lookup to avoid attempting creation when the secret already exists.
+data "aws_secretsmanager_secret" "postgres_connection" {
+  name = "${var.project_name}-${var.environment}-postgres-connection"
 }
-
-# Secret value should be provided at runtime (workflow or operator);
-# leave management of the secret's value to external tooling to avoid
-# storing sensitive data in Terraform state.
 
 # Secrets Manager - GitHub Models API Token
-resource "aws_secretsmanager_secret" "github_models_api_token" {
-  name                    = "${var.project_name}-${var.environment}-github-models-token"
-  description             = "GitHub Models API token for Portfolio API"
-  recovery_window_in_days = 7
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-github-models-token"
-    Environment = var.environment
-  }
+data "aws_secretsmanager_secret" "github_models_api_token" {
+  name = "${var.project_name}-${var.environment}-github-models-token"
 }
-
-# Secret value should be provided at runtime (workflow or operator);
-# leave management of the secret's value to external tooling to avoid
-# storing sensitive data in Terraform state.
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "portfolio_api" {
@@ -230,17 +241,21 @@ resource "aws_ecs_task_definition" "portfolio_api" {
         {
           name  = "ASPNETCORE_URLS"
           value = "http://+:80"
+        },
+        {
+          name  = "PATH_BASE"
+          value = var.path_base
         }
       ]
 
       secrets = [
         {
           name      = "ConnectionStrings__Postgres"
-          valueFrom = "${aws_secretsmanager_secret.postgres_connection.arn}"
+          valueFrom = data.aws_secretsmanager_secret.postgres_connection.arn
         },
         {
           name      = "GitHubModels__ApiToken"
-          valueFrom = "${aws_secretsmanager_secret.github_models_api_token.arn}"
+          valueFrom = data.aws_secretsmanager_secret.github_models_api_token.arn
         }
       ]
 
@@ -287,6 +302,10 @@ resource "aws_ecs_service" "portfolio_api" {
   tags = {
     Name = "${var.project_name}-${var.environment}-portfolio-api-service"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Application Auto Scaling: keep 1 task normally, scale up to 3 based on CPU
@@ -332,7 +351,7 @@ resource "aws_lb" "main" {
 # Additional public subnet in second AZ for ALB
 resource "aws_subnet" "public_2b" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.3.0/24"
+  cidr_block              = var.public_2b_cidr
   availability_zone       = "ca-central-1b"
   map_public_ip_on_launch = true
 
@@ -423,13 +442,29 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+locals {
+  # number of configured certificate ARNs
+  acm_count = length(var.acm_certificate_arns)
+
+  # clamp the API index into 0..acm_count-1 when there are ARNs
+  # Use min/max and reference local.acm_count to avoid parser errors
+  api_index = local.acm_count > 0 ? min(max(var.api_certificate_arn_index, 0), local.acm_count - 1) : 0
+
+  # ordered list: put the selected API certificate first, then the remaining ARNs in their original order
+  ordered_acm_certificate_arns = local.acm_count == 0 ? [] : concat([element(var.acm_certificate_arns, local.api_index)], [for i, a in var.acm_certificate_arns : a if i != local.api_index])
+}
+
 # HTTPS Listener (requires ACM certificate - see variable)
 resource "aws_lb_listener" "https" {
+  count             = length(var.acm_certificate_arns) > 0 ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = var.acm_certificate_arn
+  # Attach the selected API certificate (first in ordered list).
+  # The resource is created only when there are ACM ARNs (see count above),
+  # so referencing element(var.acm_certificate_arns, local.api_index) is safe.
+  certificate_arn = element(var.acm_certificate_arns, local.api_index)
 
   default_action {
     type = "fixed-response"
@@ -442,9 +477,23 @@ resource "aws_lb_listener" "https" {
   }
 }
 
+# Attach remaining ACM certs to the listener (SNI)
+resource "aws_lb_listener_certificate" "extra" {
+  for_each = { for idx, arn in var.acm_certificate_arns : idx => arn if idx != local.api_index }
+
+  listener_arn    = aws_lb_listener.https[0].arn
+  certificate_arn = each.value
+}
+
+# Ensure ECS service-linked role exists so ECS can create services
+resource "aws_iam_service_linked_role" "ecs" {
+  aws_service_name = "ecs.amazonaws.com"
+  description      = "Service-linked role for Amazon ECS"
+}
+
 # Listener rule for path-based routing (portfolio-{environment})
 resource "aws_lb_listener_rule" "portfolio_api" {
-  listener_arn = aws_lb_listener.https.arn
+  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
   priority     = 100
 
   action {
