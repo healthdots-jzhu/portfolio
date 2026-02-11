@@ -125,6 +125,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "iam:DeleteRolePolicy",
       "iam:PassRole",
       "iam:CreateServiceLinkedRole",
+      "iam:DeleteInstanceProfile",
 
       # KMS
       "kms:DescribeKey",
@@ -148,6 +149,7 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "rds:ModifyDBInstance",
       "rds:CreateDBSubnetGroup",
       "rds:AddTagsToResource",
+      "rds:DeleteDBParameterGroup",
 
       # Secrets Manager
       "secretsmanager:ListSecrets",
