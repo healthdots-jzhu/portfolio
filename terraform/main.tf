@@ -210,6 +210,20 @@ resource "aws_vpc_endpoint" "sts_app" {
   }
 }
 
+# VPC Interface Endpoint for CloudWatch Logs so Fargate tasks can publish logs without NAT
+resource "aws_vpc_endpoint" "logs_app" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-vpce-logs"
+  }
+}
+
 # S3 Gateway Endpoint for app private route table (allows S3 access without NAT)
 resource "aws_vpc_endpoint" "s3_app" {
   vpc_id       = aws_vpc.main.id
