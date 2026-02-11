@@ -437,7 +437,7 @@ resource "aws_instance" "main" {
   }))
 
   monitoring              = true
-  associate_public_ip_address = true
+  associate_public_ip_address = false
 
   tags = {
     Name = "${var.project_name}-${var.environment}-db-access-ec2-instance"
