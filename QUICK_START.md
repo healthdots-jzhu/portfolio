@@ -42,6 +42,9 @@ npm run test:e2e
 Notes:
 - The public portfolio test hits `/p/jason-zhu-EU1O` and requires the API to be running (Step 2).
 - Override the base URL with `E2E_BASE_URL` if needed.
+- Login E2E uses these optional env vars (comma-separated lists; a random value is chosen each run):
+  `E2E_LOGIN_EMAILS`, `E2E_LOGIN_PASSWORDS`, `E2E_LOGIN_FIRST_NAMES`, `E2E_LOGIN_LAST_NAMES`.
+You can also create `portfolio-frontend/.env.e2e` and it will be loaded automatically by Playwright.
 
 ## Environment Variables
 Frontend (`portfolio-frontend/.env`):
