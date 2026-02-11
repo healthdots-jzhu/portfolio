@@ -185,7 +185,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.5.7"
+          terraform_version: "1.14.3"
 
       - name: Terraform init (S3 backend)
         run: |
