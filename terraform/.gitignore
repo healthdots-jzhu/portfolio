@@ -8,6 +8,7 @@
 .terraform.tfvars
 terraform.tfvars
 plan.json
+*.tfplan
 
 # IDE
 .idea/

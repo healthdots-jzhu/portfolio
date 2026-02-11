@@ -208,7 +208,10 @@ jobs:
           echo "TF_VAR_public_subnet_cidr=${{ vars.PUBLIC_SUBNET_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_public_2b_cidr=${{ vars.PUBLIC_2B_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_private_subnet_cidr=${{ vars.PRIVATE_SUBNET_CIDR }}" >> $GITHUB_ENV
-          echo "TF_VAR_rds_ssm_ec2_instance_type=${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" >> $GITHUB_ENV
+          # Only export if the repo variable is set; otherwise let Terraform use its variable default
+          if [ -n "${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" ]; then
+            echo "TF_VAR_rds_ssm_ec2_instance_type=${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" >> $GITHUB_ENV
+          fi
           echo "TF_VAR_rds_instance_class=${{ vars.RDS_INSTANCE_CLASS }}" >> $GITHUB_ENV
           echo "TF_VAR_rds_allocated_storage=${{ vars.RDS_ALLOCATED_STORAGE }}" >> $GITHUB_ENV
           echo "TF_VAR_postgres_version=${{ vars.POSTGRES_VERSION }}" >> $GITHUB_ENV
