@@ -468,7 +468,8 @@ data "aws_ami" "amazon_linux_2_arm" {
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-arm64-gp2"]
+    # match common Amazon Linux 2 ARM naming across regions (gp2/gp3 variants)
+    values = ["amzn2-ami-hvm-*-arm64*"]
   }
 
   filter {
@@ -479,6 +480,10 @@ data "aws_ami" "amazon_linux_2_arm" {
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["arm64"]
   }
 }
 
@@ -488,7 +493,8 @@ data "aws_ami" "amazon_linux_2_x86" {
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    # match common Amazon Linux 2 x86 naming across regions
+    values = ["amzn2-ami-hvm-*-x86_64*"]
   }
 
   filter {
@@ -499,6 +505,10 @@ data "aws_ami" "amazon_linux_2_x86" {
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
   }
 }
 
