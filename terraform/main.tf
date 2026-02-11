@@ -514,8 +514,10 @@ data "aws_ami" "amazon_linux_2_x86" {
 
 locals {
   # Detect Graviton/ARM instance types by the 'g' family (e.g. t4g, m6g)
-  # Use regexall to safely handle empty or non-matching strings
-  ec2_is_arm = length(regexall("g", var.rds_ssm_ec2_instance_type)) > 0
+  # Extract the instance family (prefix before the '.') and check its suffix.
+  # This avoids false matches and handles empty values safely.
+  instance_family = length(var.rds_ssm_ec2_instance_type) > 0 ? split(".", var.rds_ssm_ec2_instance_type)[0] : ""
+  ec2_is_arm      = length(local.instance_family) > 0 ? endswith(local.instance_family, "g") : false
 
   # Select the appropriate AMI for the instance architecture
   amazon_linux_2_ami = local.ec2_is_arm ? data.aws_ami.amazon_linux_2_arm.id : data.aws_ami.amazon_linux_2_x86.id
