@@ -296,6 +296,12 @@ jobs:
         run: |
           terraform plan -out=plan.tfplan
 
+      - name: Upload TF plan to S3
+        run: |
+          set -euo pipefail
+          # Upload the generated plan to the TF state bucket for auditing
+          aws s3 cp plan.tfplan "s3://${{ vars.TF_STATE_BUCKET }}/terraform-plans/${{ env.ENVIRONMENT }}/plan-${{ github.run_id }}.tfplan" --region "${{ env.AWS_REGION }}"
+
       - name: Terraform apply on master
         if: |
           (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
