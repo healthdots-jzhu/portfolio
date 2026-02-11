@@ -180,8 +180,18 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "lambda:GetLayerVersionPolicy",
 
       # Application Auto Scaling
+      # Application Auto Scaling - allow registering/deregistering targets and scaling policies
+      "application-autoscaling:RegisterScalableTarget",
+      "application-autoscaling:DeregisterScalableTarget",
+      "application-autoscaling:PutScalingPolicy",
+      "application-autoscaling:DeleteScalingPolicy",
       "application-autoscaling:DescribeScalableTargets",
       "application-autoscaling:DescribeScalingPolicies",
+
+      # CloudWatch Alarms for autoscaling
+      "cloudwatch:PutMetricAlarm",
+      "cloudwatch:DeleteAlarms",
+      "cloudwatch:DescribeAlarms",
 
       # S3 helper
       "s3:GetBucketLocation",
