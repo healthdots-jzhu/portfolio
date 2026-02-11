@@ -300,7 +300,7 @@ resource "aws_security_group" "vpc_endpoints" {
     from_port       = 443
     to_port         = 443
     protocol        = "tcp"
-    security_groups = [aws_security_group.ec2.id]
+    security_groups = [aws_security_group.ec2.id, aws_security_group.ecs_tasks.id]
   }
 
   egress {
