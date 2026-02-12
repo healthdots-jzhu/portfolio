@@ -534,12 +534,6 @@ resource "aws_s3_bucket" "alb_logs" {
   }
 }
 
-# ACL for ALB logs bucket (moved from inline argument)
-resource "aws_s3_bucket_acl" "alb_logs" {
-  bucket = aws_s3_bucket.alb_logs.id
-  acl    = "private"
-}
-
 # Versioning for ALB logs bucket (moved from inline argument)
 resource "aws_s3_bucket_versioning" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
@@ -585,17 +579,6 @@ resource "aws_s3_bucket_policy" "alb_logs" {
         "StringEquals": { "aws:SourceAccount": "${data.aws_caller_identity.current.account_id}" },
         "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:loadbalancer/*" }
       }
-    },
-    {
-      "Sid": "AWSLoadBalancerDeliveryAcl",
-      "Effect": "Allow",
-      "Principal": { "Service": "elasticloadbalancing.amazonaws.com" },
-      "Action": "s3:PutObjectAcl",
-      "Resource": "${aws_s3_bucket.alb_logs.arn}/*",
-      "Condition": {
-        "StringEquals": { "aws:SourceAccount": "${data.aws_caller_identity.current.account_id}" },
-        "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:loadbalancer/*" }
-      }
     }
   ]
 }
@@ -608,8 +591,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
   rule {
-    id      = "logs"
+    id     = "logs"
     status = "Enabled"
+
+    filter {}
 
     transition {
       days          = 30
