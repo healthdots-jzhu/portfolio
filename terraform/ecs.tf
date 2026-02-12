@@ -355,6 +355,8 @@ resource "aws_lb" "main" {
   tags = {
     Name = "${var.project_name}-${var.environment}-alb"
   }
+
+  depends_on = [aws_s3_bucket_policy.alb_logs]
 }
 
 # Additional public subnet in second AZ for ALB
