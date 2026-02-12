@@ -116,6 +116,8 @@ builder.Services.AddSingleton<Portfolio.Api.Services.IShortIdGenerator>(sp =>
     var logger = sp.GetRequiredService<ILogger<Portfolio.Api.Services.ShortIdGenerator>>();
     var salt = config["Hashids:Salt"] ?? "portfolio-app-default-salt";
     var parameterName = config["Hashids:ParameterName"];
+    // Log the effective parameter name resolved from configuration for easier debugging
+    logger.LogInformation("Resolved Hashids:ParameterName = {ParameterName}", parameterName ?? "(null)");
 
     if (!string.IsNullOrWhiteSpace(parameterName))
     {
@@ -228,7 +230,7 @@ catch
     // swallow logging errors during startup diagnostic logging
 }
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Beta"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();

@@ -144,7 +144,10 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
           "ssm:GetParameter",
           "ssm:GetParameters"
         ]
-        Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/${var.environment}/${var.project_name}/*"
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:*:parameter/${var.environment}/${var.project_name}/*",
+          "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*"
+        ]
       }
     ]
   })
@@ -343,6 +346,12 @@ resource "aws_lb" "main" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = [aws_subnet.public.id, aws_subnet.public_2b.id]
 
+  access_logs {
+    bucket  = aws_s3_bucket.alb_logs.bucket
+    prefix  = "${var.project_name}/${var.environment}/alb"
+    enabled = true
+  }
+
   tags = {
     Name = "${var.project_name}-${var.environment}-alb"
   }
@@ -515,6 +524,85 @@ resource "aws_lb_listener_rule" "portfolio_api" {
 }
 
 # Route53 record for API subdomain
+
+// S3 bucket to receive ALB access logs
+resource "aws_s3_bucket" "alb_logs" {
+  bucket = "${var.project_name}-${var.environment}-alb-logs"
+  acl    = "private"
+
+  versioning {
+    enabled = true
+  }
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
+  lifecycle_rule {
+    id      = "logs"
+    enabled = true
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    expiration {
+      days = 365
+    }
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-alb-logs"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_logs" {
+  bucket                  = aws_s3_bucket.alb_logs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AWSLoadBalancerDelivery",
+      "Effect": "Allow",
+      "Principal": { "Service": "elasticloadbalancing.amazonaws.com" },
+      "Action": "s3:PutObject",
+      "Resource": "${aws_s3_bucket.alb_logs.arn}/*",
+      "Condition": {
+        "StringEquals": { "aws:SourceAccount": "${var.aws_account_id}" },
+        "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${var.aws_account_id}:loadbalancer/*" }
+      }
+    },
+    {
+      "Sid": "AWSLoadBalancerDeliveryAcl",
+      "Effect": "Allow",
+      "Principal": { "Service": "elasticloadbalancing.amazonaws.com" },
+      "Action": "s3:PutObjectAcl",
+      "Resource": "${aws_s3_bucket.alb_logs.arn}/*",
+      "Condition": {
+        "StringEquals": { "aws:SourceAccount": "${var.aws_account_id}" },
+        "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${var.aws_account_id}:loadbalancer/*" }
+      }
+    }
+  ]
+}
+POLICY
+}
+
 data "aws_route53_zone" "selected" {
   name         = var.route53_zone_name
   private_zone = false
