@@ -592,8 +592,6 @@ resource "aws_s3_bucket_policy" "alb_logs" {
 POLICY
 }
 
-data "aws_caller_identity" "current" {}
-
 # Separate lifecycle configuration for the ALB logs bucket (replacement for
 # deprecated lifecycle_rule inside aws_s3_bucket)
 resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
