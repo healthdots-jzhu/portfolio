@@ -137,3 +137,14 @@ jobs:
         id: set-image
         run: |
           echo "image=${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Force ECS service deployment
+        run: |
+          aws ecs update-service \
+            --cluster "${CLUSTER_NAME}" \
+            --service "${SERVICE_NAME}" \
+            --force-new-deployment \
+            --region "${AWS_REGION}"
+        env:
+          CLUSTER_NAME: ${{ format('{0}-{1}-cluster', vars.PROJECT_NAME, env.ENVIRONMENT) }}
+          SERVICE_NAME: ${{ format('{0}-{1}-portfolio-api', vars.PROJECT_NAME, env.ENVIRONMENT) }}

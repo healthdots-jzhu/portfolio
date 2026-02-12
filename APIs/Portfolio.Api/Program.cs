@@ -257,7 +257,10 @@ if (!string.IsNullOrEmpty(pathBase))
     app.UsePathBase(new Microsoft.AspNetCore.Http.PathString(pathBase));
 }
 
-app.UseHttpsRedirection();
+// HTTPS redirect is handled at the ALB level (which terminates HTTPS and forwards HTTP to container).
+// The app receives X-Forwarded-Proto: https header from the ALB for detection.
+// Skip UseHttpsRedirection() to avoid "Failed to determine https port" errors when running behind ALB.
+// app.UseHttpsRedirection();
 
 // Enable routing before applying CORS so the CORS middleware can run with endpoint routing
 app.UseRouting();
