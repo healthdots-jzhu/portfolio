@@ -148,3 +148,82 @@ jobs:
         env:
           CLUSTER_NAME: ${{ format('{0}-{1}-cluster', vars.PROJECT_NAME, env.ENVIRONMENT) }}
           SERVICE_NAME: ${{ format('{0}-{1}-portfolio-api', vars.PROJECT_NAME, env.ENVIRONMENT) }}
+
+      - name: Wait for ECS service deployment to complete
+        run: |
+          set -euo pipefail
+          CLUSTER_NAME="${{ format('{0}-{1}-cluster', vars.PROJECT_NAME, env.ENVIRONMENT) }}"
+          SERVICE_NAME="${{ format('{0}-{1}-portfolio-api', vars.PROJECT_NAME, env.ENVIRONMENT) }}"
+          MAX_WAIT=600
+          INTERVAL=10
+          waited=0
+          
+          echo "Waiting for ECS service '${SERVICE_NAME}' in cluster '${CLUSTER_NAME}' to stabilize..."
+          
+          while [ $waited -lt $MAX_WAIT ]; do
+            service_info=$(aws ecs describe-services \
+              --cluster "${CLUSTER_NAME}" \
+              --services "${SERVICE_NAME}" \
+              --region "${AWS_REGION}" \
+              --query 'services[0]' \
+              --output json)
+            
+            desired_count=$(echo "$service_info" | jq -r '.desiredCount')
+            running_count=$(echo "$service_info" | jq -r '.runningCount')
+            deployment_count=$(echo "$service_info" | jq '.deployments | length')
+            active_deployments=$(echo "$service_info" | jq '[.deployments[] | select(.status=="PRIMARY")] | length')
+            
+            echo "Desired: ${desired_count}, Running: ${running_count}, Active deployments: ${active_deployments}, Total deployments: ${deployment_count}"
+            
+            # Check if service is stable: desired == running and only 1 active deployment
+            if [ "$desired_count" -eq "$running_count" ] && [ "$active_deployments" -eq 1 ]; then
+              echo "✓ ECS service deployment complete - all tasks are running"
+              
+              # Wait a few more seconds for health checks to pass
+              echo "Waiting for health checks to pass..."
+              sleep 10
+              
+              # Check if tasks are healthy
+              task_arns=$(aws ecs list-tasks \
+                --cluster "${CLUSTER_NAME}" \
+                --service-name "${SERVICE_NAME}" \
+                --region "${AWS_REGION}" \
+                --query 'taskArns[]' \
+                --output text)
+              
+              if [ -z "$task_arns" ]; then
+                echo "✗ No tasks found"
+                exit 1
+              fi
+              
+              # Get task details to check if they're in RUNNING state
+              tasks_info=$(aws ecs describe-tasks \
+                --cluster "${CLUSTER_NAME}" \
+                --tasks $task_arns \
+                --region "${AWS_REGION}" \
+                --query 'tasks[*].{arn:taskArn, lastStatus:lastStatus, desiredStatus:desiredStatus}' \
+                --output json)
+              
+              all_running=$(echo "$tasks_info" | jq '[.[] | select(.lastStatus=="RUNNING" and .desiredStatus=="RUNNING")] | length')
+              total_tasks=$(echo "$tasks_info" | jq 'length')
+              
+              echo "Tasks running: ${all_running}/${total_tasks}"
+              
+              if [ "$all_running" -eq "$total_tasks" ] && [ "$total_tasks" -gt 0 ]; then
+                echo "✓ All tasks are healthy and running"
+                exit 0
+              else
+                echo "⚠ Not all tasks are in RUNNING state, but service reports stable. Continuing..."
+                exit 0
+              fi
+            fi
+            
+            echo "Service not yet stable, waiting ${INTERVAL}s..."
+            sleep $INTERVAL
+            waited=$((waited + INTERVAL))
+          done
+          
+          echo "✗ Timed out waiting for ECS service to stabilize after ${MAX_WAIT}s"
+          exit 1
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}

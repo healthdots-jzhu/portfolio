@@ -9,6 +9,9 @@ using Amazon.SimpleSystemsManagement.Model;
 using Amazon.Runtime;
 using Amazon.Runtime.CredentialManagement;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 // Prevent claim type mapping (keep "sub" as "sub", not transform to ClaimTypes.NameIdentifier)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -45,19 +48,31 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var cognitoAuthority = builder.Configuration["Aws:Cognito:Authority"];
 var cognitoAudience = builder.Configuration.GetSection("Aws:Cognito:Audience").Get<string[]>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = cognitoAuthority;
-        options.TokenValidationParameters = new TokenValidationParameters
+// Register JwtBearer only for Development runs (where ALB auth is not present).
+// In non-Development (prod/beta) environments the ALB performs authentication
+// and `AlbAuthMiddleware` will populate HttpContext.User.
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            ValidateIssuer = true,
-            ValidIssuer = cognitoAuthority,
-            ValidateAudience = true,
-            ValidAudiences = cognitoAudience,
-            ValidateLifetime = true
-        };
-    });
+            options.Authority = cognitoAuthority;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = cognitoAuthority,
+                ValidateAudience = true,
+                ValidAudiences = cognitoAudience,
+                ValidateLifetime = true
+            };
+        });
+}
+else
+{
+    // Ensure Authentication services are available so the pipeline can call UseAuthentication(),
+    // but don't register JwtBearer since ALB handles auth.
+    builder.Services.AddAuthentication();
+}
 
 builder.Services.AddAuthorization(options =>
 {
@@ -242,6 +257,60 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
 });
 
+// Global exception handler: catch unexpected exceptions, log them, and return
+// a minimal 500 response. Placed early to capture errors from downstream middleware.
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        await next();
+
+        // If downstream set a 5xx status without throwing, log it for visibility
+        if (context.Response.StatusCode >= 500)
+        {
+            logger.LogError("Request completed with server error status {StatusCode} for {Method} {Path}", context.Response.StatusCode, context.Request.Method, context.Request.Path);
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Unhandled exception processing request {Method} {Path}", context.Request.Method, context.Request.Path);
+
+        if (!context.Response.HasStarted)
+        {
+            context.Response.Clear();
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/json";
+            var payload = System.Text.Json.JsonSerializer.Serialize(new { error = "An unexpected error occurred." });
+            await context.Response.WriteAsync(payload);
+        }
+
+        // Do not rethrow; we handled and logged the exception.
+    }
+});
+
+// Add request logging middleware to diagnose slow or hanging requests
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    logger.LogInformation("→ {Method} {Path}", context.Request.Method, context.Request.Path);
+    
+    try
+    {
+        await next.Invoke();
+        stopwatch.Stop();
+        logger.LogInformation("← {Method} {Path} - {StatusCode} ({ElapsedMs}ms)", 
+            context.Request.Method, context.Request.Path, context.Response.StatusCode, stopwatch.ElapsedMilliseconds);
+    }
+    catch (Exception)
+    {
+        // Let the global exception handler capture and log the exception.
+        stopwatch.Stop();
+        throw;
+    }
+});
+
 // Respect a path base injected by the ALB (e.g. "/portfolio-beta/content") so existing controllers
 // with routes like "api/[controller]" continue to work without changes.
 var pathBase = Environment.GetEnvironmentVariable("PATH_BASE") ?? app.Configuration["PathBase"];
@@ -268,6 +337,13 @@ app.UseRouting();
 app.UseCors("AppCors");
 
 app.UseAuthentication();
+
+// Use dedicated middleware to trust ALB-injected auth headers when appropriate.
+// Trust ALB-injected auth headers only outside of Development to simplify local runs.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseMiddleware<Portfolio.Api.Middleware.AlbAuthMiddleware>();
+}
 
 // Ensure authenticated users exist in DB (JIT provisioning)
 app.UseMiddleware<Portfolio.Api.Middleware.EnsureUserExistsMiddleware>();
