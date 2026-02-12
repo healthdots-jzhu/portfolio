@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   id-token: write
 
 jobs:
@@ -37,6 +38,8 @@ jobs:
       CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
 
     steps:
+      
+
       - name: Checkout repo
         uses: actions/checkout@v6.0.2
         with:
@@ -78,6 +81,40 @@ jobs:
         working-directory: portfolio-frontend
         run: npm ci
 
+      - name: Wait for backend build-and-push workflow to finish (if running)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TARGET_WORKFLOW_PATH: .github/workflows/2-backend-build-and-push.yml
+        run: |
+          set -euo pipefail
+          command -v jq >/dev/null || (sudo apt-get update -y && sudo apt-get install -y jq)
+          WORKFLOWS_API="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows"
+          WORKFLOW_ID=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "$WORKFLOWS_API" | jq -r --arg p "$TARGET_WORKFLOW_PATH" '.workflows[] | select(.path==$p) | .id')
+          if [ -z "$WORKFLOW_ID" ] || [ "$WORKFLOW_ID" = "null" ]; then
+            echo "Target workflow not found: $TARGET_WORKFLOW_PATH - continuing"
+          else
+            echo "Waiting for workflow id $WORKFLOW_ID ($TARGET_WORKFLOW_PATH) to have no in-progress runs"
+            MAX_WAIT=1800
+            INTERVAL=15
+            waited=0
+            while true; do
+              runs=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?status=in_progress")
+              count=$(echo "$runs" | jq '.total_count')
+              if [ "$count" -eq 0 ]; then
+                echo "No in-progress runs for ${TARGET_WORKFLOW_PATH}"
+                break
+              fi
+              echo "Found $count in-progress run(s); waiting ${INTERVAL}s..."
+              sleep $INTERVAL
+              waited=$((waited+INTERVAL))
+              if [ $waited -ge $MAX_WAIT ]; then
+                echo "Timed out waiting for ${TARGET_WORKFLOW_PATH} to finish after ${waited}s"
+                exit 1
+              fi
+            done
+          fi
+          
       - name: Validate CloudFront distribution ID is set
         env:
           CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
