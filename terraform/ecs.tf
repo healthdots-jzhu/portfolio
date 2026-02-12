@@ -357,8 +357,10 @@ resource "aws_lb" "main" {
   }
 
   depends_on = [
+    aws_s3_bucket.alb_logs,
     aws_s3_bucket_policy.alb_logs,
-    aws_s3_bucket_ownership_controls.alb_logs
+    aws_s3_bucket_ownership_controls.alb_logs,
+    aws_s3_bucket_public_access_block.alb_logs
   ]
 }
 
@@ -586,24 +588,10 @@ resource "aws_s3_bucket_policy" "alb_logs" {
         Sid    = "AWSLogDeliveryWrite"
         Effect = "Allow"
         Principal = {
-          Service = "delivery.logs.amazonaws.com"
+          AWS = "arn:aws:iam::985666609251:root"
         }
         Action   = "s3:PutObject"
         Resource = "${aws_s3_bucket.alb_logs.arn}/*"
-        Condition = {
-          StringEquals = {
-            "s3:x-amz-acl" = "bucket-owner-full-control"
-          }
-        }
-      },
-      {
-        Sid    = "AWSLogDeliveryAclCheck"
-        Effect = "Allow"
-        Principal = {
-          Service = "delivery.logs.amazonaws.com"
-        }
-        Action   = "s3:GetBucketAcl"
-        Resource = aws_s3_bucket.alb_logs.arn
       }
     ]
   })
