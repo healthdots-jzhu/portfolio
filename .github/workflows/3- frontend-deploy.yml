@@ -95,6 +95,7 @@ jobs:
             echo "Target workflow not found: $TARGET_WORKFLOW_PATH - continuing"
           else
             echo "Waiting for workflow id $WORKFLOW_ID ($TARGET_WORKFLOW_PATH) to have no in-progress runs"
+            sleep 2
             MAX_WAIT=1800
             INTERVAL=15
             waited=0
@@ -114,7 +115,7 @@ jobs:
               fi
             done
           fi
-          
+
       - name: Validate CloudFront distribution ID is set
         env:
           CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
