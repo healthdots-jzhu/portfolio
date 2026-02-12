@@ -94,26 +94,54 @@ jobs:
           if [ -z "$WORKFLOW_ID" ] || [ "$WORKFLOW_ID" = "null" ]; then
             echo "Target workflow not found: $TARGET_WORKFLOW_PATH - continuing"
           else
-            echo "Waiting for workflow id $WORKFLOW_ID ($TARGET_WORKFLOW_PATH) to have no in-progress runs"
+            echo "Checking latest run status for workflow id $WORKFLOW_ID ($TARGET_WORKFLOW_PATH)"
             sleep 2
-            MAX_WAIT=1800
-            INTERVAL=15
-            waited=0
-            while true; do
-              runs=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?status=in_progress")
-              count=$(echo "$runs" | jq '.total_count')
-              if [ "$count" -eq 0 ]; then
-                echo "No in-progress runs for ${TARGET_WORKFLOW_PATH}"
-                break
-              fi
-              echo "Found $count in-progress run(s); waiting ${INTERVAL}s..."
-              sleep $INTERVAL
-              waited=$((waited+INTERVAL))
-              if [ $waited -ge $MAX_WAIT ]; then
-                echo "Timed out waiting for ${TARGET_WORKFLOW_PATH} to finish after ${waited}s"
+            
+            # Get the latest run (most recent)
+            latest_run=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?per_page=1")
+            latest_status=$(echo "$latest_run" | jq -r '.workflow_runs[0].status // "unknown"')
+            latest_conclusion=$(echo "$latest_run" | jq -r '.workflow_runs[0].conclusion // "null"')
+            
+            echo "Latest run status: $latest_status, conclusion: $latest_conclusion"
+            
+            # If the latest run is completed and failed, exit immediately
+            if [ "$latest_status" = "completed" ]; then
+              if [ "$latest_conclusion" = "failure" ] || [ "$latest_conclusion" = "cancelled" ] || [ "$latest_conclusion" = "timed_out" ]; then
+                echo "ERROR: Latest backend build workflow run ended with conclusion: $latest_conclusion"
+                echo "Cannot proceed with frontend deployment while backend build has failed."
                 exit 1
+              elif [ "$latest_conclusion" = "success" ]; then
+                echo "Latest backend build workflow run succeeded - continuing"
               fi
-            done
+            elif [ "$latest_status" = "queued" ] || [ "$latest_status" = "in_progress" ] || [ "$latest_status" = "waiting" ]; then
+              # Wait for in-progress runs to complete
+              echo "Waiting for workflow id $WORKFLOW_ID ($TARGET_WORKFLOW_PATH) to have no in-progress runs"
+              MAX_WAIT=1800
+              INTERVAL=15
+              waited=0
+              while true; do
+                runs=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?status=in_progress")
+                count=$(echo "$runs" | jq '.total_count')
+                if [ "$count" -eq 0 ]; then
+                  echo "No in-progress runs for ${TARGET_WORKFLOW_PATH}"
+                  # Re-check the latest run's conclusion after waiting
+                  latest_run=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?per_page=1")
+                  latest_conclusion=$(echo "$latest_run" | jq -r '.workflow_runs[0].conclusion // "null"')
+                  if [ "$latest_conclusion" = "failure" ] || [ "$latest_conclusion" = "cancelled" ] || [ "$latest_conclusion" = "timed_out" ]; then
+                    echo "ERROR: Backend build workflow completed with conclusion: $latest_conclusion"
+                    exit 1
+                  fi
+                  break
+                fi
+                echo "Found $count in-progress run(s); waiting ${INTERVAL}s..."
+                sleep $INTERVAL
+                waited=$((waited+INTERVAL))
+                if [ $waited -ge $MAX_WAIT ]; then
+                  echo "Timed out waiting for ${TARGET_WORKFLOW_PATH} to finish after ${waited}s"
+                  exit 1
+                fi
+              done
+            fi
           fi
 
       - name: Validate CloudFront distribution ID is set
