@@ -528,25 +528,35 @@ resource "aws_lb_listener_rule" "portfolio_api" {
 // S3 bucket to receive ALB access logs
 resource "aws_s3_bucket" "alb_logs" {
   bucket = "${var.project_name}-${var.environment}-alb-logs"
-  acl    = "private"
-
-  versioning {
-    enabled = true
-  }
-
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-
-  # lifecycle_rule is deprecated; lifecycle configuration moved to
-  # aws_s3_bucket_lifecycle_configuration resource below.
 
   tags = {
     Name = "${var.project_name}-${var.environment}-alb-logs"
+  }
+}
+
+# ACL for ALB logs bucket (moved from inline argument)
+resource "aws_s3_bucket_acl" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+  acl    = "private"
+}
+
+# Versioning for ALB logs bucket (moved from inline argument)
+resource "aws_s3_bucket_versioning" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Server-side encryption for ALB logs bucket (moved from inline argument)
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
   }
 }
 
@@ -599,7 +609,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
 
   rule {
     id      = "logs"
-    enabled = true
+    status = "Enabled"
 
     transition {
       days          = 30
