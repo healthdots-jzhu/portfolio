@@ -536,6 +536,15 @@ resource "aws_s3_bucket" "alb_logs" {
   }
 }
 
+# Bucket ownership controls - required for ALB logs
+resource "aws_s3_bucket_ownership_controls" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
 # Versioning for ALB logs bucket (moved from inline argument)
 resource "aws_s3_bucket_versioning" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
@@ -567,24 +576,36 @@ resource "aws_s3_bucket_public_access_block" "alb_logs" {
 resource "aws_s3_bucket_policy" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
-  policy = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "AWSLoadBalancerDelivery",
-      "Effect": "Allow",
-      "Principal": { "Service": "elasticloadbalancing.amazonaws.com" },
-      "Action": "s3:PutObject",
-      "Resource": "${aws_s3_bucket.alb_logs.arn}/*",
-      "Condition": {
-        "StringEquals": { "aws:SourceAccount": "${data.aws_caller_identity.current.account_id}" },
-        "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:loadbalancer/*" }
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AWSLogDeliveryWrite"
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.alb_logs.arn}/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      },
+      {
+        Sid    = "AWSLogDeliveryAclCheck"
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action   = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.alb_logs.arn
       }
-    }
-  ]
-}
-POLICY
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.alb_logs]
 }
 
 # Separate lifecycle configuration for the ALB logs bucket (replacement for
