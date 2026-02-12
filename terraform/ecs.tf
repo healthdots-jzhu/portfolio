@@ -565,7 +565,7 @@ resource "aws_lb_listener_rule" "portfolio_api_auth" {
     type = "authenticate-cognito"
 
     authenticate_cognito {
-      user_pool_arn       = var.cognito_user_pool_arn
+      user_pool_arn       = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/${var.cognito_user_pool_id}"
       user_pool_client_id = var.cognito_user_pool_client_id
       user_pool_domain    = var.cognito_user_pool_domain
       on_unauthenticated_request = "authenticate"

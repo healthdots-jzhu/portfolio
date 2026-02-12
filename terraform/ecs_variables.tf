@@ -38,9 +38,9 @@ variable "s3_bucket_name" {
 # ALB authentication variables removed from common variables file.
 # This is intentionally configured per-environment or supplied via secure tfvars.
 
-variable "cognito_user_pool_arn" {
+variable "cognito_user_pool_id" {
   type        = string
-  description = "ARN of the Cognito User Pool used by ALB authenticate-cognito"
+  description = "Cognito User Pool ID (e.g. ca-central-1_xxx) used to compute the user pool ARN for ALB authenticate-cognito"
 }
 
 variable "cognito_user_pool_client_id" {
