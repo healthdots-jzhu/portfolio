@@ -356,7 +356,10 @@ resource "aws_lb" "main" {
     Name = "${var.project_name}-${var.environment}-alb"
   }
 
-  depends_on = [aws_s3_bucket_policy.alb_logs]
+  depends_on = [
+    aws_s3_bucket_policy.alb_logs,
+    aws_s3_bucket_ownership_controls.alb_logs
+  ]
 }
 
 # Additional public subnet in second AZ for ALB
@@ -605,7 +608,10 @@ resource "aws_s3_bucket_policy" "alb_logs" {
     ]
   })
 
-  depends_on = [aws_s3_bucket_public_access_block.alb_logs]
+  depends_on = [
+    aws_s3_bucket_public_access_block.alb_logs,
+    aws_s3_bucket_ownership_controls.alb_logs
+  ]
 }
 
 # Separate lifecycle configuration for the ALB logs bucket (replacement for
