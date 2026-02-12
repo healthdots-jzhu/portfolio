@@ -542,19 +542,8 @@ resource "aws_s3_bucket" "alb_logs" {
     }
   }
 
-  lifecycle_rule {
-    id      = "logs"
-    enabled = true
-
-    transition {
-      days          = 30
-      storage_class = "STANDARD_IA"
-    }
-
-    expiration {
-      days = 365
-    }
-  }
+  # lifecycle_rule is deprecated; lifecycle configuration moved to
+  # aws_s3_bucket_lifecycle_configuration resource below.
 
   tags = {
     Name = "${var.project_name}-${var.environment}-alb-logs"
@@ -583,8 +572,8 @@ resource "aws_s3_bucket_policy" "alb_logs" {
       "Action": "s3:PutObject",
       "Resource": "${aws_s3_bucket.alb_logs.arn}/*",
       "Condition": {
-        "StringEquals": { "aws:SourceAccount": "${var.aws_account_id}" },
-        "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${var.aws_account_id}:loadbalancer/*" }
+        "StringEquals": { "aws:SourceAccount": "${data.aws_caller_identity.current.account_id}" },
+        "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:loadbalancer/*" }
       }
     },
     {
@@ -594,13 +583,35 @@ resource "aws_s3_bucket_policy" "alb_logs" {
       "Action": "s3:PutObjectAcl",
       "Resource": "${aws_s3_bucket.alb_logs.arn}/*",
       "Condition": {
-        "StringEquals": { "aws:SourceAccount": "${var.aws_account_id}" },
-        "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${var.aws_account_id}:loadbalancer/*" }
+        "StringEquals": { "aws:SourceAccount": "${data.aws_caller_identity.current.account_id}" },
+        "ArnLike": { "aws:SourceArn": "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:loadbalancer/*" }
       }
     }
   ]
 }
 POLICY
+}
+
+data "aws_caller_identity" "current" {}
+
+# Separate lifecycle configuration for the ALB logs bucket (replacement for
+# deprecated lifecycle_rule inside aws_s3_bucket)
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    id      = "logs"
+    enabled = true
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    expiration {
+      days = 365
+    }
+  }
 }
 
 data "aws_route53_zone" "selected" {
