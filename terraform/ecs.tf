@@ -162,15 +162,6 @@ resource "aws_security_group" "ecs_tasks" {
   name_prefix = "${var.environment}-${var.project_name}-ecs-tasks-"
   description = "Security group for ECS tasks"
   vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-    description     = "Allow HTTP from ALB"
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -186,6 +177,17 @@ resource "aws_security_group" "ecs_tasks" {
   lifecycle {
     prevent_destroy = true
   }
+}
+
+# Explicit rule: allow HTTP ingress from the ALB security group only
+resource "aws_security_group_rule" "ecs_tasks_from_alb" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.ecs_tasks.id
+  source_security_group_id = aws_security_group.alb.id
+  description              = "Allow HTTP from ALB SG only"
 }
 
 # Allow ECS tasks to connect to RDS
@@ -526,6 +528,64 @@ resource "aws_lb_listener_rule" "portfolio_api" {
   condition {
     path_pattern {
       values = ["/portfolio-${var.environment}/content/*"]
+    }
+  }
+}
+
+# Listener rule: health endpoint — forward without authentication
+resource "aws_lb_listener_rule" "portfolio_api_health" {
+  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.portfolio_api.arn
+  }
+
+  condition {
+    host_header {
+      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
+    }
+  }
+
+  condition {
+    path_pattern {
+      values = ["${var.path_base}/api/health", "${var.path_base}/api/health/*"]
+    }
+  }
+}
+
+# Listener rule: authenticate via Cognito then forward to target group
+resource "aws_lb_listener_rule" "portfolio_api_auth" {
+  count        = 1
+  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
+  priority     = 50
+
+  action {
+    type = "authenticate-cognito"
+
+    authenticate_cognito {
+      user_pool_arn       = var.cognito_user_pool_arn
+      user_pool_client_id = var.cognito_user_pool_client_id
+      user_pool_domain    = var.cognito_user_pool_domain
+      on_unauthenticated_request = "authenticate"
+    }
+  }
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.portfolio_api.arn
+  }
+
+  condition {
+    host_header {
+      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
+    }
+  }
+
+  condition {
+    path_pattern {
+      values = ["/portfolio-${var.environment}/content/*", "${var.path_base}/*"]
     }
   }
 }

@@ -294,6 +294,33 @@ resource "github_actions_environment_variable" "route53_zone_name_env" {
   depends_on    = [github_repository_environment.env]
 }
 
+resource "github_actions_environment_variable" "cognito_user_pool_id_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "cognito_user_pool_id", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "COGNITO_USER_POOL_ID"
+  value         = each.value.cognito_user_pool_id
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "cognito_user_pool_client_id_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "cognito_user_pool_client_id", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "COGNITO_USER_POOL_CLIENT_ID"
+  value         = each.value.cognito_user_pool_client_id
+  depends_on    = [github_repository_environment.env]
+}
+
+resource "github_actions_environment_variable" "cognito_user_pool_domain_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "cognito_user_pool_domain", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  variable_name = "COGNITO_USER_POOL_DOMAIN"
+  value         = each.value.cognito_user_pool_domain
+  depends_on    = [github_repository_environment.env]
+}
+
 # Repository-level Actions variables for shared values
 resource "github_actions_variable" "tf_state_bucket_repo" {
   count         = var.tf_state_bucket != "" ? 1 : 0

@@ -34,3 +34,21 @@ variable "s3_bucket_name" {
   description = "S3 bucket name for portfolio assets"
   default     = "healthdots-portfolio-web-app-001"
 }
+
+# ALB authentication variables removed from common variables file.
+# This is intentionally configured per-environment or supplied via secure tfvars.
+
+variable "cognito_user_pool_arn" {
+  type        = string
+  description = "ARN of the Cognito User Pool used by ALB authenticate-cognito"
+}
+
+variable "cognito_user_pool_client_id" {
+  type        = string
+  description = "Cognito User Pool App Client ID used by ALB authenticate-cognito"
+}
+
+variable "cognito_user_pool_domain" {
+  type        = string
+  description = "Cognito Hosted UI domain (e.g., your-domain.auth.region.amazoncognito.com) used by ALB authenticate-cognito"
+}
