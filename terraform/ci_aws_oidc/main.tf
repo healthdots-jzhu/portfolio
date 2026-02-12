@@ -72,10 +72,12 @@ data "aws_iam_policy_document" "ci_policy_doc" {
   # (ECR repository actions are covered by the extra policy wildcard)
 
   statement {
-    actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket", "s3:DeleteObject"]
+    actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket", "s3:DeleteObject", "s3:CreateBucket"]
     resources = [
       "arn:aws:s3:::${var.tf_state_bucket}",
-      "arn:aws:s3:::${var.tf_state_bucket}/*"
+      "arn:aws:s3:::${var.tf_state_bucket}/*",
+      "arn:aws:s3:::*-alb-logs",
+      "arn:aws:s3:::*-alb-logs/*"
     ]
   }
 
