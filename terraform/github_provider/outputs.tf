@@ -10,6 +10,9 @@ output "variables_created" {
     [for k in keys(github_actions_environment_variable.ecs_service_desired_count_env) : "${k}:ECS_SERVICE_DESIRED_COUNT"],
     var.tf_state_bucket != "" ? ["TF_STATE_BUCKET"] : [],
     var.tf_state_dynamodb_table != "" ? ["TF_STATE_DYNAMODB_TABLE"] : [],
+    var.cognito_user_pool_id != "" ? ["COGNITO_USER_POOL_ID"] : [],
+    var.cognito_user_pool_client_id != "" ? ["COGNITO_USER_POOL_CLIENT_ID"] : [],
+    var.cognito_user_pool_domain != "" ? ["COGNITO_USER_POOL_DOMAIN"] : [],
   )
 }
 

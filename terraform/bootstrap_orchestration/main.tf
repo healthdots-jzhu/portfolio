@@ -27,4 +27,9 @@ module "github_provider" {
   tf_state_bucket = var.tf_state_bucket
   tf_state_dynamodb_table = var.tf_state_dynamodb_table
   environments = var.environments
+  
+  # Cognito values (shared across all environments)
+  cognito_user_pool_id       = var.cognito_user_pool_id
+  cognito_user_pool_client_id = var.cognito_user_pool_client_id
+  cognito_user_pool_domain   = var.cognito_user_pool_domain
 }

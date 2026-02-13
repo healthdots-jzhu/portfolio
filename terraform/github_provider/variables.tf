@@ -80,3 +80,21 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "cognito_user_pool_id" {
+  description = "Cognito User Pool ID (shared across environments) to create as a repository-level variable"
+  type        = string
+  default     = ""
+}
+
+variable "cognito_user_pool_client_id" {
+  description = "Cognito User Pool App Client ID (shared across environments) to create as a repository-level variable"
+  type        = string
+  default     = ""
+}
+
+variable "cognito_user_pool_domain" {
+  description = "Cognito Hosted UI domain (shared across environments) to create as a repository-level variable"
+  type        = string
+  default     = ""
+}

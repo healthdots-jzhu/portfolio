@@ -336,6 +336,28 @@ resource "github_actions_variable" "tf_state_dynamodb_table_repo" {
   value         = var.tf_state_dynamodb_table
 }
 
+# Repository-level Cognito variables (shared across all environments)
+resource "github_actions_variable" "cognito_user_pool_id_repo" {
+  count         = var.cognito_user_pool_id != "" ? 1 : 0
+  repository    = var.repository
+  variable_name = "COGNITO_USER_POOL_ID"
+  value         = var.cognito_user_pool_id
+}
+
+resource "github_actions_variable" "cognito_user_pool_client_id_repo" {
+  count         = var.cognito_user_pool_client_id != "" ? 1 : 0
+  repository    = var.repository
+  variable_name = "COGNITO_USER_POOL_CLIENT_ID"
+  value         = var.cognito_user_pool_client_id
+}
+
+resource "github_actions_variable" "cognito_user_pool_domain_repo" {
+  count         = var.cognito_user_pool_domain != "" ? 1 : 0
+  repository    = var.repository
+  variable_name = "COGNITO_USER_POOL_DOMAIN"
+  value         = var.cognito_user_pool_domain
+}
+
 resource "github_actions_secret" "repo_aws_role_arn" {
   count           = var.create_repo_aws_role_secret ? 1 : 0
   repository      = var.repository

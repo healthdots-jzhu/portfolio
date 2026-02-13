@@ -1,6 +1,11 @@
 # Sample environments map for bootstrap_orchestration
 # Replace values with your account-specific names/regions.
 
+# Cognito configuration (shared across all environments)
+cognito_user_pool_id       = "ca-central-1_cRS3mcP7U"
+cognito_user_pool_client_id = "24au0dv8rlj5belkbfh3s9fof2"
+cognito_user_pool_domain   = "auth.healthdots.net"
+
 environments = {
   staging = {
     tf_state_key           = "portfolio/staging.tfstate"

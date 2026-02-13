@@ -67,3 +67,21 @@ variable "environments" {
   type = map(any)
   default = {}
 }
+
+variable "cognito_user_pool_id" {
+  description = "Cognito User Pool ID (shared across environments)"
+  type        = string
+  default     = ""
+}
+
+variable "cognito_user_pool_client_id" {
+  description = "Cognito User Pool App Client ID (shared across environments)"
+  type        = string
+  default     = ""
+}
+
+variable "cognito_user_pool_domain" {
+  description = "Cognito Hosted UI domain (shared across environments)"
+  type        = string
+  default     = ""
+}
