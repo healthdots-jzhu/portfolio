@@ -613,6 +613,31 @@ resource "aws_lb_listener_rule" "portfolio_api_auth_config" {
   }
 }
 
+# Listener rule: forward CORS preflight (OPTIONS) to target group without authentication
+# Matches requests that include the Access-Control-Request-Method header (preflight)
+resource "aws_lb_listener_rule" "portfolio_api_preflight" {
+  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
+  priority     = 15
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.portfolio_api.arn
+  }
+
+  condition {
+    host_header {
+      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
+    }
+  }
+
+  condition {
+    http_header {
+      http_header_name = "Access-Control-Request-Method"
+      values = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    }
+  }
+}
+
 # Route53 record for API subdomain
 
 // S3 bucket to receive ALB access logs
