@@ -562,13 +562,17 @@ resource "aws_lb_listener_rule" "portfolio_api_auth" {
   priority     = 50
 
   action {
-    type = "authenticate-cognito"
+    type = "authenticate-oidc"
 
-    authenticate_cognito {
-      user_pool_arn       = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/${var.cognito_user_pool_id}"
-      user_pool_client_id = var.cognito_user_pool_client_id
-      user_pool_domain    = var.cognito_user_pool_domain
+    authenticate_oidc {
+      issuer                = "https://${var.cognito_user_pool_domain}"
+      authorization_endpoint = "https://${var.cognito_user_pool_domain}/oauth2/authorize"
+      token_endpoint         = "https://${var.cognito_user_pool_domain}/oauth2/token"
+      user_info_endpoint     = "https://${var.cognito_user_pool_domain}/oauth2/userInfo"
+      client_id              = var.cognito_user_pool_client_id
+      client_secret          = var.cognito_user_pool_client_secret
       on_unauthenticated_request = "authenticate"
+      scope                  = "openid"
     }
   }
 

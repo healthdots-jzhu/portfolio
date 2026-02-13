@@ -244,6 +244,10 @@ jobs:
           echo "TF_VAR_cognito_user_pool_id=${{ vars.COGNITO_USER_POOL_ID }}" >> $GITHUB_ENV
           echo "TF_VAR_cognito_user_pool_client_id=${{ vars.COGNITO_USER_POOL_CLIENT_ID }}" >> $GITHUB_ENV
           echo "TF_VAR_cognito_user_pool_domain=${{ vars.COGNITO_USER_POOL_DOMAIN }}" >> $GITHUB_ENV
+          # Export Cognito client secret from environment-scoped secret if available
+          if [ -n "${{ secrets.COGNITO_USER_POOL_CLIENT_SECRET }}" ]; then
+            echo "TF_VAR_cognito_user_pool_client_secret=${{ secrets.COGNITO_USER_POOL_CLIENT_SECRET }}" >> $GITHUB_ENV
+          fi
           # Export ACM certificate ARNs as a JSON list (repo variable `ACM_CERTIFICATE_ARNS`), or empty list.
           if [ -n "${{ vars.ACM_CERTIFICATE_ARNS }}" ]; then
             echo 'TF_VAR_acm_certificate_arns=${{ vars.ACM_CERTIFICATE_ARNS }}' >> $GITHUB_ENV

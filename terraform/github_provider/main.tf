@@ -321,6 +321,25 @@ resource "github_actions_environment_variable" "cognito_user_pool_domain_env" {
   depends_on    = [github_repository_environment.env]
 }
 
+resource "github_actions_environment_secret" "cognito_user_pool_client_secret_env" {
+  for_each      = { for k, v in local.envs : k => v if lookup(v, "cognito_user_pool_client_secret", "") != "" }
+  repository    = var.repository
+  environment   = each.key
+  secret_name   = "COGNITO_USER_POOL_CLIENT_SECRET"
+  # Select per-environment TF var if present (staging/beta/prod), fallback to
+  # the generic `cognito_user_pool_client_secret_beta` var.
+  plaintext_value = lookup(
+    {
+      staging = var.cognito_user_pool_client_secret_staging,
+      beta    = var.cognito_user_pool_client_secret_beta,
+      prod    = var.cognito_user_pool_client_secret_prod
+    },
+    each.key,
+    var.cognito_user_pool_client_secret_beta
+  )
+  depends_on    = [github_repository_environment.env]
+}
+
 # Repository-level Actions variables for shared values
 resource "github_actions_variable" "tf_state_bucket_repo" {
   count         = var.tf_state_bucket != "" ? 1 : 0

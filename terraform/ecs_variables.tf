@@ -52,3 +52,10 @@ variable "cognito_user_pool_domain" {
   type        = string
   description = "Cognito Hosted UI domain (e.g., your-domain.auth.region.amazoncognito.com) used by ALB authenticate-cognito"
 }
+
+variable "cognito_user_pool_client_secret" {
+  type        = string
+  description = "(Sensitive) Cognito User Pool App Client Secret for confidential clients used by ALB authenticate_oidc"
+  sensitive   = true
+  default     = ""
+}
