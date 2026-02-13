@@ -100,6 +100,12 @@ Workflow design notes:
 - Frontend workflow waits for backend workflow health.
 - Terraform plans are uploaded to S3 for audit trail.
 
+## CI Assume Role Dependency
+- `terraform/ci_aws_oidc/main.tf` defines the GitHub OIDC-assumable CI IAM role and attached policies used by infra deployment.
+- `.github/workflows/1-deploy-infra.yml` assumes this role (`secrets.CI_AWS_ROLE_ARN`) via `aws-actions/configure-aws-credentials` to run Terraform plan/apply.
+- If infrastructure changes require additional AWS IAM permissions, trust-policy changes, or new/changed GitHub repository/environment variables or secrets, you must:
+  1. Update `.github/workflows/0.2-onetime-provision-github-oidc-secrets-variables.yml` (and related bootstrap Terraform under `terraform/bootstrap_orchestration` / `terraform/ci_aws_oidc` as needed).
+  2. Run `0.2-onetime-provision-github-oidc-secrets-variables.yml` to reconcile CI role permissions and GitHub secrets/variables before running `1-deploy-infra.yml`.
 ## Environment and Secrets
 - Use `.env.example` as local template.
 - Never commit `.env` or real secrets.
@@ -121,3 +127,4 @@ Workflow design notes:
 - Secret name consistency between Terraform, workflows, and app config.
 - RDS/DB migration compatibility with production data.
 - Terraform resources guarded by `prevent_destroy`.
+

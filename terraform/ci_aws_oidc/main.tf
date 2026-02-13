@@ -186,6 +186,18 @@ data "aws_iam_policy_document" "ci_policy_doc" {
     resources = ["*"]
   }
 
+  # Allow Cognito read operations needed by ALB authenticate-cognito
+  statement {
+    actions = [
+      "cognito-idp:DescribeUserPoolClient",
+      "cognito-idp:DescribeUserPool"
+    ]
+    resources = [
+      "arn:aws:cognito-idp:${var.aws_region}:${var.aws_account_id}:userpool/*",
+      "arn:aws:cognito-idp:${var.aws_region}:${var.aws_account_id}:userpool/*/client/*"
+    ]
+  }
+
   # Allow passing limited roles (scoped to project-prefixed roles)
   statement {
     actions = ["iam:PassRole"]
