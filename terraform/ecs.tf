@@ -631,9 +631,8 @@ resource "aws_lb_listener_rule" "portfolio_api_preflight" {
   }
 
   condition {
-    http_header {
-      http_header_name = "Access-Control-Request-Method"
-      values = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    http_request_method {
+      values = ["OPTIONS"]
     }
   }
 }
