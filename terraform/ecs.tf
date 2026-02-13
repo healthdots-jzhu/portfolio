@@ -585,7 +585,7 @@ resource "aws_lb_listener_rule" "portfolio_api_auth" {
 
   condition {
     path_pattern {
-      values = ["/portfolio-${var.environment}/content/*", "${var.path_base}/*"]
+      values = ["/portfolio-${var.environment}/content/*"]
     }
   }
 }

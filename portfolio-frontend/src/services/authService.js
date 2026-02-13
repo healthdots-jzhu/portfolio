@@ -158,8 +158,21 @@ export const getAccessToken = () => {
     .split('; ')
     .find(row => row.startsWith('accessToken='))
     ?.split('=')[1];
-  
-  return cookieToken || null;
+
+  if (!cookieToken) return null;
+
+  // Decode and validate expiry (so expired tokens are treated as absent)
+  const payload = decodeJwt(cookieToken);
+  if (!payload || !payload.exp) return null;
+  const nowSec = Math.floor(Date.now() / 1000);
+  // Consider token expired if past its exp time
+  if (payload.exp <= nowSec) {
+    // Token expired — clear it so UI updates and refresh flow can trigger
+    clearTokens();
+    return null;
+  }
+
+  return cookieToken;
 };
 
 const getRefreshToken = () => {
@@ -174,11 +187,8 @@ const getRefreshToken = () => {
  * Check if token is expired
  */
 export const isTokenExpired = () => {
-  const cookieToken = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('accessToken='));
-
-  return !cookieToken; // If no cookie, token is missing/expired
+  const token = getAccessToken();
+  return !token;
 };
 
 /**
