@@ -590,6 +590,29 @@ resource "aws_lb_listener_rule" "portfolio_api_auth" {
   }
 }
 
+# Listener rule: forward auth config without authentication
+resource "aws_lb_listener_rule" "portfolio_api_auth_config" {
+  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
+  priority     = 20
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.portfolio_api.arn
+  }
+
+  condition {
+    host_header {
+      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
+    }
+  }
+
+  condition {
+    path_pattern {
+      values = ["${var.path_base}/api/auth/config", "${var.path_base}/api/auth/config/*"]
+    }
+  }
+}
+
 # Route53 record for API subdomain
 
 // S3 bucket to receive ALB access logs
