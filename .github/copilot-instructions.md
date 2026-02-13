@@ -1,73 +1,131 @@
-Purpose
-- Help an AI coding agent become productive in this repository quickly by summarizing architecture, developer workflows, environment pitfalls, and project-specific conventions.
+# HealthDots Portfolio Platform - README
 
-Quick architecture overview
-- Backend: `APIs/Portfolio.Api` — ASP.NET Core (net10.0) Web API using EF Core (Postgres). Key files:
-  - `Program.cs` — app startup, CORS policy (`AppCors`), AWS client registration, auth, middleware.
-  - `Controllers/PortfoliosController.cs` — main portfolio and asset endpoints (upload, edit, delete, list).
-  - `Services/S3Service.cs` — S3 integration (upload, exists, delete) and CloudFront URL generation.
-  - `Data/AppDbContext.cs` and `Migrations/` — EF models & migrations.
+## Purpose
+This repository contains a full-stack portfolio platform with:
+- Backend API: `APIs/Portfolio.Api` (.NET 10, EF Core, PostgreSQL, Cognito JWT auth, S3 assets)
+- Frontend SPA: `portfolio-frontend` (React + Vite + Playwright)
+- Infrastructure as code: `terraform` (AWS VPC, ECS Fargate, ALB, RDS, Route53, Secrets Manager integration, scheduler)
+- CI/CD workflows: `.github/workflows`
 
-- Frontend: `portfolio-frontend` — React (Vite). Key files:
-  - `src/pages/PortfolioEditor.jsx` — asset UI, upload flow, delete button wired to backend.
-  - `src/services/portfolioApi.js` — HTTP client wrappers used across app (uploadAsset, deleteAsset, getPortfolioForEdit).
+## Monorepo Structure
+- `APIs/Portfolio.Api`: ASP.NET Core API, EF Core migrations, business services, Dockerfile.
+- `portfolio-frontend`: React application, Vite build, Playwright e2e tests.
+- `terraform`: Main AWS stack and related bootstrap/OIDC sub-stacks.
+- `.github/workflows`: Infra deploy, backend image build/push, frontend S3+CloudFront deploy.
+- `docker-compose.yml`: Local API container run.
 
-Important dev workflows & commands
-- Backend:
-  - Build: `dotnet build APIs/Portfolio.Api/Portfolio.Api.csproj`
-  - Run (dev, foreground):
-    ```powershell
-    $env:ASPNETCORE_ENVIRONMENT='Development'
-    & 'C:\Program Files\dotnet\dotnet.exe' run --project 'APIs/Portfolio.Api/Portfolio.Api.csproj'
-    ```
-  - Watch: VS Code tasks include `watch` (dotnet watch run) — see `.vscode/tasks.json`.
+## Runtime Architecture
+- Frontend served from S3 behind CloudFront.
+- API runs on ECS Fargate behind ALB + Route53.
+- API path base is environment-specific: `/portfolio-{environment}/content/*`.
+- API expects JWT auth via AWS Cognito and persists data in RDS PostgreSQL.
+- Assets are stored in S3 and exposed via CloudFront URL in API responses.
+- API pulls secrets from AWS Secrets Manager and Hashids salt from SSM Parameter Store (if configured).
 
-- Frontend:
-  - Install / build: `npm install` then `npm run build` or `npm run dev` inside `portfolio-frontend`.
+## Local Development (PowerShell)
+### Backend
+```powershell
+Set-Location APIs/Portfolio.Api
+dotnet run
+```
 
-Environment & credentials (critical for local AWS integration)
-- This project talks to AWS (S3, SSM, Cognito). Local development commonly uses AWS SSO profiles.
-- Practical local approach: run `aws sso login --profile <name>` then export temporary creds into the same shell before starting the API:
-  - export `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, and `AWS_REGION` (or set `AWS_PROFILE` + `AWS_SDK_LOAD_CONFIG=1`).
-- The API logs credential resolution at startup (check console for `Aws:Region=..., Aws:Profile=..., CredentialsResolved=...`). If false, export temporary creds into the shell.
-- Sensitive values (Hashids salt, etc.) may be stored in SSM under paths like `/portfolio/hashids/salt` — the app will fall back to `appsettings` if missing.
+### Backend migrations
+```powershell
+Set-Location APIs/Portfolio.Api
+dotnet ef database update
+```
 
-Project-specific patterns and gotchas
-- S3 object keys: assets are stored under `img/{personId}/{filename}` — `PersonId` is the stable public identifier.
-- Short IDs: `Portfolio.Id` is a short Hashids-derived value. `Hashids` salt is critical — rotating it changes generated IDs; use a salts-list strategy if rotation is required.
-- CORS: `Program.cs` registers `AppCors` and expects `UseRouting()` before `UseCors()` and then `UseAuthentication()` / middleware / `UseAuthorization()`.
-- Credentials resolution: the AWS SDK may attempt IMDS if credentials are unresolved; local dev must supply credentials to avoid runtime failures.
-- AppLocker / Windows policy: running the API from some paths may be blocked; moving repo to `C:\dev\portfolio` or unblocking built DLL may be required.
+### Frontend
+```powershell
+Set-Location portfolio-frontend
+npm install
+npm run dev
+```
 
-Authentication & Authorization (Cognito + social login)
-- The API uses AWS Cognito JWTs for authentication. Relevant startup config is in `Program.cs`:
-  - `Aws:Cognito:Authority` → `options.Authority` for JWT validation.
-  - `Aws:Cognito:Audience` → validated audiences (array).
-  - The app sets a global FallbackPolicy that requires authenticated users by default; controllers use `[AllowAnonymous]` to opt-out (e.g., `HealthController`).
-- JIT provisioning: `EnsureUserExistsMiddleware` inspects JWT claims (`sub`, `iss`, `email`, `cognito:username`/identities) and creates/updates a local `User` record if missing. It adds a `userId` claim to the ClaimsIdentity for downstream use.
-- Use `ICurrentUserProvider` (`CurrentUserProvider`) to access the current user in controllers:
-  - `GetUserId(HttpContext)` reads the `userId` claim (or `X-Debug-UserId` header in dev).
-  - `GetCognitoSub(HttpContext)` returns the `sub` claim.
-  - `GetEmail(HttpContext)` returns `email` claim.
-- Social logins (Google) are supported via Cognito federation. The API just validates the Cognito JWT — federated Google users present a Cognito-backed `sub` and provider hints (e.g., `cognito:username` or identities claim). The middleware handles these transparently and records the provider in the `Users` table.
+### Frontend E2E tests
+```powershell
+Set-Location portfolio-frontend
+npm run test:e2e
+```
+Notes:
+- Playwright base URL defaults to `http://localhost:5173` (override with `E2E_BASE_URL`).
+- Some e2e tests require API availability.
+
+### Docker-based API run
+```powershell
+docker compose up --build
+```
+- Uses `.env` values for container environment mapping.
+- DB is expected to be external (for example RDS), not provisioned by compose.
+
+## Key Backend Conventions
+- `Program.cs` reads `ConnectionStrings__Postgres` first, then `ConnectionStrings:Postgres`.
+- Cognito JWT configuration comes from `Aws:Cognito:*` settings.
+- `PATH_BASE` env var is respected via `UsePathBase` for ALB path routing.
+- CORS allows `*.healthdots.net` and `localhost` origins.
+- AWS SDK clients are created with optional profile/region resolution.
+- `GitHubModels__ApiToken` can be injected via secret/env.
+
+## Key Frontend Conventions
+- Build tool: Vite (`npm run build`).
+- Deployment env file writes:
+  - `VITE_API_URL=https://api.healthdots.net/portfolio-{env}/content`
+  - `VITE_CDN_URL=https://<cloudfront_distribution_id>.cloudfront.net`
+- E2E config is in `portfolio-frontend/playwright.config.js`.
+
+## Terraform Topology
+Primary stack files:
+- `terraform/main.tf`: VPC/networking, RDS, EC2 bastion-like SSM host, VPC endpoints, ECR, KMS, scheduler.
+- `terraform/ecs.tf`: ECS cluster/service/task, ALB/listeners/rules, Route53 record, task IAM and secrets wiring.
+- `terraform/variables.tf` + `terraform/ecs_variables.tf`: core and ECS variable contracts.
+
+Important behavior:
+- Many resources use `prevent_destroy = true`.
+- ECS task reads secret values by name from Secrets Manager:
+  - `${project_name}-${environment}-postgres-connection`
+  - `${project_name}-${environment}-github-models-token`
+- ALB HTTPS listener is created only if `acm_certificate_arns` is non-empty.
+- ECS path routing expects `/portfolio-{environment}/content/*`.
+
+## CI/CD Workflows (order and intent)
+1. `0.1-onetime-provision-terraform-backend.yml`
+2. `0.2-onetime-provision-github-oidc-secrets-variables.yml`
+3. `1-deploy-infra.yml` (terraform plan/apply)
+4. `2-backend-build-and-push.yml` (Docker build + push to ECR)
+5. `3- frontend-deploy.yml` (frontend build + S3 sync + CloudFront invalidation)
+
+Workflow design notes:
+- AWS auth is via GitHub OIDC role assumption.
+- Backend workflow waits for infra workflow health.
+- Frontend workflow waits for backend workflow health.
+- Terraform plans are uploaded to S3 for audit trail.
+
+## CI Assume Role Dependency
+- `terraform/ci_aws_oidc/main.tf` defines the GitHub OIDC-assumable CI IAM role and attached policies used by infra deployment.
+- `.github/workflows/1-deploy-infra.yml` assumes this role (`secrets.CI_AWS_ROLE_ARN`) via `aws-actions/configure-aws-credentials` to run Terraform plan/apply.
+- If infrastructure changes require additional AWS IAM permissions, trust-policy changes, or new/changed GitHub repository/environment variables or secrets, you must:
+  1. Update `.github/workflows/0.2-onetime-provision-github-oidc-secrets-variables.yml` (and related bootstrap Terraform under `terraform/bootstrap_orchestration` / `terraform/ci_aws_oidc` as needed).
+  2. Run `0.2-onetime-provision-github-oidc-secrets-variables.yml` to reconcile CI role permissions and GitHub secrets/variables before running `1-deploy-infra.yml`.
+## Environment and Secrets
+- Use `.env.example` as local template.
+- Never commit `.env` or real secrets.
+- Preferred runtime secret sources: GitHub environment secrets, AWS Secrets Manager, SSM parameters, IAM roles.
+
+## Agent Guardrails for This Repo
+- Keep changes scoped; avoid broad refactors unless requested.
+- When modifying API contract or routing, verify both backend and frontend impact.
+- When changing Terraform, call out blast radius, state implications, and `prevent_destroy` constraints.
+- Validate locally where practical:
+  - Backend compiles (`dotnet build`)
+  - Frontend builds (`npm run build`)
+  - Relevant tests pass
+- Use PowerShell command style in documentation and runbooks.
+
+## High-Risk Areas
+- Auth and claim handling (`Program.cs`, Cognito config).
+- Path base and ALB listener-rule alignment.
+- Secret name consistency between Terraform, workflows, and app config.
+- RDS/DB migration compatibility with production data.
+- Terraform resources guarded by `prevent_destroy`.
 
 
-Where to change behavior
-- Add new API endpoints: `APIs/Portfolio.Api/Controllers/PortfoliosController.cs`.
-- S3 logic / content-type validation: `APIs/Portfolio.Api/Services/S3Service.cs` and `APIs/Portfolio.Api/Utils/FileSignatureValidator.cs`.
-- Frontend asset UI: `portfolio-frontend/src/pages/PortfolioEditor.jsx` and styles in `PortfolioEditor.css`.
-- HTTP client helpers: `portfolio-frontend/src/services/portfolioApi.js` — update here for consistent fetch patterns and error handling.
-
-Logging & debugging
-- Backend logs to console (Kestrel). Health endpoint: `GET /api/health` (anonymous).
-- To reproduce credential issues: start API in the same shell used for AWS CLI SSO login and inspect startup diagnostic logs.
-
-Testing & migrations
-- Database migrations live in `APIs/Portfolio.Api/Migrations/` — use standard EF Core CLI to add or apply migrations. If you change models (e.g., add `FileSize`), create and run a migration.
-
-Behavior expectations for AI edits
-- Preserve existing public APIs and database schemas unless explicitly changing them; when changing models, add EF migrations and mention DB impact.
-- Put environment-sensitive defaults in `appsettings.Development.json` or avoid hardcoding secrets.
-- When modifying AWS interactions, prefer non-blocking behavior in dev (log warnings and fall back) but ensure production uses strict checks.
-
-If anything looks incomplete or you'd like examples inserted (startup logs, sample env script), tell me which section to expand.

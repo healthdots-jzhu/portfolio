@@ -35,7 +35,7 @@ environments = {
     public_2b_cidr         = "10.0.16.0/24"
     # ALB/Cognito configuration (shared values across environments)
     cognito_user_pool_id       = "ca-central-1_cRS3mcP7U"
-    cognito_user_pool_client_id = "4ligvh2gi6e7713i72dgob118u"
+    cognito_user_pool_client_id = "24au0dv8rlj5belkbfh3s9fof2"
     cognito_user_pool_domain   = "auth.healthdots.net"
   }
 
@@ -72,7 +72,7 @@ environments = {
     public_2b_cidr         = "10.0.16.0/24"
     # ALB/Cognito configuration (shared values across environments)
     cognito_user_pool_id       = "ca-central-1_cRS3mcP7U"
-    cognito_user_pool_client_id = "4ligvh2gi6e7713i72dgob118u"
+    cognito_user_pool_client_id = "24au0dv8rlj5belkbfh3s9fof2"
     cognito_user_pool_domain   = "auth.healthdots.net"
   }
 
@@ -109,7 +109,7 @@ environments = {
     public_2b_cidr         = "10.0.16.0/24"
     # ALB/Cognito configuration (shared values across environments)
     cognito_user_pool_id       = "ca-central-1_cRS3mcP7U"
-    cognito_user_pool_client_id = "4ligvh2gi6e7713i72dgob118u"
+    cognito_user_pool_client_id = "24au0dv8rlj5belkbfh3s9fof2"
     cognito_user_pool_domain   = "auth.healthdots.net"
   }
 }
