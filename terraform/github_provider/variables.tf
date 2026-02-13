@@ -80,3 +80,24 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "cognito_user_pool_client_secret_staging" {
+  description = "Optional: Cognito user pool client secret for the staging environment (sensitive)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "cognito_user_pool_client_secret_beta" {
+  description = "Optional: Cognito user pool client secret for the beta environment (sensitive)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "cognito_user_pool_client_secret_prod" {
+  description = "Optional: Cognito user pool client secret for the prod environment (sensitive)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
