@@ -33,10 +33,6 @@ environments = {
     private_app_2b_cidr    = "10.0.192.0/20"
     path_base              = "/portfolio-staging/content"
     public_2b_cidr         = "10.0.16.0/24"
-    # ALB/Cognito configuration (shared values across environments)
-    cognito_user_pool_id       = "ca-central-1_cRS3mcP7U"
-    cognito_user_pool_client_id = "24au0dv8rlj5belkbfh3s9fof2"
-    cognito_user_pool_domain   = "auth.healthdots.net"
   }
 
   beta = {
@@ -70,10 +66,6 @@ environments = {
     private_app_2b_cidr    = "10.0.192.0/20"
     path_base              = "/portfolio-beta/content"
     public_2b_cidr         = "10.0.16.0/24"
-    # ALB/Cognito configuration (shared values across environments)
-    cognito_user_pool_id       = "ca-central-1_cRS3mcP7U"
-    cognito_user_pool_client_id = "24au0dv8rlj5belkbfh3s9fof2"
-    cognito_user_pool_domain   = "auth.healthdots.net"
   }
 
   prod = {
@@ -107,9 +99,5 @@ environments = {
     private_app_2b_cidr    = "10.0.192.0/20"
     path_base              = "/portfolio-prod/content"
     public_2b_cidr         = "10.0.16.0/24"
-    # ALB/Cognito configuration (shared values across environments)
-    cognito_user_pool_id       = "ca-central-1_cRS3mcP7U"
-    cognito_user_pool_client_id = "24au0dv8rlj5belkbfh3s9fof2"
-    cognito_user_pool_domain   = "auth.healthdots.net"
   }
 }

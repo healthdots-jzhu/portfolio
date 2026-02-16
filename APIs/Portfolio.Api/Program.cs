@@ -48,31 +48,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var cognitoAuthority = builder.Configuration["Aws:Cognito:Authority"];
 var cognitoAudience = builder.Configuration.GetSection("Aws:Cognito:Audience").Get<string[]>();
 
-// Register JwtBearer only for Development runs (where ALB auth is not present).
-// In non-Development (prod/beta) environments the ALB performs authentication
-// and `AlbAuthMiddleware` will populate HttpContext.User.
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
+// Enable JWT Bearer authentication in ALL environments.
+// ECS tasks now run in public subnets with internet access, allowing direct validation
+// of JWT tokens against Cognito's JWKS endpoint without requiring VPC endpoints or NAT gateway.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = cognitoAuthority;
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            options.Authority = cognitoAuthority;
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = cognitoAuthority,
-                ValidateAudience = true,
-                ValidAudiences = cognitoAudience,
-                ValidateLifetime = true
-            };
-        });
-}
-else
-{
-    // Ensure Authentication services are available so the pipeline can call UseAuthentication(),
-    // but don't register JwtBearer since ALB handles auth.
-    builder.Services.AddAuthentication();
-}
+            ValidateIssuer = true,
+            ValidIssuer = cognitoAuthority,
+            ValidateAudience = true,
+            ValidAudiences = cognitoAudience,
+            ValidateLifetime = true
+        };
+    });
 
 builder.Services.AddAuthorization(options =>
 {
@@ -337,13 +328,6 @@ app.UseRouting();
 app.UseCors("AppCors");
 
 app.UseAuthentication();
-
-// Use dedicated middleware to trust ALB-injected auth headers when appropriate.
-// Trust ALB-injected auth headers only outside of Development to simplify local runs.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseMiddleware<Portfolio.Api.Middleware.AlbAuthMiddleware>();
-}
 
 // Ensure authenticated users exist in DB (JIT provisioning)
 app.UseMiddleware<Portfolio.Api.Middleware.EnsureUserExistsMiddleware>();

@@ -9,6 +9,7 @@ namespace Portfolio.Api.Middleware;
 /// Middleware to trust ALB-injected OIDC headers when the request originates
 /// from a trusted proxy (ALB). Parses `x-amzn-oidc-data` and populates
 /// HttpContext.User when appropriate.
+/// Note: this is not IN USE anymore
 /// </summary>
 public class AlbAuthMiddleware
 {

@@ -289,8 +289,9 @@ resource "aws_ecs_service" "portfolio_api" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
-    security_groups = [aws_security_group.ecs_tasks.id]
+    subnets          = [aws_subnet.public.id, aws_subnet.public_2b.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -509,7 +510,8 @@ resource "aws_iam_service_linked_role" "ecs" {
   description      = "Service-linked role for Amazon ECS"
 }
 
-# Listener rule for path-based routing (portfolio-{environment})
+# ALB Listener rule: Forward all portfolio API traffic to ECS tasks
+# API validates JWT tokens directly (no ALB authentication)
 resource "aws_lb_listener_rule" "portfolio_api" {
   listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
   priority     = 100
@@ -528,115 +530,6 @@ resource "aws_lb_listener_rule" "portfolio_api" {
   condition {
     path_pattern {
       values = ["/portfolio-${var.environment}/content/*"]
-    }
-  }
-}
-
-# Listener rule: health endpoint — forward without authentication
-resource "aws_lb_listener_rule" "portfolio_api_health" {
-  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
-  priority     = 10
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.portfolio_api.arn
-  }
-
-  condition {
-    host_header {
-      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
-    }
-  }
-
-  condition {
-    path_pattern {
-      values = ["${var.path_base}/api/health", "${var.path_base}/api/health/*"]
-    }
-  }
-}
-
-# Listener rule: authenticate via Cognito then forward to target group
-resource "aws_lb_listener_rule" "portfolio_api_auth" {
-  count        = 1
-  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
-  priority     = 50
-
-  action {
-    type = "authenticate-oidc"
-
-    authenticate_oidc {
-      issuer                = "https://${var.cognito_user_pool_domain}"
-      authorization_endpoint = "https://${var.cognito_user_pool_domain}/oauth2/authorize"
-      token_endpoint         = "https://${var.cognito_user_pool_domain}/oauth2/token"
-      user_info_endpoint     = "https://${var.cognito_user_pool_domain}/oauth2/userInfo"
-      client_id              = var.cognito_user_pool_client_id
-      client_secret          = var.cognito_user_pool_client_secret
-      on_unauthenticated_request = "authenticate"
-      scope                  = "openid"
-    }
-  }
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.portfolio_api.arn
-  }
-
-  condition {
-    host_header {
-      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
-    }
-  }
-
-  condition {
-    path_pattern {
-      values = ["/portfolio-${var.environment}/content/*"]
-    }
-  }
-}
-
-# Listener rule: forward auth config without authentication
-resource "aws_lb_listener_rule" "portfolio_api_auth_config" {
-  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
-  priority     = 20
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.portfolio_api.arn
-  }
-
-  condition {
-    host_header {
-      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
-    }
-  }
-
-  condition {
-    path_pattern {
-      values = ["${var.path_base}/api/auth/config", "${var.path_base}/api/auth/config/*"]
-    }
-  }
-}
-
-# Listener rule: forward CORS preflight (OPTIONS) to target group without authentication
-# Matches requests that include the Access-Control-Request-Method header (preflight)
-resource "aws_lb_listener_rule" "portfolio_api_preflight" {
-  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
-  priority     = 15
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.portfolio_api.arn
-  }
-
-  condition {
-    host_header {
-      values = ["${var.api_subdomain}.${var.route53_zone_name}"]
-    }
-  }
-
-  condition {
-    http_request_method {
-      values = ["OPTIONS"]
     }
   }
 }
