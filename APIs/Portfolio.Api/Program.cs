@@ -114,6 +114,9 @@ var ssmClient = awsCredentials is not null
 builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(s3Client);
 builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(ssmClient);
 builder.Services.AddScoped<Portfolio.Api.Services.IS3Service, Portfolio.Api.Services.S3Service>();
+// Memory cache and token provider for GitHub Models API token caching
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<Portfolio.Api.Services.IGitHubModelsTokenProvider, Portfolio.Api.Services.GitHubModelsTokenProvider>();
 
 // Register ShortIdGenerator for Portfolio ID generation; prefer Parameter Store salt if configured
 builder.Services.AddSingleton<Portfolio.Api.Services.IShortIdGenerator>(sp =>
