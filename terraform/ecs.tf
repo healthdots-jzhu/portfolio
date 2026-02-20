@@ -10,6 +10,10 @@ resource "aws_ecs_cluster" "main" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-cluster"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # CloudWatch Log Group for ECS tasks
@@ -19,6 +23,10 @@ resource "aws_cloudwatch_log_group" "ecs_tasks" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-logs"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -42,17 +50,25 @@ resource "aws_iam_role" "ecs_task_execution" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-exec-role"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
   role       = aws_iam_role.ecs_task_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Additional policy for ECS task execution to read secrets from Secrets Manager
 resource "aws_iam_role_policy" "ecs_secrets_access" {
   name_prefix = "${var.environment}-${var.project_name}-ecs-secrets-"
-  role        = aws_iam_role.ecs_task_execution.id
+  role        = aws_iam_role.ecs_task_execution.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -63,19 +79,16 @@ resource "aws_iam_role_policy" "ecs_secrets_access" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.postgres_connection.arn,
-          aws_secretsmanager_secret.github_models_api_token.arn
+          data.aws_secretsmanager_secret.postgres_connection.arn,
+          data.aws_secretsmanager_secret.github_models_api_token.arn
         ]
       },
-      {
-        Effect = "Allow"
-        Action = [
-          "kms:Decrypt"
-        ]
-        Resource = aws_kms_key.secrets.arn
-      }
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # ECS Task Role (for application runtime permissions like S3, SSM)
@@ -98,12 +111,16 @@ resource "aws_iam_role" "ecs_task" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-task-role"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Task role policy for S3, SSM, and other app needs
 resource "aws_iam_role_policy" "ecs_task_permissions" {
   name_prefix = "${var.environment}-${var.project_name}-ecs-task-policy-"
-  role        = aws_iam_role.ecs_task.id
+  role        = aws_iam_role.ecs_task.name
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -127,10 +144,17 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
           "ssm:GetParameter",
           "ssm:GetParameters"
         ]
-        Resource = "arn:aws:ssm:${var.aws_region}:*:parameter/${var.environment}/${var.project_name}/*"
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:*:parameter/${var.environment}/${var.project_name}/*",
+          "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*"
+        ]
       }
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Security Group for ECS tasks
@@ -138,15 +162,6 @@ resource "aws_security_group" "ecs_tasks" {
   name_prefix = "${var.environment}-${var.project_name}-ecs-tasks-"
   description = "Security group for ECS tasks"
   vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-    description     = "Allow HTTP from ALB"
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -158,6 +173,21 @@ resource "aws_security_group" "ecs_tasks" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ecs-tasks-sg"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Explicit rule: allow HTTP ingress from the ALB security group only
+resource "aws_security_group_rule" "ecs_tasks_from_alb" {
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.ecs_tasks.id
+  source_security_group_id = aws_security_group.alb.id
+  description              = "Allow HTTP from ALB SG only"
 }
 
 # Allow ECS tasks to connect to RDS
@@ -171,55 +201,18 @@ resource "aws_security_group_rule" "rds_from_ecs" {
   description              = "Allow PostgreSQL from ECS tasks"
 }
 
-# KMS Key for Secrets Manager
-resource "aws_kms_key" "secrets" {
-  description             = "KMS key for Secrets Manager encryption"
-  deletion_window_in_days = 7
-  enable_key_rotation     = true
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-secrets-key"
-  }
-}
-
-resource "aws_kms_alias" "secrets" {
-  name          = "alias/${var.environment}-${var.project_name}-secrets"
-  target_key_id = aws_kms_key.secrets.key_id
-}
+# Using AWS-managed KMS for Secrets Manager (aws/secretsmanager). No customer CMK created here.
 
 # Secrets Manager - Postgres Connection String
-resource "aws_secretsmanager_secret" "postgres_connection" {
-  name                    = "${var.project_name}-${var.environment}-postgres-connection"
-  description             = "PostgreSQL connection string for Portfolio API"
-  kms_key_id              = aws_kms_key.secrets.id
-  recovery_window_in_days = 7
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-postgres-connection"
-    Environment = var.environment
-  }
+# Use data lookup to avoid attempting creation when the secret already exists.
+data "aws_secretsmanager_secret" "postgres_connection" {
+  name = "${var.project_name}-${var.environment}-postgres-connection"
 }
-
-# Secret value should be provided at runtime (workflow or operator);
-# leave management of the secret's value to external tooling to avoid
-# storing sensitive data in Terraform state.
 
 # Secrets Manager - GitHub Models API Token
-resource "aws_secretsmanager_secret" "github_models_api_token" {
-  name                    = "${var.project_name}-${var.environment}-github-models-token"
-  description             = "GitHub Models API token for Portfolio API"
-  kms_key_id              = aws_kms_key.secrets.id
-  recovery_window_in_days = 7
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-github-models-token"
-    Environment = var.environment
-  }
+data "aws_secretsmanager_secret" "github_models_api_token" {
+  name = "${var.project_name}-${var.environment}-github-models-token"
 }
-
-# Secret value should be provided at runtime (workflow or operator);
-# leave management of the secret's value to external tooling to avoid
-# storing sensitive data in Terraform state.
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "portfolio_api" {
@@ -253,17 +246,21 @@ resource "aws_ecs_task_definition" "portfolio_api" {
         {
           name  = "ASPNETCORE_URLS"
           value = "http://+:80"
+        },
+        {
+          name  = "PATH_BASE"
+          value = var.path_base
         }
       ]
 
       secrets = [
         {
           name      = "ConnectionStrings__Postgres"
-          valueFrom = "${aws_secretsmanager_secret.postgres_connection.arn}:connection_string::"
+          valueFrom = data.aws_secretsmanager_secret.postgres_connection.arn
         },
         {
           name      = "GitHubModels__ApiToken"
-          valueFrom = "${aws_secretsmanager_secret.github_models_api_token.arn}:api_token::"
+          valueFrom = data.aws_secretsmanager_secret.github_models_api_token.arn
         }
       ]
 
@@ -292,8 +289,9 @@ resource "aws_ecs_service" "portfolio_api" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
-    security_groups = [aws_security_group.ecs_tasks.id]
+    subnets          = [aws_subnet.public.id, aws_subnet.public_2b.id]
+    security_groups  = [aws_security_group.ecs_tasks.id]
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -309,6 +307,10 @@ resource "aws_ecs_service" "portfolio_api" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-portfolio-api-service"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -328,7 +330,7 @@ resource "aws_appautoscaling_policy" "portfolio_api_cpu" {
   scalable_dimension = aws_appautoscaling_target.portfolio_api.scalable_dimension
   policy_type        = "TargetTrackingScaling"
 
-  target_tracking_configuration {
+  target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
@@ -347,15 +349,28 @@ resource "aws_lb" "main" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = [aws_subnet.public.id, aws_subnet.public_2b.id]
 
+  access_logs {
+    bucket  = aws_s3_bucket.alb_logs.bucket
+    prefix  = "${var.project_name}/${var.environment}/alb"
+    enabled = true
+  }
+
   tags = {
     Name = "${var.project_name}-${var.environment}-alb"
   }
+
+  depends_on = [
+    aws_s3_bucket.alb_logs,
+    aws_s3_bucket_policy.alb_logs,
+    aws_s3_bucket_ownership_controls.alb_logs,
+    aws_s3_bucket_public_access_block.alb_logs
+  ]
 }
 
 # Additional public subnet in second AZ for ALB
 resource "aws_subnet" "public_2b" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.3.0/24"
+  cidr_block              = var.public_2b_cidr
   availability_zone       = "ca-central-1b"
   map_public_ip_on_launch = true
 
@@ -446,13 +461,29 @@ resource "aws_lb_listener" "http" {
   }
 }
 
+locals {
+  # number of configured certificate ARNs
+  acm_count = length(var.acm_certificate_arns)
+
+  # clamp the API index into 0..acm_count-1 when there are ARNs
+  # Use min/max and reference local.acm_count to avoid parser errors
+  api_index = local.acm_count > 0 ? min(max(var.api_certificate_arn_index, 0), local.acm_count - 1) : 0
+
+  # ordered list: put the selected API certificate first, then the remaining ARNs in their original order
+  ordered_acm_certificate_arns = local.acm_count == 0 ? [] : concat([element(var.acm_certificate_arns, local.api_index)], [for i, a in var.acm_certificate_arns : a if i != local.api_index])
+}
+
 # HTTPS Listener (requires ACM certificate - see variable)
 resource "aws_lb_listener" "https" {
+  count             = length(var.acm_certificate_arns) > 0 ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = var.acm_certificate_arn
+  # Attach the selected API certificate (first in ordered list).
+  # The resource is created only when there are ACM ARNs (see count above),
+  # so referencing element(var.acm_certificate_arns, local.api_index) is safe.
+  certificate_arn = element(var.acm_certificate_arns, local.api_index)
 
   default_action {
     type = "fixed-response"
@@ -465,9 +496,24 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# Listener rule for path-based routing (portfolio-{environment})
+# Attach remaining ACM certs to the listener (SNI)
+resource "aws_lb_listener_certificate" "extra" {
+  for_each = { for idx, arn in var.acm_certificate_arns : idx => arn if idx != local.api_index }
+
+  listener_arn    = aws_lb_listener.https[0].arn
+  certificate_arn = each.value
+}
+
+# Ensure ECS service-linked role exists so ECS can create services
+resource "aws_iam_service_linked_role" "ecs" {
+  aws_service_name = "ecs.amazonaws.com"
+  description      = "Service-linked role for Amazon ECS"
+}
+
+# ALB Listener rule: Forward all portfolio API traffic to ECS tasks
+# API validates JWT tokens directly (no ALB authentication)
 resource "aws_lb_listener_rule" "portfolio_api" {
-  listener_arn = aws_lb_listener.https.arn
+  listener_arn = length(aws_lb_listener.https) > 0 ? aws_lb_listener.https[0].arn : ""
   priority     = 100
 
   action {
@@ -489,6 +535,99 @@ resource "aws_lb_listener_rule" "portfolio_api" {
 }
 
 # Route53 record for API subdomain
+
+// S3 bucket to receive ALB access logs
+resource "aws_s3_bucket" "alb_logs" {
+  bucket = "${var.project_name}-${var.environment}-alb-logs"
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-alb-logs"
+  }
+}
+
+# Bucket ownership controls - required for ALB logs
+resource "aws_s3_bucket_ownership_controls" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Versioning for ALB logs bucket (moved from inline argument)
+resource "aws_s3_bucket_versioning" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Server-side encryption for ALB logs bucket (moved from inline argument)
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_logs" {
+  bucket                  = aws_s3_bucket.alb_logs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AWSLogDeliveryWrite"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::985666609251:root"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.alb_logs.arn}/*"
+      }
+    ]
+  })
+
+  depends_on = [
+    aws_s3_bucket_public_access_block.alb_logs,
+    aws_s3_bucket_ownership_controls.alb_logs
+  ]
+}
+
+# Separate lifecycle configuration for the ALB logs bucket (replacement for
+# deprecated lifecycle_rule inside aws_s3_bucket)
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    id     = "logs"
+    status = "Enabled"
+
+    filter {}
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+
+    expiration {
+      days = 365
+    }
+  }
+}
+
 data "aws_route53_zone" "selected" {
   name         = var.route53_zone_name
   private_zone = false
@@ -504,6 +643,4 @@ resource "aws_route53_record" "api" {
     zone_id                = aws_lb.main.zone_id
     evaluate_target_health = false
   }
-
-  ttl = 300
 }

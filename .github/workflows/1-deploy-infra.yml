@@ -1,8 +1,6 @@
 name: Deploy Infrastructure (backend stack - vpc, ec2, rds, etc.)
 
 on:
-  push:
-    branches: [ master ]
   workflow_dispatch:
     inputs:
       environment:
@@ -17,6 +15,10 @@ on:
         description: 'GitHub Models API token (optional; only used for manual runs to update secret)'
         required: false
         default: ''
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'terraform/**'
 
 permissions:
   contents: read
@@ -24,7 +26,7 @@ permissions:
 
 env:
   AWS_REGION: ca-central-1
-  ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'beta' }}
+  ENVIRONMENT: ${{ github.event.inputs.environment || 'beta' }}
 
 jobs:
   terraform:
@@ -49,14 +51,32 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com
 
+      - name: Preset dispatch inputs when triggered by CI Role workflow
+        if: >-
+          github.event_name == 'workflow_run' && github.event.workflow_run.name == 'Onetime Provision: AWS CI Role + GitHub Secrets & Variables'
+        run: |
+          echo "Presetting inputs from CI Role workflow"
+          echo 'POSTGRES_INPUT=Host=healthdots-postgres-20260109164746330200000002.clw2owae6kbt.ca-central-1.rds.amazonaws.com;Port=5432;Database=portfoliodb;Username=postgres;Password=TNObr~X:sZ1_-MV$sdh?4aoJj|G:;Include Error Detail=true' >> $GITHUB_ENV
+          echo 'GITHUB_INPUT=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' >> $GITHUB_ENV
+
       - name: Verify or update Secrets Manager secret values for environment
         shell: bash
         env:
-          POSTGRES_INPUT: "${{ github.event.inputs.postgres_connection_string || '' }}"
-          GITHUB_INPUT: "${{ github.event.inputs.github_models_api_token || '' }}"
           GITHUB_EVENT_NAME: "${{ github.event_name }}"
         run: |
           set -euo pipefail
+          # Prefer explicit dispatch inputs; otherwise honor any presets written to GITHUB_ENV
+          if [ -n "${{ github.event.inputs.postgres_connection_string }}" ]; then
+            POSTGRES_INPUT="${{ github.event.inputs.postgres_connection_string }}"
+          else
+            POSTGRES_INPUT="${POSTGRES_INPUT:-}"
+          fi
+          if [ -n "${{ github.event.inputs.github_models_api_token }}" ]; then
+            GITHUB_INPUT="${{ github.event.inputs.github_models_api_token }}"
+          else
+            GITHUB_INPUT="${GITHUB_INPUT:-}"
+          fi
+
           SECRET_POSTGRES_NAME="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-postgres-connection"
           SECRET_GITHUB_NAME="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-github-models-token"
 
@@ -89,18 +109,29 @@ jobs:
               return $?
             fi
 
-            # Attempt to create the secret (uses AWS-managed KMS key if none provided).
-            if aws secretsmanager create-secret --name "$1" --secret-string "$2" --description "Created by GitHub Actions workflow for ${ENVIRONMENT}" >/dev/null 2>&1; then
-              echo "Created secret $1"
+            # Create the secret using AWS-managed KMS (aws/secretsmanager)
+            TMPERR=$(mktemp)
+
+            if aws secretsmanager create-secret --name "$1" --secret-string "$2" --description "Created by GitHub Actions workflow for ${ENVIRONMENT}" 2> "$TMPERR" >/dev/null; then
+              echo "Created secret $1 with AWS-managed KMS key"
+              rm -f "$TMPERR"
               return 0
-            else
-              # If create failed because the secret was created concurrently, try putting the value
-              if check_secret_exists "$1"; then
-                put_secret_value "$1" "$2"
-                return $?
-              fi
-              return 1
             fi
+
+            # If creation failed, print AWS CLI error for diagnosis. If secret now exists (race), put the value.
+            echo "Create secret failed:"
+            sed -n '1,200p' "$TMPERR" || true
+
+            if check_secret_exists "$1"; then
+              echo "Secret $1 now exists; attempting to put value"
+              put_secret_value "$1" "$2" 2> "$TMPERR" || true
+              sed -n '1,200p' "$TMPERR" || true
+              rm -f "$TMPERR"
+              return 0
+            fi
+
+            rm -f "$TMPERR"
+            return 1
           }
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
@@ -158,7 +189,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: "1.5.7"
+          terraform_version: "1.14.3"
 
       - name: Terraform init (S3 backend)
         run: |
@@ -173,14 +204,18 @@ jobs:
         run: |
           echo "TF_VAR_environment=${{ env.ENVIRONMENT }}" >> $GITHUB_ENV
           echo "TF_VAR_aws_region=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
-          echo "TF_VAR_ecr_registry=${{ vars.ECR_REGISTRY }}" >> $GITHUB_ENV
+          # TF_VAR_ecr_registry removed (not used)
           echo "TF_VAR_s3_bucket_frontend=${{ vars.S3_BUCKET_FRONTEND }}" >> $GITHUB_ENV
-          echo "TF_VAR_acm_certificate_arn=${{ vars.ACM_CERTIFICATE_ARN }}" >> $GITHUB_ENV
+          # TF_VAR_acm_certificate_arn removed; use list `ACM_CERTIFICATE_ARNS` instead.
           echo "TF_VAR_project_name=${{ vars.PROJECT_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_vpc_cidr=${{ vars.VPC_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_public_subnet_cidr=${{ vars.PUBLIC_SUBNET_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_public_2b_cidr=${{ vars.PUBLIC_2B_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_private_subnet_cidr=${{ vars.PRIVATE_SUBNET_CIDR }}" >> $GITHUB_ENV
-          echo "TF_VAR_rds_ssm_ec2_instance_type=${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" >> $GITHUB_ENV
+          # Only export if the repo variable is set; otherwise let Terraform use its variable default
+          if [ -n "${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" ]; then
+            echo "TF_VAR_rds_ssm_ec2_instance_type=${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" >> $GITHUB_ENV
+          fi
           echo "TF_VAR_rds_instance_class=${{ vars.RDS_INSTANCE_CLASS }}" >> $GITHUB_ENV
           echo "TF_VAR_rds_allocated_storage=${{ vars.RDS_ALLOCATED_STORAGE }}" >> $GITHUB_ENV
           echo "TF_VAR_postgres_version=${{ vars.POSTGRES_VERSION }}" >> $GITHUB_ENV
@@ -203,14 +238,80 @@ jobs:
           echo "TF_VAR_private_app_2a_cidr=${{ vars.PRIVATE_APP_2A_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_private_app_2b_cidr=${{ vars.PRIVATE_APP_2B_CIDR }}" >> $GITHUB_ENV
           echo "TF_VAR_path_base=${{ vars.PATH_BASE }}" >> $GITHUB_ENV
+          echo "TF_VAR_api_subdomain=${{ vars.API_SUBDOMAIN }}" >> $GITHUB_ENV
+          echo "TF_VAR_route53_zone_name=${{ vars.ROUTE53_ZONE_NAME }}" >> $GITHUB_ENV
+
+          # Export ACM certificate ARNs as a JSON list (repo variable `ACM_CERTIFICATE_ARNS`), or empty list.
+          if [ -n "${{ vars.ACM_CERTIFICATE_ARNS }}" ]; then
+            echo 'TF_VAR_acm_certificate_arns=${{ vars.ACM_CERTIFICATE_ARNS }}' >> $GITHUB_ENV
+          else
+            echo "TF_VAR_acm_certificate_arns=[]" >> $GITHUB_ENV
+          fi
+          # Export API certificate index (repo variable if available)
+          if [ -n "${{ vars.API_CERTIFICATE_ARN_INDEX }}" ]; then
+            echo "TF_VAR_api_certificate_arn_index=${{ vars.API_CERTIFICATE_ARN_INDEX }}" >> $GITHUB_ENV
+          else
+            echo "TF_VAR_api_certificate_arn_index=0" >> $GITHUB_ENV
+          fi
+
+      - name: Validate TF vars and required CIDRs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Ensure ecs desired count is numeric; default to 1 if empty
+          if [[ -z "${TF_VAR_ecs_service_desired_count:-}" ]]; then
+            echo "TF_VAR_ecs_service_desired_count is empty; setting default to 1"
+            echo "TF_VAR_ecs_service_desired_count=1" >> $GITHUB_ENV
+          elif ! [[ "$TF_VAR_ecs_service_desired_count" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: TF_VAR_ecs_service_desired_count ('$TF_VAR_ecs_service_desired_count') is not a number"
+            exit 1
+          fi
+
+          # Validate required CIDR variables using pure bash (format + octet/prefix checks)
+          validate_cidr() {
+            local name="$1"
+            local v="${!name:-}"
+            if [[ -z "$v" ]]; then
+              echo "ERROR: $name is empty"
+              return 1
+            fi
+            if [[ ! "$v" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+              echo "ERROR: $name has invalid CIDR '$v' (bad format)"
+              return 1
+            fi
+            IFS='/' read -r ip prefix <<< "$v"
+            IFS='.' read -r o1 o2 o3 o4 <<< "$ip"
+            for o in "$o1" "$o2" "$o3" "$o4"; do
+              if (( o < 0 || o > 255 )); then
+                echo "ERROR: $name has invalid octet in '$v'"
+                return 1
+              fi
+            done
+            if (( prefix < 0 || prefix > 32 )); then
+              echo "ERROR: $name has invalid prefix in '$v'"
+              return 1
+            fi
+            return 0
+          }
+
+          for var in TF_VAR_private_2a_cidr TF_VAR_private_2b_cidr TF_VAR_private_app_2a_cidr TF_VAR_private_app_2b_cidr; do
+            validate_cidr "$var" || exit 1
+          done
+          echo 'CIDR validation passed'
 
       - name: Terraform plan
         run: |
           terraform plan -out=plan.tfplan
 
+      - name: Upload TF plan to S3
+        run: |
+          set -euo pipefail
+          # Upload the generated plan to the TF state bucket for auditing
+          aws s3 cp plan.tfplan "s3://${{ vars.TF_STATE_BUCKET }}/terraform-plans/${{ env.ENVIRONMENT }}/plan-${{ github.run_id }}.tfplan" --region "${{ env.AWS_REGION }}"
+
       - name: Terraform apply on master
-        if: |
-          github.ref == 'refs/heads/main' && github.event_name == 'push' ||
-          (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
         run: |
           terraform apply -auto-approve plan.tfplan
+
+  

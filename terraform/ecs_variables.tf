@@ -17,9 +17,16 @@ variable "ecs_service_desired_count" {
   default     = 1
 }
 
-variable "acm_certificate_arn" {
-  type        = string
-  description = "ARN of ACM certificate for HTTPS listener"
+variable "acm_certificate_arns" {
+  type        = list(string)
+  description = "List of ACM certificate ARNs for HTTPS listener (first = default)"
+  default     = []
+}
+
+variable "api_certificate_arn_index" {
+  type        = number
+  description = "Index into acm_certificate_arns selecting which certificate should be default for API (0-based)"
+  default     = 0
 }
 
 variable "s3_bucket_name" {

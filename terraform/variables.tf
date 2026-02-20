@@ -48,6 +48,12 @@ variable "private_2b_cidr" {
   default     = "10.0.160.0/20"
 }
 
+variable "public_2b_cidr" {
+  type        = string
+  description = "CIDR block for additional public subnet in AZ 2 (public_2b)"
+  default     = "10.0.16.0/24"
+}
+
 variable "private_app_2a_cidr" {
   type        = string
   description = "CIDR block for application-private subnet 2a"
@@ -140,4 +146,10 @@ variable "rds_storage_type" {
   type        = string
   description = "Storage type for RDS (gp2, gp3, io1, io2)"
   default     = "gp2"
+}
+
+variable "db_subnet_group_name" {
+  type        = string
+  description = "Optional explicit DB subnet group name to use. If empty, Terraform will create one using name_prefix. Provide the existing subnet-group name to avoid replacing the DB."
+  default     = ""
 }

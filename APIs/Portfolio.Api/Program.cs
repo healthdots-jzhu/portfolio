@@ -9,6 +9,9 @@ using Amazon.SimpleSystemsManagement.Model;
 using Amazon.Runtime;
 using Amazon.Runtime.CredentialManagement;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 // Prevent claim type mapping (keep "sub" as "sub", not transform to ClaimTypes.NameIdentifier)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -45,6 +48,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var cognitoAuthority = builder.Configuration["Aws:Cognito:Authority"];
 var cognitoAudience = builder.Configuration.GetSection("Aws:Cognito:Audience").Get<string[]>();
 
+// Enable JWT Bearer authentication in ALL environments.
+// ECS tasks now run in public subnets with internet access, allowing direct validation
+// of JWT tokens against Cognito's JWKS endpoint without requiring VPC endpoints or NAT gateway.
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -108,6 +114,9 @@ var ssmClient = awsCredentials is not null
 builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(s3Client);
 builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(ssmClient);
 builder.Services.AddScoped<Portfolio.Api.Services.IS3Service, Portfolio.Api.Services.S3Service>();
+// Memory cache and token provider for GitHub Models API token caching
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<Portfolio.Api.Services.IGitHubModelsTokenProvider, Portfolio.Api.Services.GitHubModelsTokenProvider>();
 
 // Register ShortIdGenerator for Portfolio ID generation; prefer Parameter Store salt if configured
 builder.Services.AddSingleton<Portfolio.Api.Services.IShortIdGenerator>(sp =>
@@ -116,6 +125,8 @@ builder.Services.AddSingleton<Portfolio.Api.Services.IShortIdGenerator>(sp =>
     var logger = sp.GetRequiredService<ILogger<Portfolio.Api.Services.ShortIdGenerator>>();
     var salt = config["Hashids:Salt"] ?? "portfolio-app-default-salt";
     var parameterName = config["Hashids:ParameterName"];
+    // Log the effective parameter name resolved from configuration for easier debugging
+    logger.LogInformation("Resolved Hashids:ParameterName = {ParameterName}", parameterName ?? "(null)");
 
     if (!string.IsNullOrWhiteSpace(parameterName))
     {
@@ -228,7 +239,7 @@ catch
     // swallow logging errors during startup diagnostic logging
 }
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Beta"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -238,6 +249,60 @@ if (app.Environment.IsDevelopment())
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
+// Global exception handler: catch unexpected exceptions, log them, and return
+// a minimal 500 response. Placed early to capture errors from downstream middleware.
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        await next();
+
+        // If downstream set a 5xx status without throwing, log it for visibility
+        if (context.Response.StatusCode >= 500)
+        {
+            logger.LogError("Request completed with server error status {StatusCode} for {Method} {Path}", context.Response.StatusCode, context.Request.Method, context.Request.Path);
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Unhandled exception processing request {Method} {Path}", context.Request.Method, context.Request.Path);
+
+        if (!context.Response.HasStarted)
+        {
+            context.Response.Clear();
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/json";
+            var payload = System.Text.Json.JsonSerializer.Serialize(new { error = "An unexpected error occurred." });
+            await context.Response.WriteAsync(payload);
+        }
+
+        // Do not rethrow; we handled and logged the exception.
+    }
+});
+
+// Add request logging middleware to diagnose slow or hanging requests
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    logger.LogInformation("→ {Method} {Path}", context.Request.Method, context.Request.Path);
+    
+    try
+    {
+        await next.Invoke();
+        stopwatch.Stop();
+        logger.LogInformation("← {Method} {Path} - {StatusCode} ({ElapsedMs}ms)", 
+            context.Request.Method, context.Request.Path, context.Response.StatusCode, stopwatch.ElapsedMilliseconds);
+    }
+    catch (Exception)
+    {
+        // Let the global exception handler capture and log the exception.
+        stopwatch.Stop();
+        throw;
+    }
 });
 
 // Respect a path base injected by the ALB (e.g. "/portfolio-beta/content") so existing controllers
@@ -255,7 +320,10 @@ if (!string.IsNullOrEmpty(pathBase))
     app.UsePathBase(new Microsoft.AspNetCore.Http.PathString(pathBase));
 }
 
-app.UseHttpsRedirection();
+// HTTPS redirect is handled at the ALB level (which terminates HTTPS and forwards HTTP to container).
+// The app receives X-Forwarded-Proto: https header from the ALB for detection.
+// Skip UseHttpsRedirection() to avoid "Failed to determine https port" errors when running behind ALB.
+// app.UseHttpsRedirection();
 
 // Enable routing before applying CORS so the CORS middleware can run with endpoint routing
 app.UseRouting();

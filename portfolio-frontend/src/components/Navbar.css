@@ -18,7 +18,7 @@
   transition: transform 0.3s ease, letter-spacing 0.3s ease;
   text-decoration: none;
   display: inline-block;
-  font-family: 'Playball', cursive;
+  font-family: inherit;
 }
 
 .navbar-logo:hover {

@@ -1,8 +1,6 @@
 name: Build and push Docker images (APIs) to ECR and other backend tasks
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
     branches: [ master ]
   workflow_dispatch:
@@ -14,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   id-token: write
 
 env:
@@ -27,6 +26,7 @@ jobs:
     environment: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'beta' }}
     env:
       ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+      IMAGE_REPOSITORY: ${{ format('{0}-healthdots-portfolio-api', github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'beta') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -38,12 +38,90 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com
 
+      - name: Wait for infra workflow to finish (if running)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TARGET_WORKFLOW_PATH: .github/workflows/1-deploy-infra.yml
+        run: |
+          set -euo pipefail
+          command -v jq >/dev/null || (sudo apt-get update -y && sudo apt-get install -y jq)
+          WORKFLOWS_API="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows"
+          WORKFLOW_ID=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "$WORKFLOWS_API" | jq -r --arg p "$TARGET_WORKFLOW_PATH" '.workflows[] | select(.path==$p) | .id')
+          if [ -z "$WORKFLOW_ID" ] || [ "$WORKFLOW_ID" = "null" ]; then
+            echo "Target workflow not found: $TARGET_WORKFLOW_PATH - continuing"
+          else
+            echo "Checking latest run status for workflow id $WORKFLOW_ID ($TARGET_WORKFLOW_PATH)"
+            sleep 2
+            
+            # Get the latest run (most recent)
+            latest_run=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?per_page=1")
+            latest_status=$(echo "$latest_run" | jq -r '.workflow_runs[0].status // "unknown"')
+            latest_conclusion=$(echo "$latest_run" | jq -r '.workflow_runs[0].conclusion // "null"')
+            
+            echo "Latest run status: $latest_status, conclusion: $latest_conclusion"
+            
+            # If the latest run is completed and failed, exit immediately
+            if [ "$latest_status" = "completed" ]; then
+              if [ "$latest_conclusion" = "failure" ] || [ "$latest_conclusion" = "cancelled" ] || [ "$latest_conclusion" = "timed_out" ]; then
+                echo "ERROR: Latest infra workflow run ended with conclusion: $latest_conclusion"
+                echo "Cannot proceed with backend build while infrastructure deployment has failed."
+                exit 1
+              elif [ "$latest_conclusion" = "success" ]; then
+                echo "Latest infra workflow run succeeded - continuing"
+              fi
+            elif [ "$latest_status" = "queued" ] || [ "$latest_status" = "in_progress" ] || [ "$latest_status" = "waiting" ]; then
+              # Wait for in-progress runs to complete
+              echo "Waiting for workflow id $WORKFLOW_ID ($TARGET_WORKFLOW_PATH) to have no in-progress runs"
+              MAX_WAIT=1800
+              INTERVAL=15
+              waited=0
+              while true; do
+                runs=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?status=in_progress")
+                count=$(echo "$runs" | jq '.total_count')
+                if [ "$count" -eq 0 ]; then
+                  echo "No in-progress runs for ${TARGET_WORKFLOW_PATH}"
+                  # Re-check the latest run's conclusion after waiting
+                  latest_run=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_ID}/runs?per_page=1")
+                  latest_conclusion=$(echo "$latest_run" | jq -r '.workflow_runs[0].conclusion // "null"')
+                  if [ "$latest_conclusion" = "failure" ] || [ "$latest_conclusion" = "cancelled" ] || [ "$latest_conclusion" = "timed_out" ]; then
+                    echo "ERROR: Infra workflow completed with conclusion: $latest_conclusion"
+                    exit 1
+                  fi
+                  break
+                fi
+                echo "Found $count in-progress run(s); waiting ${INTERVAL}s..."
+                sleep $INTERVAL
+                waited=$((waited+INTERVAL))
+                if [ $waited -ge $MAX_WAIT ]; then
+                  echo "Timed out waiting for ${TARGET_WORKFLOW_PATH} to finish after ${waited}s"
+                  exit 1
+                fi
+              done
+            fi
+          fi
+
       - name: Login to ECR
         id: ecr-login
         run: |
-          aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+          # Derive registry if not provided via repo variable
+          if [ -z "${ECR_REGISTRY:-}" ]; then
+            ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+            ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+            echo "Derived ECR_REGISTRY=${ECR_REGISTRY}"
+          fi
+          aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
+          echo "registry=${ECR_REGISTRY}" >> "$GITHUB_OUTPUT"
+
+      - name: ECR debug & ensure repo
+        run: |
+          echo "Caller identity:"; aws sts get-caller-identity
+          echo "Checking repository ${IMAGE_REPOSITORY}";
+          aws ecr describe-repositories --repository-names "${IMAGE_REPOSITORY}" || \
+            aws ecr create-repository --repository-name "${IMAGE_REPOSITORY}" --image-scanning-configuration scanOnPush=true
+          aws ecr describe-repositories --repository-names "${IMAGE_REPOSITORY}"
         env:
-          ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          IMAGE_REPOSITORY: ${{ env.IMAGE_REPOSITORY }}
 
       - name: Build and push image
         id: build
@@ -52,10 +130,100 @@ jobs:
           context: ./APIs/Portfolio.Api
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}:latest
-            ${{ env.ECR_REGISTRY }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_REPOSITORY }}:latest
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}
 
       - name: Set job output image
         id: set-image
         run: |
-          echo "image=${{ env.ECR_REGISTRY }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "image=${{ steps.ecr-login.outputs.registry }}/${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Force ECS service deployment
+        run: |
+          aws ecs update-service \
+            --cluster "${CLUSTER_NAME}" \
+            --service "${SERVICE_NAME}" \
+            --force-new-deployment \
+            --region "${AWS_REGION}"
+        env:
+          CLUSTER_NAME: ${{ format('{0}-{1}-cluster', vars.PROJECT_NAME, env.ENVIRONMENT) }}
+          SERVICE_NAME: ${{ format('{0}-{1}-portfolio-api', vars.PROJECT_NAME, env.ENVIRONMENT) }}
+
+      - name: Wait for ECS service deployment to complete
+        run: |
+          set -euo pipefail
+          CLUSTER_NAME="${{ format('{0}-{1}-cluster', vars.PROJECT_NAME, env.ENVIRONMENT) }}"
+          SERVICE_NAME="${{ format('{0}-{1}-portfolio-api', vars.PROJECT_NAME, env.ENVIRONMENT) }}"
+          MAX_WAIT=600
+          INTERVAL=10
+          waited=0
+          
+          echo "Waiting for ECS service '${SERVICE_NAME}' in cluster '${CLUSTER_NAME}' to stabilize..."
+          
+          while [ $waited -lt $MAX_WAIT ]; do
+            service_info=$(aws ecs describe-services \
+              --cluster "${CLUSTER_NAME}" \
+              --services "${SERVICE_NAME}" \
+              --region "${AWS_REGION}" \
+              --query 'services[0]' \
+              --output json)
+            
+            desired_count=$(echo "$service_info" | jq -r '.desiredCount')
+            running_count=$(echo "$service_info" | jq -r '.runningCount')
+            deployment_count=$(echo "$service_info" | jq '.deployments | length')
+            active_deployments=$(echo "$service_info" | jq '[.deployments[] | select(.status=="PRIMARY")] | length')
+            
+            echo "Desired: ${desired_count}, Running: ${running_count}, Active deployments: ${active_deployments}, Total deployments: ${deployment_count}"
+            
+            # Check if service is stable: desired == running and only 1 active deployment
+            if [ "$desired_count" -eq "$running_count" ] && [ "$active_deployments" -eq 1 ]; then
+              echo "✓ ECS service deployment complete - all tasks are running"
+              
+              # Wait a few more seconds for health checks to pass
+              echo "Waiting for health checks to pass..."
+              sleep 10
+              
+              # Check if tasks are healthy
+              task_arns=$(aws ecs list-tasks \
+                --cluster "${CLUSTER_NAME}" \
+                --service-name "${SERVICE_NAME}" \
+                --region "${AWS_REGION}" \
+                --query 'taskArns[]' \
+                --output text)
+              
+              if [ -z "$task_arns" ]; then
+                echo "✗ No tasks found"
+                exit 1
+              fi
+              
+              # Get task details to check if they're in RUNNING state
+              tasks_info=$(aws ecs describe-tasks \
+                --cluster "${CLUSTER_NAME}" \
+                --tasks $task_arns \
+                --region "${AWS_REGION}" \
+                --query 'tasks[*].{arn:taskArn, lastStatus:lastStatus, desiredStatus:desiredStatus}' \
+                --output json)
+              
+              all_running=$(echo "$tasks_info" | jq '[.[] | select(.lastStatus=="RUNNING" and .desiredStatus=="RUNNING")] | length')
+              total_tasks=$(echo "$tasks_info" | jq 'length')
+              
+              echo "Tasks running: ${all_running}/${total_tasks}"
+              
+              if [ "$all_running" -eq "$total_tasks" ] && [ "$total_tasks" -gt 0 ]; then
+                echo "✓ All tasks are healthy and running"
+                exit 0
+              else
+                echo "⚠ Not all tasks are in RUNNING state, but service reports stable. Continuing..."
+                exit 0
+              fi
+            fi
+            
+            echo "Service not yet stable, waiting ${INTERVAL}s..."
+            sleep $INTERVAL
+            waited=$((waited + INTERVAL))
+          done
+          
+          echo "✗ Timed out waiting for ECS service to stabilize after ${MAX_WAIT}s"
+          exit 1
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}

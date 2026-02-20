@@ -67,54 +67,31 @@ resource "aws_iam_role" "github_actions_role" {
 
 # IAM policy granting necessary permissions for CI: ECR push, S3 state access, DynamoDB lock access
 data "aws_iam_policy_document" "ci_policy_doc" {
-  statement {
-    actions = [
-      "ecr:GetAuthorizationToken",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:CompleteLayerUpload",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
-    ]
-    resources = ["*"]
-  }
+  # (ECR push/read actions are provided by the extra policy wildcard)
 
-  # Allow repository inspection/creation and image reads
-  statement {
-    actions = [
-      "ecr:DescribeRepositories",
-      "ecr:CreateRepository",
-      "ecr:BatchGetImage",
-      "ecr:DescribeImages"
-    ]
-    resources = ["arn:aws:ecr:${var.aws_region}:${var.aws_account_id}:repository/*"]
-  }
+  # (ECR repository actions are covered by the extra policy wildcard)
 
   statement {
-    actions = ["s3:PutObject", "s3:GetObject", "s3:ListBucket", "s3:DeleteObject"]
+    actions = [
+      "s3:*"
+    ]
     resources = [
       "arn:aws:s3:::${var.tf_state_bucket}",
-      "arn:aws:s3:::${var.tf_state_bucket}/*"
+      "arn:aws:s3:::${var.tf_state_bucket}/*",
+      "arn:aws:s3:::*-alb-logs",
+      "arn:aws:s3:::*-alb-logs/*"
     ]
   }
 
+  # Allow CI to create and update Secrets Manager secrets used during bootstrap and workflow runs
   statement {
-    actions   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:DeleteItem", "dynamodb:UpdateItem", "dynamodb:Query"]
-    resources = ["arn:aws:dynamodb:${var.aws_region}:${var.aws_account_id}:table/${var.tf_state_dynamodb_table}"]
-  }
-
-  # Allow CI to describe the DynamoDB lock table
-  statement {
-    actions   = ["dynamodb:DescribeTable"]
-    resources = ["arn:aws:dynamodb:${var.aws_region}:${var.aws_account_id}:table/${var.tf_state_dynamodb_table}"]
-  }
-
-  # Allow reading SSM parameters and Secrets Manager secrets used by pipelines
-  statement {
-    actions = ["ssm:GetParameter", "ssm:GetParameters", "secretsmanager:GetSecretValue"]
+    actions = [
+      "secretsmanager:CreateSecret",
+      "secretsmanager:PutSecretValue",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:ListSecretVersionIds"
+    ]
     resources = [
-      "arn:aws:ssm:${var.aws_region}:${var.aws_account_id}:parameter/*",
       "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:*"
     ]
   }
@@ -125,10 +102,100 @@ data "aws_iam_policy_document" "ci_policy_doc" {
     resources = ["arn:aws:kms:${var.aws_region}:${var.aws_account_id}:key/*"]
   }
 
-  # Allow EC2 image lookups used by Terraform when resolving AMIs
+  # Allow various read/list/describe actions Terraform uses during plan
   statement {
-    actions = ["ec2:DescribeImages"]
+    actions = [
+      # IAM (read and role lifecycle helpers)
+      "iam:GetRole",
+      "iam:ListRoles",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:GetPolicy",
+      "iam:GetPolicyVersion",
+      "iam:GetRolePolicy",
+      "iam:GetInstanceProfile",
+      "iam:ListInstanceProfiles",
+      "iam:ListInstanceProfileTags",
+      "iam:ListInstanceProfilesForRole",
+      "iam:PutRolePolicy",
+      "iam:TagInstanceProfile",
+      "iam:TagRole",
+      "iam:CreateRole",
+      "iam:AttachRolePolicy",
+      "iam:CreateInstanceProfile",
+      "iam:AddRoleToInstanceProfile",
+      "iam:RemoveRoleFromInstanceProfile",
+      "iam:DeleteRole",
+      "iam:DeleteRolePolicy",
+      "iam:PassRole",
+      "iam:CreateServiceLinkedRole",
+      "iam:DeleteInstanceProfile",
+
+      # KMS
+      "kms:DescribeKey",
+      "kms:GetKeyPolicy",
+      "kms:GetKeyRotationStatus",
+      "kms:ListAliases",
+      "kms:ListResourceTags",
+      "kms:ListKeys",
+      "kms:ListGrants",
+      "kms:Encrypt",
+
+      # RDS
+      "rds:DescribeDBParameterGroups",
+      "rds:DescribeDBParameters",
+      "rds:ListTagsForResource",
+      "rds:DescribeDBInstances",
+      "rds:DescribeDBSubnetGroups",
+      "rds:DescribeDBSnapshots",
+      "rds:CreateDBParameterGroup",
+      "rds:ModifyDBParameterGroup",
+      "rds:ModifyDBInstance",
+      "rds:CreateDBSubnetGroup",
+      "rds:AddTagsToResource",
+      "rds:DeleteDBParameterGroup",
+
+      # Secrets Manager
+      "secretsmanager:ListSecrets",
+      "secretsmanager:CreateSecret",
+      "secretsmanager:PutSecretValue",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:ListSecretVersionIds",
+      "secretsmanager:TagResource",
+      "secretsmanager:GetResourcePolicy",
+
+      # EventBridge / rules
+      "events:DescribeRule",
+      "events:ListRules",
+      "events:ListTagsForResource",
+      "events:ListTargetsByRule",
+      "events:PutRule",
+      "events:PutTargets",
+
+      # CloudWatch Alarms for autoscaling
+      "cloudwatch:PutMetricAlarm",
+      "cloudwatch:DeleteAlarms",
+      "cloudwatch:DescribeAlarms",
+
+      # S3 helper
+      "s3:GetBucketLocation",
+
+      # STS helper
+      "sts:GetCallerIdentity"
+    ]
     resources = ["*"]
+  }
+
+  # Allow Cognito read operations needed by ALB authenticate-cognito
+  statement {
+    actions = [
+      "cognito-idp:DescribeUserPoolClient",
+      "cognito-idp:DescribeUserPool"
+    ]
+    resources = [
+      "arn:aws:cognito-idp:${var.aws_region}:${var.aws_account_id}:userpool/*",
+      "arn:aws:cognito-idp:${var.aws_region}:${var.aws_account_id}:userpool/*/client/*"
+    ]
   }
 
   # Allow passing limited roles (scoped to project-prefixed roles)
@@ -152,6 +219,35 @@ data "aws_iam_policy_document" "ci_policy_doc" {
 resource "aws_iam_policy" "ci_policy" {
   name   = "${local.computed_role_name}-policy"
   policy = data.aws_iam_policy_document.ci_policy_doc.json
+}
+
+# Extra policy to hold large service wildcards so we don't exceed single-policy size limits
+data "aws_iam_policy_document" "ci_policy_doc_extra" {
+  statement {
+    actions = [
+      "ec2:*",
+      "ecs:*",
+      "elasticloadbalancing:*",
+      "logs:*",
+      "ecr:*",
+      "dynamodb:*",
+      "ssm:*",
+      "route53:*",
+      "application-autoscaling:*",
+      "lambda:*"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "ci_policy_extra" {
+  name   = "${local.computed_role_name}-policy-extra"
+  policy = data.aws_iam_policy_document.ci_policy_doc_extra.json
+}
+
+resource "aws_iam_role_policy_attachment" "attach_ci_policy_extra" {
+  role       = aws_iam_role.github_actions_role.name
+  policy_arn = aws_iam_policy.ci_policy_extra.arn
 }
 
 resource "aws_iam_role_policy_attachment" "attach_ci_policy" {

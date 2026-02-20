@@ -168,7 +168,7 @@ public class PortfoliosController : ControllerBase
         {
             await _s3Service.DeleteObjectAsync(asset.AssetKey);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Log and continue to remove DB record to keep state consistent
             // Using ILogger would be preferable; for now we rely on middleware logs.

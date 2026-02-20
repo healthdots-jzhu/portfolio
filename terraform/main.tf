@@ -28,6 +28,9 @@ provider "aws" {
   }
 }
 
+# Resolve current account information for scoped IAM resources
+data "aws_caller_identity" "current" {}
+
 # VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -62,6 +65,9 @@ resource "aws_subnet" "public" {
   tags = {
     Name = "${var.project_name}-${var.environment}-public1a-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Private Subnet for EC2/RDS
@@ -72,6 +78,9 @@ resource "aws_subnet" "private" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-private1a-subnet"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -84,6 +93,9 @@ resource "aws_subnet" "private_2a" {
   tags = {
     Name = "${var.project_name}-${var.environment}-private2a-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_subnet" "private_2b" {
@@ -94,16 +106,24 @@ resource "aws_subnet" "private_2b" {
   tags = {
     Name = "${var.project_name}-${var.environment}-private2b-subnet"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
-# Application-private subnets for ECS tasks (segregated from DB subnets)
+# Application-private subnets for ECS tasks (DEPRECATED - keeping for state compatibility)
+# ECS tasks now run in public subnets (public.id, public_2b.id) to eliminate VPC endpoint costs.
+# These private app subnets are retained in state to prevent destroy errors but are no longer used.
 resource "aws_subnet" "private_app_2a" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_app_2a_cidr
   availability_zone = "ca-central-1a"
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-app2a-subnet"
+    Name = "${var.project_name}-${var.environment}-private-app2a-subnet-deprecated"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -113,16 +133,19 @@ resource "aws_subnet" "private_app_2b" {
   availability_zone = "ca-central-1b"
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-app2b-subnet"
+    Name = "${var.project_name}-${var.environment}-private-app2b-subnet-deprecated"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
-# Private route table for application subnets (used for S3 gateway endpoint association)
+# Private route table for application subnets (DEPRECATED - no longer needed)
 resource "aws_route_table" "private_app" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-private-app-rt"
+    Name = "${var.project_name}-${var.environment}-private-app-rt-deprecated"
   }
 }
 
@@ -136,70 +159,17 @@ resource "aws_route_table_association" "private_app_2b" {
   route_table_id = aws_route_table.private_app.id
 }
 
-# VPC Interface Endpoints for ECS app subnets to access AWS services without NAT
-resource "aws_vpc_endpoint" "secretsmanager_app" {
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpce-secretsmanager"
-  }
-}
-
-resource "aws_vpc_endpoint" "ecr_api_app" {
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${var.aws_region}.ecr.api"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpce-ecr-api"
-  }
-}
-
-resource "aws_vpc_endpoint" "ecr_dkr_app" {
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${var.aws_region}.ecr.dkr"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpce-ecr-dkr"
-  }
-}
-
-resource "aws_vpc_endpoint" "sts_app" {
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${var.aws_region}.sts"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = [aws_subnet.private_app_2a.id, aws_subnet.private_app_2b.id]
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpce-sts"
-  }
-}
-
-# S3 Gateway Endpoint for app private route table (allows S3 access without NAT)
-resource "aws_vpc_endpoint" "s3_app" {
-  vpc_id       = aws_vpc.main.id
-  service_name = "com.amazonaws.${var.aws_region}.s3"
-  vpc_endpoint_type = "Gateway"
-  route_table_ids = [aws_route_table.private_app.id]
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpce-s3-app"
-  }
-}
+# VPC Endpoints for ECS app subnets removed - ECS tasks now run in public subnets
+# with direct internet access via Internet Gateway (no VPC endpoints needed for cost savings).
+# The following endpoints were removed:
+# - secretsmanager_app (Secrets Manager access)
+# - ecr_api_app (ECR API access)
+# - ecr_dkr_app (ECR Docker registry access)
+# - sts_app (STS token service access)
+# - logs_app (CloudWatch Logs access)
+# - s3_app (S3 Gateway endpoint for private route table)
+#
+# ECS tasks in public subnets can reach all AWS services via public endpoints.
 
 # Route Table for Public Subnet
 resource "aws_route_table" "public" {
@@ -236,6 +206,9 @@ resource "aws_security_group" "ec2" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ec2-sg"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Security Group for RDS
@@ -248,7 +221,7 @@ resource "aws_security_group" "rds" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.ec2.id]
+    security_groups = [aws_security_group.ec2.id, aws_security_group.ecs_tasks.id]
   }
 
   egress {
@@ -260,6 +233,9 @@ resource "aws_security_group" "rds" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-rds-sg"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -273,7 +249,7 @@ resource "aws_security_group" "vpc_endpoints" {
     from_port       = 443
     to_port         = 443
     protocol        = "tcp"
-    security_groups = [aws_security_group.ec2.id]
+    security_groups = [aws_security_group.ec2.id, aws_security_group.ecs_tasks.id]
   }
 
   egress {
@@ -286,47 +262,14 @@ resource "aws_security_group" "vpc_endpoints" {
   tags = {
     Name = "${var.project_name}-${var.environment}-vpce-sg"
   }
-}
-
-# VPC Interface Endpoints for SSM in private subnets
-resource "aws_vpc_endpoint" "ssm" {
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${var.aws_region}.ssm"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = [aws_subnet.private.id]
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpce-ssm"
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
-resource "aws_vpc_endpoint" "ssmmessages" {
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${var.aws_region}.ssmmessages"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = [aws_subnet.private.id]
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpce-ssmmessages"
-  }
-}
-
-resource "aws_vpc_endpoint" "ec2messages" {
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${var.aws_region}.ec2messages"
-  vpc_endpoint_type   = "Interface"
-  private_dns_enabled = true
-  subnet_ids          = [aws_subnet.private.id]
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-vpce-ec2messages"
-  }
-}
+# VPC endpoints for SSM removed - EC2 now in public subnet with direct internet access.
+# EC2 instance reaches AWS Systems Manager via public endpoints over Internet Gateway.
+# Cost savings: ~$22/month from removing 3 interface endpoints (ssm, ssmmessages, ec2messages).
 
 # IAM Role for EC2 (SSM access)
 resource "aws_iam_role" "ec2_ssm_role" {
@@ -348,12 +291,44 @@ resource "aws_iam_role" "ec2_ssm_role" {
   tags = {
     Name = "${var.project_name}-${var.environment}-ec2-ssm-role"
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Attach SSM managed policy to EC2 role
 resource "aws_iam_role_policy_attachment" "ssm_policy" {
   role       = aws_iam_role.ec2_ssm_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Inline policy to allow SSM Messages data/control channel operations
+resource "aws_iam_role_policy" "ec2_ssm_ssmmessages" {
+  name_prefix = "${var.environment}-${var.project_name}-ec2-ssmmessages-"
+  role        = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "arn:aws:ssmmessages:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+      }
+    ]
+  })
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # IAM Instance Profile
@@ -362,11 +337,10 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role        = aws_iam_role.ec2_ssm_role.name
 }
 
-# EC2 Instance (t4g.micro with Graviton2 processor)
 resource "aws_instance" "main" {
-  ami                    = data.aws_ami.amazon_linux_2.id
+  ami                    = local.amazon_linux_2_ami
   instance_type          = var.rds_ssm_ec2_instance_type
-  subnet_id              = aws_subnet.private.id
+  subnet_id              = aws_subnet.public.id
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   vpc_security_group_ids = [aws_security_group.ec2.id]
 
@@ -388,7 +362,6 @@ resource "aws_instance" "main" {
   ]
 
   lifecycle {
-    prevent_destroy = true
     create_before_destroy = true
     ignore_changes = [
       # Prevent routine deployments or tag/user-data updates from forcing instance replacement
@@ -401,14 +374,15 @@ resource "aws_instance" "main" {
 # Trigger EC2 replacement when the latest Amazon Linux 2 AMI changes
 ## Removed terraform_data `ec2_replace_when_ami_changes` to avoid replacement cycles.
 
-# Get latest Amazon Linux 2 AMI (ARM-based for t4g)
-data "aws_ami" "amazon_linux_2" {
+# Get latest Amazon Linux 2 AMIs for ARM and x86, and choose based on instance type
+data "aws_ami" "amazon_linux_2_arm" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-arm64-gp2"]
+    # match common Amazon Linux 2 ARM naming across regions (gp2/gp3 variants)
+    values = ["amzn2-ami-hvm-*-arm64*"]
   }
 
   filter {
@@ -420,6 +394,46 @@ data "aws_ami" "amazon_linux_2" {
     name   = "virtualization-type"
     values = ["hvm"]
   }
+  filter {
+    name   = "architecture"
+    values = ["arm64"]
+  }
+}
+
+data "aws_ami" "amazon_linux_2_x86" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    # match common Amazon Linux 2 x86 naming across regions
+    values = ["amzn2-ami-hvm-*-x86_64*"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+}
+
+locals {
+  # Detect Graviton/ARM instance types by the 'g' family (e.g. t4g, m6g)
+  # Extract the instance family (prefix before the '.') and check its suffix.
+  # This avoids false matches and handles empty values safely.
+  instance_family = length(var.rds_ssm_ec2_instance_type) > 0 ? split(".", var.rds_ssm_ec2_instance_type)[0] : ""
+  ec2_is_arm      = length(local.instance_family) > 0 ? endswith(local.instance_family, "g") : false
+
+  # Select the appropriate AMI for the instance architecture
+  amazon_linux_2_ami = local.ec2_is_arm ? data.aws_ami.amazon_linux_2_arm.id : data.aws_ami.amazon_linux_2_x86.id
 }
 
 # DB Parameter Group for PostgreSQL
@@ -441,7 +455,8 @@ resource "aws_db_parameter_group" "postgres" {
 
 # DB Subnet Group for RDS
 resource "aws_db_subnet_group" "postgres" {
-  name_prefix = "${var.environment}-${var.project_name}-db-"
+  name        = var.db_subnet_group_name != "" ? var.db_subnet_group_name : null
+  name_prefix = var.db_subnet_group_name == "" ? "${var.project_name}-db-" : null
   subnet_ids  = [aws_subnet.private_2a.id, aws_subnet.private_2b.id]
 
   tags = {
@@ -498,8 +513,11 @@ resource "aws_kms_key" "rds" {
 }
 
 resource "aws_kms_alias" "rds" {
-  name          = "alias/${var.environment}-${var.project_name}-rds"
+  name          = "alias/${var.project_name}-${var.environment}-rds"
   target_key_id = aws_kms_key.rds.key_id
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Generate random salt for Hashids (only once, then reused from state)
@@ -518,6 +536,10 @@ resource "aws_ssm_parameter" "hashids_salt" {
 
   tags = {
     Name = "${var.project_name}-${var.environment}-hashids-salt"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -667,6 +689,9 @@ resource "aws_iam_role_policy" "lambda_scheduler" {
       }
     ]
   })
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # CloudWatch Log Group for Lambda
