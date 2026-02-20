@@ -387,7 +387,6 @@ public class PortfoliosController : ControllerBase
 
     /// <summary>
     /// Generate locale content from a free-form prompt using GitHub Models.
-    /// Owner-only. Dry-run by default (does not persist).
     /// </summary>
     [HttpPost("{personId}/locales/{language}/generate")]
     public async Task<IActionResult> GenerateLocaleFromPrompt(string personId, string language, [FromBody] GenerateLocaleRequest request)
@@ -437,11 +436,6 @@ public class PortfoliosController : ControllerBase
         {
             // Return validation errors; do not persist
             return UnprocessableEntity(new { generated = generatedJson, validation });
-        }
-
-        if (request.DryRun)
-        {
-            return Ok(new { generated = generatedJson, validation });
         }
 
         // Persist: either update existing locale or create
