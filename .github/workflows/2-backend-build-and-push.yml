@@ -170,54 +170,61 @@ jobs:
             
             desired_count=$(echo "$service_info" | jq -r '.desiredCount')
             running_count=$(echo "$service_info" | jq -r '.runningCount')
+            pending_count=$(echo "$service_info" | jq -r '.pendingCount')
             deployment_count=$(echo "$service_info" | jq '.deployments | length')
-            active_deployments=$(echo "$service_info" | jq '[.deployments[] | select(.status=="PRIMARY")] | length')
-            
-            echo "Desired: ${desired_count}, Running: ${running_count}, Active deployments: ${active_deployments}, Total deployments: ${deployment_count}"
-            
-            # Check if service is stable: desired == running and only 1 active deployment
-            if [ "$desired_count" -eq "$running_count" ] && [ "$active_deployments" -eq 1 ]; then
-              echo "✓ ECS service deployment complete - all tasks are running"
-              
+
+            echo "Desired: ${desired_count}, Running: ${running_count}, Pending: ${pending_count}, Deployments: ${deployment_count}"
+
+            # Determine if any deployments appear to be in-progress by inspecting
+            # per-deployment pending/running counts. If there is more than one
+            # deployment, or any deployment has pending tasks, consider the
+            # service still deploying.
+            deployments_in_progress=$(echo "$service_info" | jq '[.deployments[] | select(.pendingCount > 0 or (.runningCount < .desiredCount))] | length')
+
+            # Service-level checks: require desired == running, no pending tasks,
+            # no in-progress deployments, and at least one running task.
+            if [ "$desired_count" -eq "$running_count" ] && [ "$pending_count" -eq 0 ] && [ "$deployments_in_progress" -eq 0 ] && [ "$running_count" -gt 0 ]; then
+              echo "✓ ECS service deployment appears complete - desired==running, no pending tasks, no in-progress deployments"
+
               # Wait a few more seconds for health checks to pass
               echo "Waiting for health checks to pass..."
               sleep 10
-              
-              # Check if tasks are healthy
+
+              # Check if tasks are healthy and none are in provisioning/pending states
               task_arns=$(aws ecs list-tasks \
                 --cluster "${CLUSTER_NAME}" \
                 --service-name "${SERVICE_NAME}" \
                 --region "${AWS_REGION}" \
                 --query 'taskArns[]' \
                 --output text)
-              
+
               if [ -z "$task_arns" ]; then
                 echo "✗ No tasks found"
                 exit 1
               fi
-              
-              # Get task details to check if they're in RUNNING state
+
+              # Get task details to check statuses
               tasks_info=$(aws ecs describe-tasks \
                 --cluster "${CLUSTER_NAME}" \
                 --tasks $task_arns \
                 --region "${AWS_REGION}" \
-                --query 'tasks[*].{arn:taskArn, lastStatus:lastStatus, desiredStatus:desiredStatus}' \
+                --query 'tasks[*].{arn:taskArn, lastStatus:lastStatus, desiredStatus:desiredStatus, containers:containers}' \
                 --output json)
-              
-              all_running=$(echo "$tasks_info" | jq '[.[] | select(.lastStatus=="RUNNING" and .desiredStatus=="RUNNING")] | length')
+
+              # Count tasks that are neither RUNNING nor in a final state
+              non_running=$(echo "$tasks_info" | jq '[.[] | select(.lastStatus != "RUNNING" and .lastStatus != "STOPPED")] | length')
               total_tasks=$(echo "$tasks_info" | jq 'length')
-              
-              echo "Tasks running: ${all_running}/${total_tasks}"
-              
-              if [ "$all_running" -eq "$total_tasks" ] && [ "$total_tasks" -gt 0 ]; then
+
+              echo "Tasks running: $((total_tasks - non_running))/${total_tasks}, non-running: ${non_running}"
+
+              if [ "$non_running" -eq 0 ] && [ "$total_tasks" -gt 0 ]; then
                 echo "✓ All tasks are healthy and running"
                 exit 0
               else
-                echo "⚠ Not all tasks are in RUNNING state, but service reports stable. Continuing..."
-                exit 0
+                echo "⚠ Some tasks are still provisioning/pending; waiting further"
               fi
             fi
-            
+
             echo "Service not yet stable, waiting ${INTERVAL}s..."
             sleep $INTERVAL
             waited=$((waited + INTERVAL))
