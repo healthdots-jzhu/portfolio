@@ -18,7 +18,11 @@ on:
           - beta
           - prod
       cloudfront_distribution_id:
-        description: 'Optional: CloudFront distribution ID to store as env-scoped secret'
+        description: 'Optional: CloudFront distribution ID (e.g., E1SZ8TYNXJYCG0) to store as env-scoped secret'
+        required: false
+        type: string
+      cloudfront_domain:
+        description: 'Optional: CloudFront domain (e.g., dc274vt0tzx97.cloudfront.net) to store as env-scoped secret'
         required: false
         type: string
 
@@ -36,6 +40,7 @@ jobs:
       S3_BUCKET: ${{ vars.S3_BUCKET_FRONTEND }}
       ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      CLOUDFRONT_DOMAIN: ${{ secrets.CLOUDFRONT_DOMAIN }}
 
     steps:
       
@@ -59,6 +64,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PROVISION_GITHUB_TOKEN }}
           CLOUDFRONT_DISTRIBUTION_ID_INPUT: ${{ github.event.inputs.cloudfront_distribution_id }}
+          CLOUDFRONT_DOMAIN_INPUT: ${{ github.event.inputs.cloudfront_domain }}
         run: |
           if [ -n "${CLOUDFRONT_DISTRIBUTION_ID_INPUT}" ]; then
             if [ -z "${GH_TOKEN:-}" ]; then
@@ -66,6 +72,37 @@ jobs:
               exit 1
             fi
             gh secret set CLOUDFRONT_DISTRIBUTION_ID --env "${DEPLOY_ENV}" --body "${CLOUDFRONT_DISTRIBUTION_ID_INPUT}"
+          fi
+          if [ -n "${CLOUDFRONT_DOMAIN_INPUT}" ]; then
+            if [ -z "${GH_TOKEN:-}" ]; then
+              echo "ERROR: PROVISION_GITHUB_TOKEN is required to create/update environment secrets." >&2
+              exit 1
+            fi
+            gh secret set CLOUDFRONT_DOMAIN --env "${DEPLOY_ENV}" --body "${CLOUDFRONT_DOMAIN_INPUT}"
+          fi
+
+      - name: Resolve CloudFront inputs
+        # Choose workflow input first, fall back to environment secret. Export into GITHUB_ENV for downstream steps.
+        env:
+          CLOUDFRONT_DISTRIBUTION_ID_INPUT: ${{ github.event.inputs.cloudfront_distribution_id }}
+          CLOUDFRONT_DISTRIBUTION_ID_SECRET: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+          CLOUDFRONT_DOMAIN_INPUT: ${{ github.event.inputs.cloudfront_domain }}
+          CLOUDFRONT_DOMAIN_SECRET: ${{ secrets.CLOUDFRONT_DOMAIN }}
+        run: |
+          if [ -n "${CLOUDFRONT_DISTRIBUTION_ID_INPUT}" ]; then
+            echo "CLOUDFRONT_DISTRIBUTION_ID=${CLOUDFRONT_DISTRIBUTION_ID_INPUT}" >> $GITHUB_ENV
+          elif [ -n "${CLOUDFRONT_DISTRIBUTION_ID_SECRET}" ]; then
+            echo "CLOUDFRONT_DISTRIBUTION_ID=${CLOUDFRONT_DISTRIBUTION_ID_SECRET}" >> $GITHUB_ENV
+          else
+            echo "CLOUDFRONT_DISTRIBUTION_ID=" >> $GITHUB_ENV
+          fi
+
+          if [ -n "${CLOUDFRONT_DOMAIN_INPUT}" ]; then
+            echo "CLOUDFRONT_DOMAIN=${CLOUDFRONT_DOMAIN_INPUT}" >> $GITHUB_ENV
+          elif [ -n "${CLOUDFRONT_DOMAIN_SECRET}" ]; then
+            echo "CLOUDFRONT_DOMAIN=${CLOUDFRONT_DOMAIN_SECRET}" >> $GITHUB_ENV
+          else
+            echo "CLOUDFRONT_DOMAIN=" >> $GITHUB_ENV
           fi
 
       # Secrets/vars are mapped into the job `env:` block above so shell steps can use $ROLE_ARN, $S3_BUCKET, $CLOUDFRONT_DISTRIBUTION_ID
@@ -144,20 +181,19 @@ jobs:
             fi
           fi
 
-      - name: Validate CloudFront distribution ID is set
-        env:
-          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      - name: Validate CloudFront configuration (informational)
         run: |
-          if [ -z "${CLOUDFRONT_DISTRIBUTION_ID:-}" ]; then
-            echo "ERROR: CLOUDFRONT_DISTRIBUTION_ID is not set in the selected GitHub Environment." >&2
-            exit 1
+          # Use resolved values (workflow input preferred, then environment secret). These are exported to GITHUB_ENV by the earlier step.
+          if [ -z "${CLOUDFRONT_DISTRIBUTION_ID:-}" ] && [ -z "${CLOUDFRONT_DOMAIN:-}" ]; then
+            echo "WARNING: Neither CLOUDFRONT_DISTRIBUTION_ID nor CLOUDFRONT_DOMAIN is set for this run. CloudFront invalidation and CDN URL substitution will be skipped or may be empty."
+          else
+            echo "CloudFront config resolved: distribution=${CLOUDFRONT_DISTRIBUTION_ID:-<empty>} domain=${CLOUDFRONT_DOMAIN:-<empty>}"
           fi
 
       - name: Write production environment file (safe upsert)
         working-directory: portfolio-frontend
         env:
           DEPLOY_ENV: ${{ env.DEPLOY_ENV }}
-          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
         run: |
           touch .env.production
           python3 - <<'PY'
@@ -176,7 +212,7 @@ jobs:
               return lines
 
           lines = set_key(lines, 'VITE_API_URL', f"https://api.healthdots.net/portfolio-{os.environ.get('DEPLOY_ENV')}/content")
-          lines = set_key(lines, 'VITE_CDN_URL', f"https://{os.environ.get('CLOUDFRONT_DISTRIBUTION_ID')}.cloudfront.net")
+          lines = set_key(lines, 'VITE_CDN_URL', f"https://{os.environ.get('CLOUDFRONT_DOMAIN')}")
 
           p.write_text('\n'.join(lines) + ('\n' if lines else ''))
           PY
@@ -203,16 +239,21 @@ jobs:
         run: |
           aws s3 sync ./portfolio-frontend/dist s3://${S3_BUCKET} \
             --delete \
+            --exclude "img/*" \
             --cache-control "public, max-age=31536000" \
             --exclude "index.html" && \
           aws s3 cp ./portfolio-frontend/dist/index.html s3://${S3_BUCKET}/index.html \
             --cache-control "no-cache, no-store, must-revalidate"
 
-      - name: Invalidate CloudFront cache
+      - name: Invalidate CloudFront cache (if distribution specified)
         run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} \
-            --paths "/*"
+          if [ -z "${CLOUDFRONT_DISTRIBUTION_ID:-}" ]; then
+            echo "Skipping CloudFront invalidation because CLOUDFRONT_DISTRIBUTION_ID is not set for this run."
+          else
+            aws cloudfront create-invalidation \
+              --distribution-id ${CLOUDFRONT_DISTRIBUTION_ID} \
+              --paths "/*"
+          fi
 
       - name: Post-deploy output
         run: |

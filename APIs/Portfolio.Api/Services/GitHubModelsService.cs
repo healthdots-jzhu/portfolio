@@ -23,14 +23,14 @@ namespace Portfolio.Api.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly ILogger<GitHubModelsService> _logger;
-        private readonly IAmazonSimpleSystemsManagement? _ssm;
+        private readonly IGitHubModelsTokenProvider _tokenProvider;
 
-        public GitHubModelsService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<GitHubModelsService> logger, IAmazonSimpleSystemsManagement? ssm = null)
+        public GitHubModelsService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<GitHubModelsService> logger, IGitHubModelsTokenProvider tokenProvider)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _logger = logger;
-            _ssm = ssm;
+            _tokenProvider = tokenProvider;
         }
 
         public async Task<string> GenerateLocaleJsonAsync(string prompt, string language, GitHubModelOptions? options = null, CancellationToken ct = default)
@@ -41,40 +41,8 @@ namespace Portfolio.Api.Services
             var model = _configuration["GitHubModels:Model"] ?? "gpt-4o-mini";
             var maxResponseSize = _configuration.GetValue<int?>("GitHubModels:MaxResponseSizeBytes") ?? 200_000;
 
-            // Resolve token: prefer environment variable, then appsettings, then SSM parameter
-            string? token = null;
-            string tokenSource = "(none)";
-
-            // 1) environment variable (supporting ASP.NET config double-underscore naming)
-            token = Environment.GetEnvironmentVariable("GitHubModels__ApiToken");
-            if (!string.IsNullOrWhiteSpace(token)) tokenSource = "env:GitHubModels__ApiToken";
-
-            // 2) appsettings.json
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                token = _configuration["GitHubModels:ApiToken"];
-                if (!string.IsNullOrWhiteSpace(token)) tokenSource = "appsettings:GitHubModels:ApiToken";
-            }
-
-            // 3) SSM Parameter Store
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                var paramName = _configuration["GitHubModels:ApiTokenParameterName"];
-                if (!string.IsNullOrWhiteSpace(paramName) && _ssm is not null)
-                {
-                    try
-                    {
-                        var resp = await _ssm.GetParameterAsync(new GetParameterRequest { Name = paramName, WithDecryption = true }, ct);
-                        token = resp.Parameter?.Value;
-                        if (!string.IsNullOrWhiteSpace(token)) tokenSource = $"ssm:{paramName}";
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to load GitHub Models API token from SSM parameter {Param}", paramName);
-                    }
-                }
-            }
-
+            // Resolve token (cached by a singleton provider to avoid an SSM call every request)
+            var (token, tokenSource) = await _tokenProvider.GetTokenAsync(ct);
             if (string.IsNullOrWhiteSpace(token))
             {
                 _logger.LogError("GitHub Models API token is not configured (no env/appsettings/ssm value)");
