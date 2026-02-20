@@ -19,6 +19,12 @@ export default function PortfolioEditor() {
     const [assetsPage, setAssetsPage] = useState(1);
     const [assetsPageSize, setAssetsPageSize] = useState(50);
     const [assetsTotal, setAssetsTotal] = useState(0);
+    const [showCompareOverlay, setShowCompareOverlay] = useState(false);
+    const [compareVersionA, setCompareVersionA] = useState('live');
+    const [compareVersionB, setCompareVersionB] = useState('live');
+    const [compareDiff, setCompareDiff] = useState([]);
+    const [compareLoading, setCompareLoading] = useState(false);
+    const [compareError, setCompareError] = useState(null);
   const { personId } = useParams();
   const navigate = useNavigate();
   const locale = useAppLocale();
@@ -76,6 +82,165 @@ export default function PortfolioEditor() {
   const [viewLoading, setViewLoading] = useState(false);
   const [error, setError] = useState(null);
   const languageDropdownRef = useRef(null);
+
+  const normalizeContentForDiff = (contentStr) => {
+    if (contentStr === null || contentStr === undefined) return '';
+    const raw = typeof contentStr === 'string' ? contentStr : JSON.stringify(contentStr);
+    if (raw.trim() === '') return '';
+    try {
+      const obj = JSON.parse(raw);
+      return JSON.stringify(obj, null, 2);
+    } catch {
+      return raw;
+    }
+  };
+
+  const computeLineDiff = (leftText, rightText) => {
+    const leftLines = leftText.split('\n');
+    const rightLines = rightText.split('\n');
+    const n = leftLines.length;
+    const m = rightLines.length;
+    const dp = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+
+    for (let i = n - 1; i >= 0; i--) {
+      for (let j = m - 1; j >= 0; j--) {
+        if (leftLines[i] === rightLines[j]) {
+          dp[i][j] = dp[i + 1][j + 1] + 1;
+        } else {
+          dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+      }
+    }
+
+    const diff = [];
+    let i = 0;
+    let j = 0;
+    let leftLine = 1;
+    let rightLine = 1;
+
+    while (i < n && j < m) {
+      if (leftLines[i] === rightLines[j]) {
+        diff.push({
+          type: 'context',
+          text: leftLines[i],
+          leftLine,
+          rightLine
+        });
+        i++;
+        j++;
+        leftLine++;
+        rightLine++;
+      } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+        diff.push({
+          type: 'del',
+          text: leftLines[i],
+          leftLine,
+          rightLine: null
+        });
+        i++;
+        leftLine++;
+      } else {
+        diff.push({
+          type: 'add',
+          text: rightLines[j],
+          leftLine: null,
+          rightLine
+        });
+        j++;
+        rightLine++;
+      }
+    }
+
+    while (i < n) {
+      diff.push({
+        type: 'del',
+        text: leftLines[i],
+        leftLine,
+        rightLine: null
+      });
+      i++;
+      leftLine++;
+    }
+
+    while (j < m) {
+      diff.push({
+        type: 'add',
+        text: rightLines[j],
+        leftLine: null,
+        rightLine
+      });
+      j++;
+      rightLine++;
+    }
+
+    return diff;
+  };
+
+  const getVersionOptionLabel = (versionId) => {
+    if (versionId === 'live') {
+      return locale.portfolioEditor.currentLive || 'Live';
+    }
+    const version = versions.find((v) => v.id === versionId);
+    if (!version) return versionId;
+    const status = getVersionStatusLabel(version.status, locale);
+    const labelSuffix = version.label ? ` · ${version.label}` : '';
+    return `v${version.versionNumber} (${status})${labelSuffix}`;
+  };
+
+  const handleOpenCompare = () => {
+    const defaultA = selectedVersionId || 'live';
+    let defaultB = defaultA === 'live' ? (versions[0]?.id || 'live') : 'live';
+
+    if (defaultA === defaultB && versions.length > 0) {
+      const fallback = versions.find((v) => v.id !== defaultA);
+      defaultB = fallback ? fallback.id : defaultB;
+    }
+
+    setCompareVersionA(defaultA);
+    setCompareVersionB(defaultB);
+    setCompareDiff([]);
+    setCompareError(null);
+    setShowCompareOverlay(true);
+  };
+
+  const fetchCompareContent = async (versionId, language) => {
+    if (versionId === 'live') {
+      return await portfolioApi.getLocale(personId, language, { noCache: true });
+    }
+
+    const token = await getAccessToken();
+    const versionDetail = await portfolioApi.getVersion(portfolio.id, versionId, token);
+    if (versionDetail && versionDetail.localeContent && versionDetail.localeContent[language]) {
+      const content = versionDetail.localeContent[language];
+      return typeof content === 'string' ? content : JSON.stringify(content);
+    }
+    return '{}';
+  };
+
+  const handleShowDifferences = async () => {
+    if (compareVersionA === compareVersionB) {
+      setCompareError(locale.portfolioEditor.compareSameVersion || 'Please select two different versions.');
+      return;
+    }
+
+    try {
+      setCompareLoading(true);
+      setCompareError(null);
+      const [leftContent, rightContent] = await Promise.all([
+        fetchCompareContent(compareVersionA, currentLanguage),
+        fetchCompareContent(compareVersionB, currentLanguage)
+      ]);
+
+      const normalizedLeft = normalizeContentForDiff(leftContent);
+      const normalizedRight = normalizeContentForDiff(rightContent);
+      const diff = computeLineDiff(normalizedLeft, normalizedRight);
+      setCompareDiff(diff);
+    } catch (err) {
+      setCompareError((err && err.message) || 'Failed to compare versions');
+    } finally {
+      setCompareLoading(false);
+    }
+  };
 
   // Fetch assets when overlay opens or paging changes
   useEffect(() => {
@@ -801,6 +966,9 @@ export default function PortfolioEditor() {
           >
             {locale.portfolioEditor.manageAssets || 'Manage Assets'}
           </button>
+          <button className="btn-compare" onClick={handleOpenCompare}>
+            {locale.portfolioEditor.compare || 'Compare'}
+          </button>
           <button className="btn-preview" onClick={handlePreview}>
             {locale.portfolioEditor.preview || 'Preview'}
           </button>
@@ -935,6 +1103,116 @@ export default function PortfolioEditor() {
               </div>
             </div>
             <div className="assets-modal-backdrop" onClick={() => setShowAssetsOverlay(false)}></div>
+          </div>
+        )}
+        {showCompareOverlay && (
+          <div className="compare-overlay">
+            <div className="compare-modal">
+              <div className="compare-modal-header">
+                <div>
+                  <h2>{locale.portfolioEditor.compare || 'Compare Versions'}</h2>
+                  <div className="compare-subtitle">
+                    {locale.portfolioEditor.compareSubtitle || `Language: ${currentLanguage.toUpperCase()}`}
+                  </div>
+                </div>
+                <button
+                  className="compare-modal-close"
+                  onClick={() => setShowCompareOverlay(false)}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="compare-modal-body">
+                <div className="compare-form">
+                  <div className="compare-field">
+                    <label>{locale.portfolioEditor.compareVersionA || 'Version A'}</label>
+                    <select
+                      value={compareVersionA}
+                      onChange={(e) => {
+                        setCompareVersionA(e.target.value);
+                        setCompareError(null);
+                        setCompareDiff([]);
+                      }}
+                    >
+                      <option value="live">{getVersionOptionLabel('live')}</option>
+                      {versions.map((version) => (
+                        <option key={version.id} value={version.id}>
+                          {getVersionOptionLabel(version.id)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="compare-field">
+                    <label>{locale.portfolioEditor.compareVersionB || 'Version B'}</label>
+                    <select
+                      value={compareVersionB}
+                      onChange={(e) => {
+                        setCompareVersionB(e.target.value);
+                        setCompareError(null);
+                        setCompareDiff([]);
+                      }}
+                    >
+                      <option value="live">{getVersionOptionLabel('live')}</option>
+                      {versions.map((version) => (
+                        <option key={version.id} value={version.id}>
+                          {getVersionOptionLabel(version.id)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {(compareVersionA === compareVersionB || compareError) && (
+                    <div className="compare-error">
+                      {compareError || (locale.portfolioEditor.compareSameVersion || 'Please select two different versions.')}
+                    </div>
+                  )}
+                  <div className="compare-actions">
+                    <button
+                      className="compare-show-btn"
+                      onClick={handleShowDifferences}
+                      disabled={compareLoading || compareVersionA === compareVersionB}
+                    >
+                      {compareLoading
+                        ? (locale.portfolioEditor.comparing || 'Comparing...')
+                        : (locale.portfolioEditor.showDifferences || 'Show Differences')}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="compare-diff">
+                  {compareDiff.length > 0 && (
+                    <div className="diff-header">
+                      <span className="diff-title">
+                        {getVersionOptionLabel(compareVersionA)} → {getVersionOptionLabel(compareVersionB)}
+                      </span>
+                      {!compareDiff.some((line) => line.type !== 'context') && (
+                        <span className="diff-no-changes">
+                          {locale.portfolioEditor.noDifferences || 'No differences found.'}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <div className="diff-lines">
+                    {compareDiff.map((line, index) => (
+                      <div key={`${line.type}-${index}`} className={`diff-line ${line.type}`}>
+                        <span className="diff-ln diff-ln-left">
+                          {line.leftLine ?? ''}
+                        </span>
+                        <span className="diff-ln diff-ln-right">
+                          {line.rightLine ?? ''}
+                        </span>
+                        <span className="diff-marker">
+                          {line.type === 'add' ? '+' : line.type === 'del' ? '-' : ' '}
+                        </span>
+                        <span className="diff-content">{line.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="compare-modal-backdrop" onClick={() => setShowCompareOverlay(false)}></div>
           </div>
         )}
         {showVersionHistory && (
