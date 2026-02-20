@@ -290,59 +290,80 @@ public class VersionService : IVersionService
             return null;
         }
 
-        // Get the next version number
-        var maxVersionNumber = await _context.PortfolioVersions
-            .Where(v => v.PortfolioId == sourceVersion.PortfolioId && !v.IsDeleted)
-            .MaxAsync(v => (int?)v.VersionNumber) ?? 0;
-
         // Create new snapshot from source version's locale snapshot
         var snapshotJson = sourceVersion.LocaleSnapshot;
 
-        // Create the new version
-        var newVersion = new PortfolioVersion
+        // Retry logic to handle concurrent inserts that may cause unique constraint
+        // violations on (PortfolioId, VersionNumber). This mirrors CreateVersionAsync.
+        const int maxRetries = 3;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            PortfolioId = sourceVersion.PortfolioId,
-            VersionNumber = maxVersionNumber + 1,
-            Status = VersionStatus.Draft,
-            Label = $"Restored from v{sourceVersion.VersionNumber}",
-            ChangeDescription = null,
-            LocaleSnapshot = snapshotJson,
-            CreatedBy = userId,
-            CreatedAt = DateTimeOffset.UtcNow,
-            PublishedAt = null,
-            IsCurrentPublished = false,
-            IsDeleted = false
-        };
-
-        _context.PortfolioVersions.Add(newVersion);
-        await _context.SaveChangesAsync();
-
-        // Also update live content with the snapshot
-        var localeData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(snapshotJson) ?? new();
-        foreach (var kvp in localeData)
-        {
-            var language = kvp.Key;
-            var contentJson = kvp.Value.GetRawText();
-            var locale = await _context.PortfolioLocales
-                .FirstOrDefaultAsync(l => l.PortfolioId == sourceVersion.PortfolioId && l.Language == language);
-
-            if (locale != null)
+            try
             {
-                locale.ContentJson = contentJson;
-            }
-            else
-            {
-                _context.PortfolioLocales.Add(new PortfolioLocale
+                // Get the next version number (re-read on each attempt)
+                var maxVersionNumber = await _context.PortfolioVersions
+                    .Where(v => v.PortfolioId == sourceVersion.PortfolioId && !v.IsDeleted)
+                    .MaxAsync(v => (int?)v.VersionNumber) ?? 0;
+
+                // Create the new version
+                var newVersion = new PortfolioVersion
                 {
                     PortfolioId = sourceVersion.PortfolioId,
-                    Language = language,
-                    ContentJson = contentJson
-                });
+                    VersionNumber = maxVersionNumber + 1,
+                    Status = VersionStatus.Draft,
+                    Label = $"Restored from v{sourceVersion.VersionNumber}",
+                    ChangeDescription = null,
+                    LocaleSnapshot = snapshotJson,
+                    CreatedBy = userId,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    PublishedAt = null,
+                    IsCurrentPublished = false,
+                    IsDeleted = false
+                };
+
+                _context.PortfolioVersions.Add(newVersion);
+                await _context.SaveChangesAsync();
+
+                // Also update live content with the snapshot
+                var localeData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(snapshotJson) ?? new();
+                foreach (var kvp in localeData)
+                {
+                    var language = kvp.Key;
+                    var contentJson = kvp.Value.GetRawText();
+                    var locale = await _context.PortfolioLocales
+                        .FirstOrDefaultAsync(l => l.PortfolioId == sourceVersion.PortfolioId && l.Language == language);
+
+                    if (locale != null)
+                    {
+                        locale.ContentJson = contentJson;
+                    }
+                    else
+                    {
+                        _context.PortfolioLocales.Add(new PortfolioLocale
+                        {
+                            PortfolioId = sourceVersion.PortfolioId,
+                            Language = language,
+                            ContentJson = contentJson
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                return newVersion;
+            }
+            catch (DbUpdateException ex) when (attempt < maxRetries - 1 && IsUniqueConstraintViolation(ex))
+            {
+                _logger.LogWarning(ex, "Version number conflict when copying version {VersionId} for portfolio {PortfolioId}, attempt {Attempt}",
+                    versionId, sourceVersion.PortfolioId, attempt + 1);
+
+                // Clear tracked entities and retry
+                _context.ChangeTracker.Clear();
+                await Task.Delay(TimeSpan.FromMilliseconds(50 * (attempt + 1)));
+                continue;
             }
         }
-        await _context.SaveChangesAsync();
 
-        return newVersion;
+        throw new InvalidOperationException($"Failed to copy version {versionId} due to concurrent version-number conflicts after {maxRetries} attempts");
     }
 
     public async Task<bool> UpdateVersionLocaleAsync(int versionId, string language, string contentJson)
