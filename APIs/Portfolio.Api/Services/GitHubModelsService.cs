@@ -57,8 +57,8 @@ namespace Portfolio.Api.Services
             var requestPath = "v1/responses";
             object payload;
 
-            // Build a strict instruction asking for pure JSON object output.
-            var instruction = $"You are a JSON generator. Produce a single JSON object, no surrounding text. The object must be valid JSON and represent the locale content for language '{language}'. Respond only with JSON.";
+            // Use provided system prompt or default instruction
+            var instruction = options?.SystemPrompt ?? $"You are a JSON generator. Produce a single JSON object, no surrounding text. The object must be valid JSON and represent the locale content for language '{language}'. Respond only with JSON.";
 
             if (!string.IsNullOrWhiteSpace(baseUrl) && baseUrl.Contains("models.github.ai", StringComparison.OrdinalIgnoreCase))
             {
