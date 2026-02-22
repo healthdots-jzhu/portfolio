@@ -139,6 +139,14 @@ namespace Portfolio.Api.Services
                     throw new ModelGenerationException("Model response exceeds allowed size");
                 }
 
+                // Optionally log the raw model response for debugging (disabled by default)
+                var logResponse = _configuration.GetValue<bool>("GitHubModels:LogResponseText", false);
+                if (logResponse && _logger.IsEnabled(LogLevel.Debug))
+                {
+                    // Truncate for logs to avoid huge payloads in debug output
+                    _logger.LogDebug("GitHub Models raw response: {Response}", Truncate(respText, 2000));
+                }
+
                 // Parse the wrapper response and attempt to extract the assistant content
                 string? assistantText = null;
                 try
@@ -241,23 +249,47 @@ namespace Portfolio.Api.Services
                     throw new ModelGenerationException("Assistant content exceeds allowed size");
                 }
 
-                // Attempt to parse assistantText as JSON (the desired locale object)
-                try
+                // Attempt to parse assistantText as JSON (the desired locale object).
+                // Some models return a quoted JSON string or use unicode-escaped quotes (e.g. "\\u0022").
+                // Handle these cases by unwrapping string values and unescaping unicode sequences
+                // until we obtain an object/array or exhaust recovery attempts.
+                string resolved = assistantText;
+                for (int attempt = 0; attempt < 4; attempt++)
                 {
-                    using var localeDoc = JsonDocument.Parse(assistantText);
-                    if (localeDoc.RootElement.ValueKind != JsonValueKind.Object && localeDoc.RootElement.ValueKind != JsonValueKind.Array)
+                    try
                     {
-                        throw new ModelGenerationException("Assistant content is not a JSON object or array");
-                    }
+                        using var localeDoc = JsonDocument.Parse(resolved);
+                        var rootKind = localeDoc.RootElement.ValueKind;
+                        if (rootKind == JsonValueKind.Object || rootKind == JsonValueKind.Array)
+                        {
+                            return localeDoc.RootElement.GetRawText();
+                        }
 
-                    var localeJson = localeDoc.RootElement.GetRawText();
-                    return localeJson;
+                        if (rootKind == JsonValueKind.String)
+                        {
+                            // Unwrap the string and try again
+                            var inner = localeDoc.RootElement.GetString();
+                            if (string.IsNullOrWhiteSpace(inner)) break;
+                            resolved = inner;
+                            continue;
+                        }
+
+                        break;
+                    }
+                    catch (JsonException)
+                    {
+                        // Try to unescape common unicode-escaped sequences like \\u0022 and simple backslash-escapes
+                        var unescaped = UnescapeUnicodeSequences(resolved);
+                        // Also unescape escaped quotes/backslashes
+                        unescaped = unescaped.Replace("\\\"", "\"").Replace("\\\\", "\\");
+                        if (unescaped == resolved) break;
+                        resolved = unescaped;
+                        continue;
+                    }
                 }
-                catch (JsonException ex)
-                {
-                    _logger.LogWarning(ex, "Assistant content is not valid JSON: {Snippet}", Truncate(assistantText, 600));
-                    throw new ModelGenerationException("Assistant content was not valid JSON", ex);
-                }
+
+                _logger.LogWarning("Assistant content could not be normalized to JSON: {Snippet}", Truncate(assistantText, 600));
+                throw new ModelGenerationException("Assistant content was not valid JSON");
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -268,6 +300,23 @@ namespace Portfolio.Api.Services
                 _logger.LogError(ex, "Model generation failed");
                 throw new ModelGenerationException("Model generation failed", ex);
             }
+        }
+
+        private static string UnescapeUnicodeSequences(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            return System.Text.RegularExpressions.Regex.Replace(input, "\\\\u([0-9A-Fa-f]{4})", m =>
+            {
+                try
+                {
+                    var code = Convert.ToInt32(m.Groups[1].Value, 16);
+                    return char.ConvertFromUtf32(code);
+                }
+                catch
+                {
+                    return m.Value;
+                }
+            });
         }
 
         private static string Truncate(string s, int max)
