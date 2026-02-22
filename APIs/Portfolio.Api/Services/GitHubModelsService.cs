@@ -49,7 +49,10 @@ namespace Portfolio.Api.Services
                 throw new ModelGenerationException("GitHub Models API token is not configured");
             }
 
-            _logger.LogDebug("Using GitHub Models token from {Source}", tokenSource);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Using GitHub Models token from {Source}", tokenSource);
+            }
 
             var client = _httpClientFactory.CreateClient("GitHubModels");
 
@@ -82,6 +85,7 @@ namespace Portfolio.Api.Services
             {
                 // Default to GitHub Responses API shape
                 requestPath = "v1/responses";
+                // Responses API expects max_completion_tokens instead of max_tokens
                 payload = new
                 {
                     model = model,
@@ -89,7 +93,7 @@ namespace Portfolio.Api.Services
                     {
                         prompt = instruction + "\n\n" + prompt,
                         language = language,
-                        max_tokens = options?.MaxTokens,
+                        max_completion_tokens = options?.MaxTokens,
                         temperature = options?.Temperature
                     }
                 };
