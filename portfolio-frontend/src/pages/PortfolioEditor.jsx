@@ -830,12 +830,42 @@ export default function PortfolioEditor() {
       setSaving(true);
       const token = await getAccessToken();
       
-      // Copy content from the selected version to a new draft
-      const newVersion = await portfolioApi.copyVersionToNew(
-        portfolio.id,
-        selectedVersionId,
-        token
-      );
+      let newVersion;
+      
+      if (selectedVersionId === 'live') {
+        // For live version, create a new draft version from current live locales
+        // Get all live locales and create a version with them
+        const allLanguages = languages || portfolio.availableLanguages || ['en'];
+        const localeSnapshot = {};
+        
+        for (const lang of allLanguages) {
+          try {
+            const localeContent = await portfolioApi.getLocale(portfolio.personId, lang, token);
+            if (localeContent && Object.keys(localeContent).length > 0) {
+              localeSnapshot[lang] = localeContent;
+            }
+          } catch (err) {
+            console.warn(`Could not fetch locale ${lang}:`, err);
+          }
+        }
+        
+        // Create new version with the snapshot
+        newVersion = await portfolioApi.createVersion(
+          portfolio.id,
+          {
+            changeDescription: 'Copied from live',
+            localeSnapshot: localeSnapshot
+          },
+          token
+        );
+      } else {
+        // Copy content from the selected version to a new draft
+        newVersion = await portfolioApi.copyVersionToNew(
+          portfolio.id,
+          selectedVersionId,
+          token
+        );
+      }
       
       // Reload versions and switch to the new draft
       const versionHistory = await portfolioApi.getVersionHistory(portfolio.id, token);
