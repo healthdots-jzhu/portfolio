@@ -26,7 +26,8 @@ import './App.css';
 // Subdomain to person ID mapping
 const SUBDOMAIN_MAP = {
   'karen': 'karen-zhu-EU2O',
-  'jason': 'jason-zhu-EU1O'
+  'jason': 'jason-zhu-EU1O',
+  'tracey': 'portfolio-9f2f80a6',
 };
 
 function SubdomainRedirect() {

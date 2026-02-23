@@ -7,6 +7,7 @@ namespace Portfolio.Api.Services
     {
         public int? MaxTokens { get; set; }
         public double? Temperature { get; set; }
+        public string? SystemPrompt { get; set; }
     }
 
     public interface IGitHubModelsService

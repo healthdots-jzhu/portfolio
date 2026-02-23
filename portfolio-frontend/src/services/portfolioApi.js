@@ -403,6 +403,37 @@ class PortfolioApiService {
   }
 
   /**
+   * Generate locale content using AI
+   * POST /api/portfolios/{personId}/locales/{language}/generate
+   */
+  async generateLocaleWithAI(personId, language, area, prompt, versionId, languages, token) {
+    try {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          area,
+          versionId,
+          languages
+        }),
+      }, token);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to generate locale with AI:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a new version (snapshot of current state)
    * Requires authentication
    * POST /api/portfolios/{portfolioId}/versions

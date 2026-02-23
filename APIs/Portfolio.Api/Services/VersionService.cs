@@ -298,11 +298,18 @@ public class VersionService : IVersionService
         const int maxRetries = 3;
         for (int attempt = 0; attempt < maxRetries; attempt++)
         {
+            // Use a transaction and lock the portfolio row to serialize version-number
+            // assignment for this portfolio. This prevents two concurrent requests
+            // from reading the same max VersionNumber.
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Get the next version number (re-read on each attempt)
+                // Lock portfolio row FOR UPDATE
+                await _context.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Portfolios\" WHERE \"Id\" = {sourceVersion.PortfolioId} FOR UPDATE");
+
+                // Re-read max version number while holding the lock
                 var maxVersionNumber = await _context.PortfolioVersions
-                    .Where(v => v.PortfolioId == sourceVersion.PortfolioId && !v.IsDeleted)
+                    .Where(v => v.PortfolioId == sourceVersion.PortfolioId)
                     .MaxAsync(v => (int?)v.VersionNumber) ?? 0;
 
                 // Create the new version
@@ -349,6 +356,8 @@ public class VersionService : IVersionService
                 }
                 await _context.SaveChangesAsync();
 
+                await transaction.CommitAsync();
+
                 return newVersion;
             }
             catch (DbUpdateException ex) when (attempt < maxRetries - 1 && IsUniqueConstraintViolation(ex))
@@ -356,10 +365,16 @@ public class VersionService : IVersionService
                 _logger.LogWarning(ex, "Version number conflict when copying version {VersionId} for portfolio {PortfolioId}, attempt {Attempt}",
                     versionId, sourceVersion.PortfolioId, attempt + 1);
 
-                // Clear tracked entities and retry
+                // Rollback, clear tracked entities and retry
+                await transaction.RollbackAsync();
                 _context.ChangeTracker.Clear();
                 await Task.Delay(TimeSpan.FromMilliseconds(50 * (attempt + 1)));
                 continue;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
 

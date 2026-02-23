@@ -26,4 +26,10 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Ensure prompts are available at runtime for the AI system prompt loader -->
+    <None Include="Prompts\\**\\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

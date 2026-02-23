@@ -72,6 +72,6 @@ output "scheduler_start_time" {
 }
 
 output "scheduler_cloudwatch_logs" {
-  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#logsV2:log-groups/log-group/${replace(aws_cloudwatch_log_group.lambda_scheduler.name, "/", "$252F")}"
-  description = "CloudWatch Logs URL for scheduler Lambda"
+  value       = "CloudWatch Logs disabled for scheduler Lambda (logs permissions removed)"
+  description = "CloudWatch Logs are disabled for the scheduler Lambda; no log group will be created"
 }
