@@ -362,10 +362,11 @@ export default function PortfolioEditor() {
     fetchAssets();
   }, [showAssetsOverlay, assetsPage, assetsPageSize, personId]);
 
-  // Determine if current view should be read-only (Published/Archived version)
-  const isReadOnlyVersion = selectedVersionId !== 'live' &&
+  // Determine if current view should be read-only (Live, Published, or Archived version)
+  const isReadOnlyVersion = selectedVersionId === 'live' || 
+    (selectedVersionId !== 'live' &&
     !!currentVersion &&
-    (currentVersion.status === VersionStatusEnum.Published || currentVersion.status === VersionStatusEnum.Archived);
+    (currentVersion.status === VersionStatusEnum.Published || currentVersion.status === VersionStatusEnum.Archived));
 
   useEffect(() => {
     loadPortfolioData();
@@ -1608,7 +1609,7 @@ export default function PortfolioEditor() {
                 </>
               )}
               
-              {selectedVersionId !== 'live' && currentVersion && (currentVersion.status === VersionStatusEnum.Published || currentVersion.status === VersionStatusEnum.Archived) && (
+              {(selectedVersionId === 'live' || (selectedVersionId !== 'live' && currentVersion && (currentVersion.status === VersionStatusEnum.Published || currentVersion.status === VersionStatusEnum.Archived))) && (
                 <button 
                   onClick={handleCopyToNewVersion} 
                   className="btn-copy"
