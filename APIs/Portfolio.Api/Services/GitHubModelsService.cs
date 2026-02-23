@@ -67,6 +67,7 @@ namespace Portfolio.Api.Services
             {
                 // models.github.ai expects a chat/completions-like payload with messages
                 requestPath = "inference/chat/completions";
+                // Use max_completion_tokens (Responses API style) to be compatible with newer models
                 payload = new
                 {
                     model = model,
@@ -75,7 +76,7 @@ namespace Portfolio.Api.Services
                         new { role = "user", content = prompt }
                     },
                     temperature = options?.Temperature,
-                    max_tokens = options?.MaxTokens
+                    max_completion_tokens = options?.MaxTokens
                 };
 
                 // Ensure Accept header is standard JSON for this host (named client already set a default; override if needed)
