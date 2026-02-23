@@ -527,15 +527,26 @@ public class PortfoliosController : ControllerBase
                 // Call GitHub Models API
                 var generatedJson = await _gitHubModelsService.GenerateLocaleJsonAsync(enhancedPrompt, lang, options, HttpContext.RequestAborted);
 
+                // Reformat the generated JSON to ensure proper indentation
+                var serializeOptions = new System.Text.Json.JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                };
+                var reformattedGenerated = System.Text.Json.JsonSerializer.Serialize(
+                    System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.Nodes.JsonNode>(generatedJson),
+                    serializeOptions
+                );
+
                 // Merge the generated section back if area was specified
                 string finalJson;
                 if (!string.IsNullOrWhiteSpace(request.Area) && areaMapping.TryGetValue(request.Area, out var mergePath))
                 {
-                    finalJson = MergeJsonSection(currentContent, mergePath, generatedJson);
+                    finalJson = MergeJsonSection(currentContent, mergePath, reformattedGenerated);
                 }
                 else
                 {
-                    finalJson = generatedJson;
+                    finalJson = reformattedGenerated;
                 }
 
                 // Validate the full merged JSON

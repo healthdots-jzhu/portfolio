@@ -184,7 +184,8 @@ builder.Services.AddHttpClient("GitHubModels", client =>
         try { client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", gitHubModelsApiToken); } catch { }
     }
     
-    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 30));
+    // Increase default timeout for potentially long model generation calls
+    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 120));
 })
 .AddHttpMessageHandler<Portfolio.Api.Services.GitHubModelsRetryHandler>();
 

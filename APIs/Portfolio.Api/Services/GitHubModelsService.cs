@@ -302,7 +302,14 @@ namespace Portfolio.Api.Services
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
+                // Caller cancelled via the provided CancellationToken - propagate
                 throw;
+            }
+            catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+            {
+                // HttpClient.Timeout triggers TaskCanceledException without the caller's token
+                _logger.LogError(ex, "Model generation request timed out");
+                throw new ModelGenerationException("Model generation request timed out", ex);
             }
             catch (Exception ex) when (!(ex is ModelGenerationException))
             {
