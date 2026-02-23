@@ -678,29 +678,11 @@ resource "aws_iam_role_policy" "lambda_scheduler" {
         ]
         Resource = "*"
       },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = "arn:aws:logs:*:*:*"
-      }
+      # Removed CloudWatch Logs permissions per request (Lambda will not write logs)
     ]
   })
   lifecycle {
     prevent_destroy = true
-  }
-}
-
-# CloudWatch Log Group for Lambda
-resource "aws_cloudwatch_log_group" "lambda_scheduler" {
-  name              = "/aws/lambda/${aws_lambda_function.resource_scheduler.function_name}"
-  retention_in_days = 7
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-scheduler-logs"
   }
 }
 
