@@ -762,8 +762,8 @@ public class PortfoliosController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
-        // Generate personId if not provided
-        var personId = request.PreferredPersonId ?? $"portfolio-{Guid.NewGuid().ToString("N")[..8]}";
+        // Generate personId if not provided (do not add 'portfolio-' prefix)
+        var personId = request.PreferredPersonId ?? Guid.NewGuid().ToString("N")[..8];
 
         // Check if personId already exists
         if (await _context.Portfolios.AnyAsync(p => p.PersonId == personId))
