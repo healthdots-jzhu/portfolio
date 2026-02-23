@@ -258,7 +258,11 @@ namespace Portfolio.Api.Services
                 // Some models return a quoted JSON string or use unicode-escaped quotes (e.g. "\\u0022").
                 // Handle these cases by unwrapping string values and unescaping unicode sequences
                 // until we obtain an object/array or exhaust recovery attempts.
-                string resolved = assistantText;
+                // First, aggressively unescape any Unicode sequences in the entire response
+                string resolved = UnescapeUnicodeSequences(assistantText);
+                // Also handle common JSON escapes
+                resolved = resolved.Replace("\\\"", "\"").Replace("\\\\", "\\");
+                
                 for (int attempt = 0; attempt < 4; attempt++)
                 {
                     try

@@ -597,25 +597,23 @@ public class PortfoliosController : ControllerBase
             else
             {
                 // Update existing version snapshot
-                var snapshot = new Dictionary<string, object>();
+                var snapshotNode = string.IsNullOrWhiteSpace(targetVersion!.LocaleSnapshot) || targetVersion.LocaleSnapshot == "{}"
+                    ? new System.Text.Json.Nodes.JsonObject()
+                    : System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.Nodes.JsonObject>(targetVersion.LocaleSnapshot)!;
                 
-                // Parse existing snapshot
-                if (!string.IsNullOrWhiteSpace(targetVersion!.LocaleSnapshot) && targetVersion.LocaleSnapshot != "{}")
-                {
-                    using var doc = System.Text.Json.JsonDocument.Parse(targetVersion.LocaleSnapshot);
-                    foreach (var prop in doc.RootElement.EnumerateObject())
-                    {
-                        snapshot[prop.Name] = System.Text.Json.JsonSerializer.Deserialize<object>(prop.Value.GetRawText())!;
-                    }
-                }
-
                 // Update with new content
                 foreach (var kvp in updatedLocales)
                 {
-                    snapshot[kvp.Key] = System.Text.Json.JsonSerializer.Deserialize<object>(kvp.Value)!;
+                    var localeNode = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.Nodes.JsonNode>(kvp.Value);
+                    snapshotNode[kvp.Key] = localeNode;
                 }
 
-                targetVersion.LocaleSnapshot = System.Text.Json.JsonSerializer.Serialize(snapshot);
+                var serializeOptions = new System.Text.Json.JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                };
+                targetVersion.LocaleSnapshot = System.Text.Json.JsonSerializer.Serialize(snapshotNode, serializeOptions);
                 await _context.SaveChangesAsync();
 
                 return Ok(new 
@@ -656,34 +654,57 @@ public class PortfoliosController : ControllerBase
 
     private string MergeJsonSection(string fullJson, string jsonPath, string sectionJson)
     {
-        var fullObj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(fullJson) ?? new Dictionary<string, object>();
-        var sectionObj = System.Text.Json.JsonSerializer.Deserialize<object>(sectionJson);
+        // Parse both the full JSON and the section to merge
+        using var fullDoc = System.Text.Json.JsonDocument.Parse(fullJson);
+        using var sectionDoc = System.Text.Json.JsonDocument.Parse(sectionJson);
+        
+        // Use a writable DOM to perform the merge
+        var rootElement = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.Nodes.JsonNode>(fullJson);
+        if (rootElement == null)
+        {
+            throw new InvalidOperationException("Failed to parse full JSON");
+        }
         
         var pathSegments = jsonPath.Split('.');
-        if (pathSegments.Length == 1)
+        System.Text.Json.Nodes.JsonNode? current = rootElement;
+        
+        // Navigate to the parent of the target property
+        for (int i = 0; i < pathSegments.Length - 1; i++)
         {
-            fullObj[pathSegments[0]] = sectionObj!;
+            var segment = pathSegments[i];
+            if (current is System.Text.Json.Nodes.JsonObject obj)
+            {
+                if (!obj.ContainsKey(segment))
+                {
+                    obj[segment] = new System.Text.Json.Nodes.JsonObject();
+                }
+                current = obj[segment];
+            }
+            else
+            {
+                throw new InvalidOperationException($"Cannot navigate through path segment '{segment}'");
+            }
+        }
+        
+        // Set the target property with the new section
+        if (current is System.Text.Json.Nodes.JsonObject targetObj)
+        {
+            var finalSegment = pathSegments[^1];
+            var sectionNode = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.Nodes.JsonNode>(sectionJson);
+            targetObj[finalSegment] = sectionNode;
         }
         else
         {
-            // Navigate to parent and set the property
-            Dictionary<string, object>? current = fullObj;
-            for (int i = 0; i < pathSegments.Length - 1; i++)
-            {
-                if (!current.ContainsKey(pathSegments[i]))
-                {
-                    current[pathSegments[i]] = new Dictionary<string, object>();
-                }
-                current = current[pathSegments[i]] as Dictionary<string, object>;
-                if (current == null) break;
-            }
-            if (current != null)
-            {
-                current[pathSegments[^1]] = sectionObj!;
-            }
+            throw new InvalidOperationException("Target parent is not a JSON object");
         }
         
-        return System.Text.Json.JsonSerializer.Serialize(fullObj);
+        // Serialize with indentation for readability
+        var options = new System.Text.Json.JsonSerializerOptions 
+        { 
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+        return System.Text.Json.JsonSerializer.Serialize(rootElement, options);
     }
 
     private async Task<PortfolioVersion> CreateVersionSnapshot(string portfolioId, Guid creatorId, string? description)
@@ -710,13 +731,19 @@ public class PortfoliosController : ControllerBase
             }
         }
 
+        var serializeOptions = new System.Text.Json.JsonSerializerOptions 
+        { 
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
         var version = new PortfolioVersion
         {
             PortfolioId = portfolioId,
             VersionNumber = nextVersionNumber + 1,
             Status = VersionStatus.Draft,
             ChangeDescription = description,
-            LocaleSnapshot = System.Text.Json.JsonSerializer.Serialize(snapshot),
+            LocaleSnapshot = System.Text.Json.JsonSerializer.Serialize(snapshot, serializeOptions),
             CreatedBy = creatorId,
             CreatedAt = DateTimeOffset.UtcNow
         };
