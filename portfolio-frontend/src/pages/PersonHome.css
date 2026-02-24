@@ -255,7 +255,7 @@
 /* Larger screens */
 @media (min-width: 1024px) {
   .home-hero h1 {
-    font-size: 3.5rem;
+    font-size: 7rem;
   }
 
   .home-engagement-content h2 {
