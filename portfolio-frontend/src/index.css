@@ -1,5 +1,16 @@
 /* Fonts are now dynamically loaded from fontLoader.js based on locale configuration */
 
+@font-face {
+  font-family: 'UVN-Sang-Song';
+  src: url('/fonts/webfonts_UVN-Sang-Song/UVN-Sang-Song.ttf.woff') format('woff'),
+       url('/fonts/webfonts_UVN-Sang-Song/UVN-Sang-Song.ttf.svg#UVN-Sang-Song') format('svg'),
+       url('/fonts/webfonts_UVN-Sang-Song/UVN-Sang-Song.ttf.eot');
+  src: url('/fonts/webfonts_UVN-Sang-Song/UVN-Sang-Song.ttf.eot?#iefix') format('embedded-opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --color-bg: #ffffff;
   --color-gray: #e8e8e8;
@@ -13,6 +24,7 @@
   --font-display: 'Playfair Display', serif;
   --font-sans: 'Inter', sans-serif;
   --font-cursive: 'Edu NSW ACT Cursive', cursive;
+  --font-uvn: 'UVN-Sang-Song', serif;
   font-family: var(--font-primary);
 }
 
