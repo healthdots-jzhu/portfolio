@@ -1,6 +1,6 @@
   // ...existing code...
 // API service for portfolio backend
-import { maybeRefreshAccessTokenOnActivity, getAccessToken } from './authService';
+import { maybeRefreshAccessTokenOnActivity, getAccessToken, redirectToLogin } from './authService';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const API_PREFIX = '/api';
 
@@ -17,7 +17,19 @@ const apiFetch = async (url, opts = {}, providedToken) => {
 
   const token = providedToken || getAccessToken();
   const headers = { ...(opts.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-  return fetch(url, { ...opts, headers });
+
+  const response = await fetch(url, { ...opts, headers });
+
+  if (response.status === 401) {
+    try {
+      await redirectToLogin();
+    } catch (e) {
+      console.error('Redirect to login failed:', e);
+    }
+    throw new Error('Authentication required');
+  }
+
+  return response;
 };
 
 class PortfolioApiService {

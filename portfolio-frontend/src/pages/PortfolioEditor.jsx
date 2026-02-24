@@ -833,29 +833,12 @@ export default function PortfolioEditor() {
       let newVersion;
       
       if (selectedVersionId === 'live') {
-        // For live version, create a new draft version from current live locales
-        // Get all live locales and create a version with them
-        const allLanguages = languages || portfolio.availableLanguages || ['en'];
-        const localeSnapshot = {};
-        
-        for (const lang of allLanguages) {
-          try {
-            const localeContent = await portfolioApi.getLocale(portfolio.personId, lang, token);
-            if (localeContent && Object.keys(localeContent).length > 0) {
-              localeSnapshot[lang] = localeContent;
-            }
-          } catch (err) {
-            console.warn(`Could not fetch locale ${lang}:`, err);
-          }
-        }
-        
-        // Create new version with the snapshot
+        // For live version, create a new draft snapshot from current state
         newVersion = await portfolioApi.createVersion(
           portfolio.id,
-          {
-            changeDescription: 'Copied from live',
-            localeSnapshot: localeSnapshot
-          },
+          null,
+          'Copied from live',
+          false,
           token
         );
       } else {

@@ -110,7 +110,8 @@
       "cannotDeletePublished": "Les versions publiées ne peuvent pas être supprimées.",
       "requiresAuth": "Veuillez enregistrer vos modifications avant de créer une version",
       "confirmRequired": "Confirmation requise pour publier",
-      "loadingPortfolios": "Chargement de vos portefeuilles..."
+      "loadingPortfolios": "Chargement de vos portefeuilles...",
+      "sessionExpiredSigningIn": "Session expirée — connexion en cours..."
     },
     "errors": {
       "authRequired": "Authentification requise",

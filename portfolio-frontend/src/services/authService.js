@@ -1,3 +1,5 @@
+import { showToastLocalized } from '../utils/toast';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.healthdots.net';
 
 let authConfig = null;
@@ -272,4 +274,35 @@ export const refreshAccessToken = async () => {
 export const initTokenAutoRefresh = async () => {
   // No background auto-refresh. Callers should invoke `maybeRefreshAccessTokenOnActivity`
   // on user interactions (clicks, navigation, etc.) to refresh when needed.
+};
+
+/**
+ * Redirect the user to the identity provider (Cognito) to sign in.
+ * This builds the authorize URL from the backend auth config and navigates.
+ */
+export const redirectToLogin = async () => {
+  try {
+    const config = await getAuthConfig();
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      response_type: 'code',
+      scope: 'email openid phone',
+      redirect_uri: config.redirectUri,
+    });
+    const authUrl = `https://${config.domain}/oauth2/authorize?${params.toString()}`;
+    // Store current location to return after sign-in
+    sessionStorage.setItem('preAuthUrl', window.location.href);
+    // Show a localized non-blocking toast then redirect
+    try {
+      showToastLocalized('messages.sessionExpiredSigningIn', 3000);
+      // Small delay so user can see the message
+      setTimeout(() => { window.location.href = authUrl; }, 700);
+    } catch (e) {
+      console.debug('showToastLocalized failed:', e);
+      window.location.href = authUrl;
+    }
+  } catch (e) {
+    console.error('Failed to redirect to login:', e);
+    throw e;
+  }
 };

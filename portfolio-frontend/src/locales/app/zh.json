@@ -110,7 +110,8 @@
       "cannotDeletePublished": "已发布的版本无法删除。",
       "requiresAuth": "在创建版本之前，请保存您的更改",
       "confirmRequired": "发布需要确认",
-      "loadingPortfolios": "加载您的作品集..."
+        "loadingPortfolios": "加载您的作品集...",
+        "sessionExpiredSigningIn": "会话已过期 — 正在为您登录..."
     },
     "errors": {
       "authRequired": "需要身份验证",
