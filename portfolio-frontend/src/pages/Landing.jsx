@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAuthConfig, getAccessToken, clearTokens } from '../services/authService';
+import { getAuthConfig, getAccessToken, clearTokens, redirectToLogin } from '../services/authService';
 import { useAppLocale } from '../hooks/useAppLocale';
 import '../App.css';
 import './Landing.css';
@@ -20,9 +20,6 @@ const Landing = () => {
       // Always load auth URL for the Register button
       try {
         const config = await getAuthConfig();
-        
-        // Store the current URL for redirect after auth
-        sessionStorage.setItem('preAuthUrl', window.location.href);
         
         // Build the Cognito authorization URL
         const params = new URLSearchParams({
@@ -57,7 +54,11 @@ const Landing = () => {
               {locale.nav.logout}
             </button>
           ) : authUrl ? (
-            <a href={authUrl} className="login-button">
+            <a
+              href={authUrl}
+              className="login-button"
+              onClick={(e) => { e.preventDefault(); redirectToLogin(); }}
+            >
               {locale.nav.login}
             </a>
           ) : (
@@ -91,7 +92,12 @@ const Landing = () => {
                 </>
               ) : authUrl ? (
                 <>
-                  <a href={authUrl} className="cta-primary" data-testid="landing-cta-primary">
+                  <a
+                    href={authUrl}
+                    className="cta-primary"
+                    data-testid="landing-cta-primary"
+                    onClick={(e) => { e.preventDefault(); redirectToLogin(); }}
+                  >
                     {locale.landing.registerPortfolio}
                   </a>
                   <button className="cta-secondary">{locale.landing.learnMore}</button>

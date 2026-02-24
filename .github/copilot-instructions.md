@@ -121,6 +121,11 @@ Workflow design notes:
   - Relevant tests pass
 - Use PowerShell command style in documentation and runbooks.
 
+## Additional UI/localization guidance for the assistant
+- Always place user-facing text in the locale JSON files under `src/locales/app/*.json` and reference those keys from code (use `useAppLocale` or `getAppLabel`).
+- Use the shared toast utility at `src/utils/toast.js` for transient UI messages (use `showToastLocalized('messages.someKey')`).
+- Do not hard-code English strings in service modules; fetch localized labels before showing UI text.
+
 ## High-Risk Areas
 - Auth and claim handling (`Program.cs`, Cognito config).
 - Path base and ALB listener-rule alignment.
@@ -128,4 +133,7 @@ Workflow design notes:
 - RDS/DB migration compatibility with production data.
 - Terraform resources guarded by `prevent_destroy`.
 
-
+## Self- Improvement Loop
+- After any correction from the user, update this copilot instructions file (copilot-instructions.md) to reflect the new guidance.
+- Write rules for yourself that prevent the same mistakes in the future.
+- Research the existing codebase of the relevant components (backend, frontend, infrastructure) and find possibilities to refactor existing code to improve reusability, flexibility, maintainability and consistency before suggesting changes. For example, if the change is potentially applicable to other areas or future features, check if there are existing utilities, patterns or abstractions in both codebases that can be leveraged to implement the change in a way that benefits all relevant components. Refactor existing code to extract common logic, create reusable components or services, and ensure that the new implementation follows established conventions and best practices in the codebase. This will help to prevent code duplication, reduce technical debt, and make future changes easier to implement.

@@ -110,7 +110,8 @@
       "cannotDeletePublished": "Published versions cannot be deleted.",
       "requiresAuth": "Please save your changes before creating a version",
       "confirmRequired": "Confirmation required to publish",
-      "loadingPortfolios": "Loading your portfolios..."
+      "loadingPortfolios": "Loading your portfolios...",
+      "sessionExpiredSigningIn": "Session expired — signing you in..."
     },
     "errors": {
       "authRequired": "Authentication required",

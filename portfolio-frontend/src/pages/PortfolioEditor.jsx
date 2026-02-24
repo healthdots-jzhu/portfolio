@@ -830,12 +830,25 @@ export default function PortfolioEditor() {
       setSaving(true);
       const token = await getAccessToken();
       
-      // Copy content from the selected version to a new draft
-      const newVersion = await portfolioApi.copyVersionToNew(
-        portfolio.id,
-        selectedVersionId,
-        token
-      );
+      let newVersion;
+      
+      if (selectedVersionId === 'live') {
+        // For live version, create a new draft snapshot from current state
+        newVersion = await portfolioApi.createVersion(
+          portfolio.id,
+          null,
+          'Copied from live',
+          false,
+          token
+        );
+      } else {
+        // Copy content from the selected version to a new draft
+        newVersion = await portfolioApi.copyVersionToNew(
+          portfolio.id,
+          selectedVersionId,
+          token
+        );
+      }
       
       // Reload versions and switch to the new draft
       const versionHistory = await portfolioApi.getVersionHistory(portfolio.id, token);

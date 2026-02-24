@@ -80,6 +80,11 @@
   color: #2d3142;
 }
 
+/* Use UVN-Sang-Song for the hero title when available */
+.home-hero h1 {
+  font-family: var(--font-uvn), var(--font-display), serif;
+}
+
 .home-hero-subtitle {
   font-size: 1.5rem;
   color: #666;
@@ -250,7 +255,7 @@
 /* Larger screens */
 @media (min-width: 1024px) {
   .home-hero h1 {
-    font-size: 3.5rem;
+    font-size: 7rem;
   }
 
   .home-engagement-content h2 {
