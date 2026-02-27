@@ -90,7 +90,14 @@
       "accentSecondary": "Accent secondaire",
       "link": "Liens de carte",
       "surface": "Arrière-plan des cartes",
-      "footer": "Texte du pied de page"
+      "footer": "Texte du pied de page",
+      "fontSizes": "Tailles de police",
+      "size_hero": "Titre principal",
+      "size_title": "Titre de section",
+      "size_subtitle": "Sous-titre",
+      "size_body": "Corps du texte",
+      "size_label": "Étiquettes",
+      "size_small": "Petits caractères"
     },
     "validation": {
       "required": "Champ obligatoire",

@@ -90,7 +90,14 @@
       "accentSecondary": "次强调色",
       "link": "卡片链接",
       "surface": "卡片背景",
-      "footer": "页脚文字"
+      "footer": "页脚文字",
+      "fontSizes": "字号",
+      "size_hero": "主标题",
+      "size_title": "节标题",
+      "size_subtitle": "副标题",
+      "size_body": "正文",
+      "size_label": "标签",
+      "size_small": "小字"
     },
     "validation": {
       "required": "必填字段",

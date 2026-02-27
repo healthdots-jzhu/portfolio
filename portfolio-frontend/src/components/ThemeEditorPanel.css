@@ -231,3 +231,42 @@
     transform: none;
   }
 }
+
+/* ── Font Size Controls ────────────────────────────────────────────── */
+
+.theme-size-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.theme-size-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr 4rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.theme-size-label {
+  font-size: 0.82rem;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-size-slider {
+  width: 100%;
+  accent-color: #6c63ff;
+  cursor: pointer;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.theme-size-value {
+  font-size: 0.78rem;
+  color: #6b7280;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

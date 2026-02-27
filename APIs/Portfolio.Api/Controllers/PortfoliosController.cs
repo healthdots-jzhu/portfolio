@@ -95,7 +95,7 @@ public class PortfoliosController : ControllerBase
 
         var allowedTypes = new[] {
             // Images
-            "image/png", "image/jpeg", "image/gif", "image/webp",
+            "image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/avif-sequence",
             // Videos
             "video/mp4", "video/quicktime", "video/x-msvideo", "video/x-matroska", "video/webm",
             // Documents

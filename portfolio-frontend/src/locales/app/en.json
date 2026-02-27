@@ -90,7 +90,14 @@
       "accentSecondary": "Secondary Accent",
       "link": "Card Links",
       "surface": "Card Background",
-      "footer": "Footer Text"
+      "footer": "Footer Text",
+      "fontSizes": "Font Sizes",
+      "size_hero": "Hero Title",
+      "size_title": "Section Title",
+      "size_subtitle": "Subtitle",
+      "size_body": "Body Text",
+      "size_label": "Labels",
+      "size_small": "Fine Print"
     },
     "validation": {
       "required": "Required field",

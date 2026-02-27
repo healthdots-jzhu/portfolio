@@ -74,7 +74,7 @@
 }
 
 .home-hero h1 {
-  font-size: 3rem;
+  font-size: var(--font-size-hero);
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   color: var(--color-header);
@@ -86,14 +86,14 @@
 }
 
 .home-hero-subtitle {
-  font-size: 1.5rem;
+  font-size: var(--font-size-subtitle);
   color: var(--color-muted);
   margin-bottom: 2.5rem;
   font-weight: 400;
 }
 
 .home-hero-intro {
-  font-size: 1.5rem;
+  font-size: var(--font-size-subtitle);
   line-height: 1.8;
   max-width: 800px;
   margin: 0 auto;
@@ -107,7 +107,7 @@
 
 .home-features h2 {
   text-align: center;
-  font-size: 2rem;
+  font-size: var(--font-size-title);
   margin-bottom: 2rem;
   color: var(--color-header);
 }
@@ -182,16 +182,16 @@
 .home-engagement-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 2.5rem;
 }
 
 .home-engagement-content h4 {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0;
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .home-engagement-content h2 {
@@ -204,22 +204,21 @@
 .home-engagement-cta {
   display: inline-block;
   padding: 10px 28px;
-  background: var(--color-header);
+  background: var(--color-accent);
   color: var(--color-bg, #fff);
   text-decoration: none;
   border: 1px solid var(--color-header);
-  border-radius: 2px;
+  border-radius: 8px;
   font-weight: 500;
-  font-size: 0.8rem;
+  font-size: 1rem;
   letter-spacing: 1.5px;
-  text-transform: uppercase;
   transition: background 0.2s ease, color 0.2s ease;
   align-self: flex-start;
 }
 
 .home-engagement-cta:hover {
-  background: transparent;
-  color: var(--color-header);
+  background: var(--color-header);
+  color: var(--color-bg, #fff);
 }
 
 .home-engagement-image {
@@ -262,6 +261,6 @@
   }
 
   .home-engagement-content h2 {
-    font-size: 2.3rem;
+    font-size: 2.5rem;
   }
 }

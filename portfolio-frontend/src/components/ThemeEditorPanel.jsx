@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { HexColorPicker, HexColorInput } from 'react-colorful';
 import { useAppLocale } from '../hooks/useAppLocale';
-import { COLOR_VAR_MAP, DEFAULT_COLORS } from '../utils/themeApplier';
+import { COLOR_VAR_MAP, DEFAULT_COLORS, FONT_SIZE_VAR_MAP, DEFAULT_FONT_SIZES } from '../utils/themeApplier';
 import { applyFontFamily, FONT_REGISTRY } from '../utils/fontLoader';
 import './ThemeEditorPanel.css';
 
@@ -25,6 +25,9 @@ const COLOR_TOKENS = [
 /** Font options derived from the shared registry — single source of truth. */
 const FONT_OPTIONS = Object.keys(FONT_REGISTRY);
 
+/** Font size token keys — order determines display order in the panel. */
+const FONT_SIZE_TOKENS = Object.keys(FONT_SIZE_VAR_MAP);
+
 /** Returns true only for complete 3- or 6-digit hex colour strings. */
 const isValidHex = (value) => /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value);
 
@@ -37,9 +40,10 @@ const parseThemeFromContent = (contentStr) => {
     const parsed = JSON.parse(contentStr || '{}');
     const colors = { ...DEFAULT_COLORS, ...(parsed.theme?.colors || {}) };
     const fontFamily = parsed.theme?.fontFamily || 'Montserrat';
-    return { fontFamily, colors };
+    const fontSizes = { ...DEFAULT_FONT_SIZES, ...(parsed.theme?.fontSizes || {}) };
+    return { fontFamily, colors, fontSizes };
   } catch {
-    return { fontFamily: 'Montserrat', colors: { ...DEFAULT_COLORS } };
+    return { fontFamily: 'Montserrat', colors: { ...DEFAULT_COLORS }, fontSizes: { ...DEFAULT_FONT_SIZES } };
   }
 };
 
@@ -53,6 +57,7 @@ const buildUpdatedContent = (contentStr, theme) => {
       ...(parsed.theme || {}),
       fontFamily: theme.fontFamily,
       colors: { ...theme.colors },
+      fontSizes: { ...theme.fontSizes },
     };
     return JSON.stringify(parsed, null, 2);
   } catch {
@@ -73,6 +78,11 @@ const previewColor = (key, value) => {
 
 const previewFont = (fontFamily) => {
   if (fontFamily) applyFontFamily(fontFamily);
+};
+
+const previewFontSize = (key, value) => {
+  const cssVar = FONT_SIZE_VAR_MAP[key];
+  if (cssVar && value) document.documentElement.style.setProperty(cssVar, value);
 };
 
 export default function ThemeEditorPanel({ content, onApply, onClose }) {
@@ -101,10 +111,21 @@ export default function ThemeEditorPanel({ content, onApply, onClose }) {
     });
   }, [content, onApply]);
 
+  const handleFontSizeChange = useCallback((key, remValue) => {
+    const value = `${remValue}rem`;
+    previewFontSize(key, value);
+    setTheme((prev) => {
+      const updated = { ...prev, fontSizes: { ...prev.fontSizes, [key]: value } };
+      onApply(buildUpdatedContent(content, updated));
+      return updated;
+    });
+  }, [content, onApply]);
+
   const handleReset = useCallback(() => {
-    const reset = { fontFamily: 'Montserrat', colors: { ...DEFAULT_COLORS } };
+    const reset = { fontFamily: 'Montserrat', colors: { ...DEFAULT_COLORS }, fontSizes: { ...DEFAULT_FONT_SIZES } };
     // Apply defaults immediately
     Object.entries(DEFAULT_COLORS).forEach(([k, v]) => previewColor(k, v));
+    Object.entries(DEFAULT_FONT_SIZES).forEach(([k, v]) => previewFontSize(k, v));
     previewFont(reset.fontFamily);
     setTheme(reset);
     onApply(buildUpdatedContent(content, reset));
@@ -171,6 +192,34 @@ export default function ThemeEditorPanel({ content, onApply, onClose }) {
                         />
                       </div>
                     )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Font Sizes Section */}
+          <section className="theme-section">
+            <h3 className="theme-section-title">{te.fontSizes}</h3>
+            <div className="theme-size-grid">
+              {FONT_SIZE_TOKENS.map((key) => {
+                const stored = theme.fontSizes?.[key] || DEFAULT_FONT_SIZES[key];
+                const remValue = parseFloat(stored) || parseFloat(DEFAULT_FONT_SIZES[key]);
+                const labelStr = te[`size_${key}`] || key;
+                return (
+                  <div key={key} className="theme-size-row">
+                    <span className="theme-size-label">{labelStr}</span>
+                    <input
+                      type="range"
+                      className="theme-size-slider"
+                      min="0.5"
+                      max="5"
+                      step="0.125"
+                      value={remValue}
+                      onChange={(e) => handleFontSizeChange(key, parseFloat(e.target.value))}
+                      aria-label={`${labelStr} font size`}
+                    />
+                    <span className="theme-size-value">{remValue}rem</span>
                   </div>
                 );
               })}

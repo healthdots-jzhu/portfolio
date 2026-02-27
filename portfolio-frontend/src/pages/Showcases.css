@@ -22,13 +22,13 @@
 }
 
 .showcase-hero h1 {
-  font-size: 2.5rem;
+  font-size: var(--font-size-hero);
   margin-bottom: 1rem;
   color: var(--color-header);
 }
 
 .showcase-hero-subtitle {
-  font-size: 1.3rem;
+  font-size: var(--font-size-subtitle);
   color: var(--color-muted);
   margin-bottom: 2rem;
   line-height: 1.6;
@@ -43,7 +43,7 @@
   border: 2px solid var(--color-header);
   border-radius: 4px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: var(--font-size-body);
   transition: all 0.3s ease;
 }
 
@@ -232,7 +232,7 @@
 }
 
 .showcase-story h2 {
-  font-size: 1.8rem;
+  font-size: var(--font-size-title);
   margin-bottom: 0.5rem;
   color: var(--color-header);
 }
@@ -330,14 +330,14 @@
 /* Larger screens */
 @media (min-width: 1024px) {
   .showcase-hero h1 {
-    font-size: 3rem;
+    font-size: var(--font-size-hero);
   }
 
   .showcase-hero-subtitle {
-    font-size: 1.5rem;
+    font-size: var(--font-size-subtitle);
   }
 
   .showcase-story h2 {
-    font-size: 2rem;
+    font-size: var(--font-size-title);
   }
 }

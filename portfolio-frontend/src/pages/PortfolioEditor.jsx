@@ -1125,6 +1125,7 @@ export default function PortfolioEditor() {
                     id="asset-upload-input"
                     type="file"
                     style={{ display: 'none' }}
+                    accept="image/png,image/jpeg,image/gif,image/webp,image/avif,.avif,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.doc,.docx,.xls,.xlsx"
                     multiple
                     onChange={handleAssetUpload}
                   />

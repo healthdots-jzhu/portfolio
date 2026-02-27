@@ -29,7 +29,7 @@
 }
 
 .simon-saves-hero h1 {
-  font-size: 2.5rem;
+  font-size: var(--font-size-hero);
   margin-bottom: 1rem;
   color: var(--color-header);
 }
@@ -50,7 +50,7 @@
   border: 2px solid var(--color-header);
   border-radius: 4px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: var(--font-size-body);
   transition: all 0.3s ease;
 }
 
@@ -189,11 +189,11 @@
 /* Desktop layout */
 @media (min-width: 1024px) {
   .simon-saves-hero h1 {
-    font-size: 3rem;
+    font-size: var(--font-size-hero);
   }
 
   .simon-saves-hero-subtitle {
-    font-size: 1.5rem;
+    font-size: var(--font-size-subtitle);
   }
 
   .simon-saves-features-grid {

@@ -7,7 +7,7 @@
  * was introduced.
  */
 
-/** Map from locale JSON key → CSS variable name */
+/** Map from locale JSON key → CSS variable name (colors) */
 export const COLOR_VAR_MAP = {
   bg:              '--color-bg',
   header:          '--color-header',
@@ -19,6 +19,26 @@ export const COLOR_VAR_MAP = {
   surface:         '--color-surface',
   gray:            '--color-gray',
   footer:          '--color-footer',
+};
+
+/** Map from locale JSON key → CSS variable name (font sizes) */
+export const FONT_SIZE_VAR_MAP = {
+  hero:     '--font-size-hero',
+  title:    '--font-size-title',
+  subtitle: '--font-size-subtitle',
+  body:     '--font-size-body',
+  label:    '--font-size-label',
+  small:    '--font-size-small',
+};
+
+/** Default font size values – must stay in sync with :root in index.css */
+export const DEFAULT_FONT_SIZES = {
+  hero:     '3rem',
+  title:    '2rem',
+  subtitle: '1.5rem',
+  body:     '1rem',
+  label:    '0.875rem',
+  small:    '0.75rem',
 };
 
 /** Default color values – must stay in sync with :root in index.css */
@@ -45,6 +65,7 @@ export const DEFAULT_COLORS = {
 export const applyTheme = (theme) => {
   const root = document.documentElement;
 
+  // ── Colors ───────────────────────────────────────────────────────────────
   if (!theme || !theme.colors) {
     // Reset all color vars to their defaults so switching between portfolios
     // (or clearing the theme section) doesn't bleed colours.
@@ -52,18 +73,26 @@ export const applyTheme = (theme) => {
       const cssVar = COLOR_VAR_MAP[key];
       if (cssVar) root.style.setProperty(cssVar, defaultValue);
     });
-    return;
+  } else {
+    const { colors } = theme;
+    Object.entries(COLOR_VAR_MAP).forEach(([key, cssVar]) => {
+      const value = colors[key];
+      if (value && typeof value === 'string' && value.trim()) {
+        root.style.setProperty(cssVar, value.trim());
+      } else if (DEFAULT_COLORS[key]) {
+        root.style.setProperty(cssVar, DEFAULT_COLORS[key]);
+      }
+    });
   }
 
-  const { colors } = theme;
-  Object.entries(COLOR_VAR_MAP).forEach(([key, cssVar]) => {
-    const value = colors[key];
+  // ── Font Sizes ────────────────────────────────────────────────────────────
+  const fontSizes = theme?.fontSizes || {};
+  Object.entries(FONT_SIZE_VAR_MAP).forEach(([key, cssVar]) => {
+    const value = fontSizes[key];
     if (value && typeof value === 'string' && value.trim()) {
       root.style.setProperty(cssVar, value.trim());
-    } else if (DEFAULT_COLORS[key]) {
-      // Ensure missing keys fall back to the designed default rather than
-      // whatever the previous portfolio may have set.
-      root.style.setProperty(cssVar, DEFAULT_COLORS[key]);
+    } else {
+      root.style.setProperty(cssVar, DEFAULT_FONT_SIZES[key]);
     }
   });
 };
