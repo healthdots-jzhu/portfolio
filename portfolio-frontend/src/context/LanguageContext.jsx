@@ -61,11 +61,10 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
 
   // Apply color theme tokens whenever translations change.
   // Placed before any conditional returns so hook order is always stable.
-  // Guard inside the effect body handles the null/loading case.
+  // applyTheme handles a missing/undefined theme by resetting vars to defaults,
+  // which is required when switching from a themed portfolio to a theme-less one.
   useEffect(() => {
-    if (translations?.theme) {
-      applyTheme(translations.theme);
-    }
+    applyTheme(translations?.theme);
   }, [translations]);
 
   // If loading, show a minimal loading state
