@@ -1688,6 +1688,13 @@ export default function PortfolioEditor() {
                   </ul>
                 </div>
               )}
+
+              {/* Unsaved changes banner (e.g. theme/font changes) */}
+              {hasChanges && (
+                <div className="unsaved-warning" role="status" aria-live="polite">
+                  {locale.portfolioEditor.unsavedChangesMessage || '* some change is not yet saved'}
+                </div>
+              )}
             </div>
           )}
 

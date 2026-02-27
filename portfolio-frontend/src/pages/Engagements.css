@@ -121,7 +121,7 @@
 .showcase-subtitle {
   margin-top: 0.25rem;
   margin-bottom: 1rem;
-  color: var(--color-link);
+  color: var(--color-muted);
   text-align: center;
   font-size: larger;
 }

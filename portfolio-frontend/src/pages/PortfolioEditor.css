@@ -1417,6 +1417,17 @@
   border-right: 1px solid #e5e7eb;
 }
 
+/* Unsaved change warning shown above editor when edits are not saved */
+.unsaved-warning {
+  margin: 0 1.5rem 0.5rem 1.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #fff7f7;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-weight: 600;
+}
+
 .cm-activeLineGutter {
   background: #eff6ff;
 }

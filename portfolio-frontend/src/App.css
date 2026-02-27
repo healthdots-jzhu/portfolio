@@ -3,7 +3,7 @@
 }
 
 h1, h2, h3 {
-  color: #2d3142;
+  color: var(--color-header);
 }
 
 h1 {
@@ -15,24 +15,24 @@ h2 {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   font-size: 1.8rem;
-  color: #393e57;
+  color: var(--color-text);
 }
 
 h3 {
   font-size: 1.25rem;
-  color: #555;
+  color: var(--color-muted);
   margin-top: 1.5em;
 }
 
 main {
   max-width: 1280px;
   margin: 2.5rem auto 2.5rem auto;
-  background: #fff;
+  background: var(--color-bg);
   padding: 1.4rem 1.4rem 1.1rem 1.4rem;
 }
 
 ul, p {
-  color: #33374c;
+  color: var(--color-text);
   line-height: 1.7;
   font-size: 1.25rem;
 }

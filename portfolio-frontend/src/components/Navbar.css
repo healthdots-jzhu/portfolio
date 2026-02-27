@@ -10,7 +10,7 @@
 }
 
 .navbar-logo {
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 400;
   color: var(--color-header);
   letter-spacing: 0.5px;
@@ -18,7 +18,7 @@
   transition: transform 0.3s ease, letter-spacing 0.3s ease;
   text-decoration: none;
   display: inline-block;
-  font-family: inherit;
+  font-family: var(--font-uvn),var(--font-display),serif-logo
 }
 
 .navbar-logo:hover {

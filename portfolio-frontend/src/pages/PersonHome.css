@@ -187,7 +187,7 @@
 
 .home-engagement-content h4 {
   font-size: 1.3rem;
-  color: var(--color-accent-secondary);
+  color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0;
@@ -203,21 +203,23 @@
 
 .home-engagement-cta {
   display: inline-block;
-  padding: 12px 28px;
-  background: transparent;
-  color: var(--color-header);
+  padding: 10px 28px;
+  background: var(--color-header);
+  color: var(--color-bg, #fff);
   text-decoration: none;
-  border: 2px solid var(--color-header);
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
+  border: 1px solid var(--color-header);
+  border-radius: 2px;
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: background 0.2s ease, color 0.2s ease;
   align-self: flex-start;
 }
 
 .home-engagement-cta:hover {
-  background: var(--color-header);
-  color: #fff;
+  background: transparent;
+  color: var(--color-header);
 }
 
 .home-engagement-image {
@@ -256,7 +258,7 @@
 @media (min-width: 1024px) {
   .home-hero h1 {
     font-size: 7rem;
-    height: 118px;
+    height: 138px;
   }
 
   .home-engagement-content h2 {
