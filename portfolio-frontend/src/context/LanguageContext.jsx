@@ -59,6 +59,15 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
     };
   }, [personId, language, versionId]);
 
+  // Apply color theme tokens whenever translations change.
+  // Placed before any conditional returns so hook order is always stable.
+  // Guard inside the effect body handles the null/loading case.
+  useEffect(() => {
+    if (translations?.theme) {
+      applyTheme(translations.theme);
+    }
+  }, [translations]);
+
   // If loading, show a minimal loading state
   if (loading || !translations) {
     return (
@@ -85,12 +94,6 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
   }
 
   const fontFamily = translations.theme?.fontFamily || 'Montserrat';
-
-  // Apply color theme tokens in an effect to avoid DOM writes during render
-  // and StrictMode double-invoke side effects.
-  useEffect(() => {
-    applyTheme(translations?.theme);
-  }, [translations]);
 
   const basePrefix = personId
     ? (versionId ? `/preview/${versionId}/${personId}` : `/p/${personId}`)

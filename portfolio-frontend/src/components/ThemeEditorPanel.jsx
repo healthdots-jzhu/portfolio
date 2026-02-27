@@ -121,7 +121,7 @@ export default function ThemeEditorPanel({ content, onApply, onClose }) {
         {/* Header */}
         <div className="theme-modal-header">
           <h2>{te.title}</h2>
-          <button className="theme-modal-close" onClick={onClose} aria-label="Close">{'×'}</button>
+          <button className="theme-modal-close" onClick={onClose} aria-label={te.close}>×</button>
         </div>
 
         <div className="theme-modal-body">

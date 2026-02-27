@@ -77,6 +77,7 @@
     },
     "themeEditor": {
       "title": "主题编辑器",
+      "close": "关闭",
       "fontFamily": "字体",
       "colors": "颜色",
       "editColor": "编辑颜色",
