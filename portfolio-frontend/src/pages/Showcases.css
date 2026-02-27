@@ -10,7 +10,7 @@
 .showcase-divider {
   height: 1px;
   border: none;
-  background: #e0e0e0;
+  background: var(--color-gray);
   margin: 4rem 0;
 }
 
@@ -24,12 +24,12 @@
 .showcase-hero h1 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
-  color: #2d3142;
+  color: var(--color-header);
 }
 
 .showcase-hero-subtitle {
   font-size: 1.3rem;
-  color: #666;
+  color: var(--color-muted);
   margin-bottom: 2rem;
   line-height: 1.6;
 }
@@ -38,9 +38,9 @@
   display: inline-block;
   padding: 12px 32px;
   background: transparent;
-  color: #2d3142;
+  color: var(--color-header);
   text-decoration: none;
-  border: 2px solid #2d3142;
+  border: 2px solid var(--color-header);
   border-radius: 4px;
   font-weight: 600;
   font-size: 1rem;
@@ -48,7 +48,7 @@
 }
 
 .showcase-hero-cta:hover {
-  background: #2d3142;
+  background: var(--color-header);
   color: #fff;
 }
 
@@ -117,7 +117,7 @@
 .showcase-carousel-btn svg {
   width: 32px;
   height: 32px;
-  stroke: #2d3142;
+  stroke: var(--color-header);
   stroke-width: 3;
   fill: none;
 }
@@ -142,7 +142,7 @@
   width: 10px !important;
   height: 10px !important;
   border-radius: 50%;
-  border: 1px solid #2d3142;
+  border: 1px solid var(--color-header);
   background: transparent;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -152,7 +152,7 @@
 }
 
 .showcase-carousel-indicator.active {
-  background: #2d3142;
+  background: var(--color-header);
   box-shadow: 0 2px 6px rgba(45, 49, 66, 0.3);
 }
 
@@ -175,7 +175,7 @@
 
 .showcase-feature-item {
   padding: 1.5rem;
-  background: #f8f9fa;
+  background: var(--color-surface);
   border-radius: 8px;
   min-height: 120px;
   display: flex;
@@ -185,7 +185,7 @@
 .showcase-feature-item h3 {
   margin-top: 0;
   margin-bottom: 0.75rem;
-  color: #2d3142;
+  color: var(--color-header);
 }
 
 .showcase-feature-item p {
@@ -209,7 +209,7 @@
 .showcase-feature-expand-btn {
   background: none;
   border: none;
-  color: #504e70;
+  color: var(--color-link);
   font-weight: 600;
   cursor: pointer;
   padding: 0.5rem 0;
@@ -234,12 +234,12 @@
 .showcase-story h2 {
   font-size: 1.8rem;
   margin-bottom: 0.5rem;
-  color: #2d3142;
+  color: var(--color-header);
 }
 
 .showcase-story-subtitle {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--color-muted);
   margin-bottom: 1.5rem;
   font-weight: 500;
 }
@@ -251,7 +251,7 @@
 .showcase-story-description p {
   line-height: 1.8;
   margin-bottom: 1rem;
-  color: #555;
+  color: var(--color-muted);
 }
 
 .showcase-story-images {
@@ -282,12 +282,12 @@
 .showcase-story-footer {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-gray);
 }
 
 .showcase-story-footer p {
   line-height: 1.8;
-  color: #555;
+  color: var(--color-muted);
   margin: 0;
 }
 

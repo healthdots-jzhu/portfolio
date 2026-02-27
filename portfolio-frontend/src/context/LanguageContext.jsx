@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loadTranslations, getAvailableLanguages } from '../locales';
+import { applyTheme } from '../utils/themeApplier';
 
 const LanguageContext = createContext();
 
@@ -84,6 +85,9 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
   }
 
   const fontFamily = translations.theme?.fontFamily || 'Montserrat';
+
+  // Apply both font and color theme tokens whenever translations change
+  applyTheme(translations.theme);
 
   const basePrefix = personId
     ? (versionId ? `/preview/${versionId}/${personId}` : `/p/${personId}`)

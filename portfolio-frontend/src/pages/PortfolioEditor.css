@@ -501,6 +501,16 @@
   border: 1px solid #d1d5db;
 }
 
+.btn-theme {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+.btn-theme:hover {
+  background: #ffedd5;
+}
+
 .btn-compare {
   background: #111827;
   color: #fff;

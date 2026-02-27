@@ -31,12 +31,12 @@
 .simon-saves-hero h1 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
-  color: #2d3142;
+  color: var(--color-header);
 }
 
 .simon-saves-hero-subtitle {
   font-size: 1rem;
-  color: #666;
+  color: var(--color-muted);
   margin-bottom: 2rem;
   line-height: 1.6;
 }
@@ -45,9 +45,9 @@
   display: inline-block;
   padding: 12px 32px;
   background: transparent;
-  color: #2d3142;
+  color: var(--color-header);
   text-decoration: none;
-  border: 2px solid #2d3142;
+  border: 2px solid var(--color-header);
   border-radius: 4px;
   font-weight: 600;
   font-size: 1rem;
@@ -55,7 +55,7 @@
 }
 
 .simon-saves-hero-cta:hover {
-  background: #2d3142;
+  background: var(--color-header);
   color: #fff;
 }
 
@@ -66,7 +66,7 @@
 
 .simon-saves-section h2 {
   margin-bottom: 0.75rem;
-  color: #2d3142;
+  color: var(--color-header);
 }
 
 .simon-saves-section p {
@@ -76,7 +76,7 @@
 
 .simon-saves-role-title {
   font-size: 1.1rem;
-  color: #555;
+  color: var(--color-muted);
   margin-bottom: 0.75rem;
 }
 
@@ -96,7 +96,7 @@
 
 .simon-saves-feature-bullet {
   font-size: 1.5rem;
-  color: #7fb685;
+  color: var(--color-accent-secondary);
   font-weight: bold;
   flex-shrink: 0;
   line-height: 1.2;
@@ -170,7 +170,7 @@
   content: "•";
   position: absolute;
   left: 0.5rem;
-  color: #7fb685;
+  color: var(--color-accent-secondary);
   font-weight: bold;
   font-size: 1.5rem;
 }

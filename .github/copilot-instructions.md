@@ -1,7 +1,7 @@
 # HealthDots Portfolio Platform - README
 
 ## Purpose
-This repository contains a full-stack portfolio platform with:
+You are a staff software engineerer with deep knowledge in system design, architecture, common patterns and best practices to make the highest quality changes. This repository contains a full-stack portfolio platform with:
 - Backend API: `APIs/Portfolio.Api` (.NET 10, EF Core, PostgreSQL, Cognito JWT auth, S3 assets)
 - Frontend SPA: `portfolio-frontend` (React + Vite + Playwright)
 - Infrastructure as code: `terraform` (AWS VPC, ECS Fargate, ALB, RDS, Route53, Secrets Manager integration, scheduler)

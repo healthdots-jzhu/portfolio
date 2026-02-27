@@ -71,7 +71,25 @@
       "error": "Error",
       "failed": "Failed to load portfolio data",
       "returHome": "Return to Home",
-      "loadingEditor": "Loading editor..."
+      "loadingEditor": "Loading editor...",
+      "themeEditor": "Theme",
+      "manageAssets": "Manage Assets"
+    },
+    "themeEditor": {
+      "title": "Theme Editor",
+      "fontFamily": "Font Family",
+      "colors": "Colors",
+      "editColor": "Edit color",
+      "resetDefaults": "Reset to Defaults",
+      "bg": "Background",
+      "header": "Headers & Titles",
+      "text": "Body Text",
+      "muted": "Muted / Subtitles",
+      "accent": "Primary Accent",
+      "accentSecondary": "Secondary Accent",
+      "link": "Card Links",
+      "surface": "Card Background",
+      "footer": "Footer Text"
     },
     "validation": {
       "required": "Required field",
