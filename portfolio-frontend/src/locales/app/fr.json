@@ -71,7 +71,25 @@
       "error": "Erreur",
       "failed": "Échec du chargement des données du portefeuille",
       "returHome": "Retour à l'Accueil",
-      "loadingEditor": "Chargement de l'éditeur..."
+      "loadingEditor": "Chargement de l'éditeur...",
+      "themeEditor": "Thème",
+      "manageAssets": "Gérer les ressources"
+    },
+    "themeEditor": {
+      "title": "Éditeur de thème",
+      "fontFamily": "Famille de polices",
+      "colors": "Couleurs",
+      "editColor": "Modifier la couleur",
+      "resetDefaults": "Rétablir les valeurs par défaut",
+      "bg": "Arrière-plan",
+      "header": "Titres et en-têtes",
+      "text": "Corps du texte",
+      "muted": "Discret / Sous-titres",
+      "accent": "Accent principal",
+      "accentSecondary": "Accent secondaire",
+      "link": "Liens de carte",
+      "surface": "Arrière-plan des cartes",
+      "footer": "Texte du pied de page"
     },
     "validation": {
       "required": "Champ obligatoire",

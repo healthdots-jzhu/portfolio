@@ -2,37 +2,31 @@ import { useState, useCallback } from 'react';
 import { HexColorPicker, HexColorInput } from 'react-colorful';
 import { useAppLocale } from '../hooks/useAppLocale';
 import { COLOR_VAR_MAP, DEFAULT_COLORS } from '../utils/themeApplier';
-import { applyFontFamily } from '../utils/fontLoader';
+import { applyFontFamily, FONT_REGISTRY } from '../utils/fontLoader';
 import './ThemeEditorPanel.css';
 
 /**
- * Ordered list of color tokens the user can customise.
- * `key` matches the locale JSON `theme.colors` key and DEFAULT_COLORS.
+ * Ordered list of color token keys the user can customise.
+ * Each key maps to a `theme.colors` field in the locale JSON and to
+ * a `themeEditor.<key>` label in the app locale.
  */
 const COLOR_TOKENS = [
-  { key: 'header',          label: 'Headers & Titles' },
-  { key: 'text',            label: 'Body Text' },
-  { key: 'muted',           label: 'Muted / Subtitles' },
-  { key: 'accent',          label: 'Primary Accent' },
-  { key: 'accentSecondary', label: 'Secondary Accent' },
-  { key: 'link',            label: 'Card Links' },
-  { key: 'bg',              label: 'Background' },
-  { key: 'surface',         label: 'Card Background' },
-  { key: 'footer',          label: 'Footer Text' },
+  'header',
+  'text',
+  'muted',
+  'accent',
+  'accentSecondary',
+  'link',
+  'bg',
+  'surface',
+  'footer',
 ];
 
-const FONT_OPTIONS = [
-  'Montserrat',
-  'Poppins',
-  'Playfair Display',
-  'Inter',
-  'Lato',
-  'Open Sans',
-  'Roboto',
-  'Comic Neue',
-  'Edu NSW ACT Cursive',
-  'Playball',
-];
+/** Font options derived from the shared registry — single source of truth. */
+const FONT_OPTIONS = Object.keys(FONT_REGISTRY);
+
+/** Returns true only for complete 3- or 6-digit hex colour strings. */
+const isValidHex = (value) => /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value);
 
 /**
  * Parse the current theme from the locale JSON string.
@@ -89,6 +83,7 @@ export default function ThemeEditorPanel({ content, onApply, onClose }) {
   const [activeColorKey, setActiveColorKey] = useState(null);
 
   const handleColorChange = useCallback((key, value) => {
+    if (!isValidHex(value)) return;
     previewColor(key, value);
     setTheme((prev) => {
       const updated = { ...prev, colors: { ...prev.colors, [key]: value } };
@@ -125,14 +120,14 @@ export default function ThemeEditorPanel({ content, onApply, onClose }) {
       <div className="theme-modal">
         {/* Header */}
         <div className="theme-modal-header">
-          <h2>{te.title || 'Theme Editor'}</h2>
-          <button className="theme-modal-close" onClick={onClose} aria-label="Close">✕</button>
+          <h2>{te.title}</h2>
+          <button className="theme-modal-close" onClick={onClose} aria-label="Close">{'×'}</button>
         </div>
 
         <div className="theme-modal-body">
           {/* Font Section */}
           <section className="theme-section">
-            <h3 className="theme-section-title">{te.fontFamily || 'Font Family'}</h3>
+            <h3 className="theme-section-title">{te.fontFamily}</h3>
             <select
               className="theme-font-select"
               value={theme.fontFamily}
@@ -146,12 +141,12 @@ export default function ThemeEditorPanel({ content, onApply, onClose }) {
 
           {/* Colors Section */}
           <section className="theme-section">
-            <h3 className="theme-section-title">{te.colors || 'Colors'}</h3>
+            <h3 className="theme-section-title">{te.colors}</h3>
             <div className="theme-color-grid">
-              {COLOR_TOKENS.map(({ key, label }) => {
+              {COLOR_TOKENS.map((key) => {
                 const color = theme.colors[key] || DEFAULT_COLORS[key] || '#ffffff';
                 const isActive = activeColorKey === key;
-                const labelStr = te[key] || label;
+                const labelStr = te[key] || key;
                 return (
                   <div key={key} className="theme-color-row">
                     <button
@@ -159,13 +154,13 @@ export default function ThemeEditorPanel({ content, onApply, onClose }) {
                       style={{ background: color }}
                       onClick={() => togglePicker(key)}
                       title={labelStr}
-                      aria-label={`${te.editColor || 'Edit color'}: ${labelStr}`}
+                      aria-label={`${te.editColor}: ${labelStr}`}
                     />
                     <span className="theme-color-label">{labelStr}</span>
                     <HexColorInput
                       className="theme-hex-input"
                       color={color}
-                      onChange={(v) => handleColorChange(key, `#${v.replace('#', '')}`)}
+                      onChange={(v) => handleColorChange(key, v)}
                       prefixed
                     />
                     {isActive && (
@@ -185,7 +180,7 @@ export default function ThemeEditorPanel({ content, onApply, onClose }) {
           {/* Reset */}
           <div className="theme-footer-actions">
             <button className="theme-reset-btn" onClick={handleReset}>
-              {te.resetDefaults || 'Reset to Defaults'}
+              {te.resetDefaults}
             </button>
           </div>
         </div>

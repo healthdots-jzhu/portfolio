@@ -1073,12 +1073,14 @@ export default function PortfolioEditor() {
           >
             {locale.portfolioEditor.manageAssets || 'Manage Assets'}
           </button>
-          <button
-            className="btn-theme"
-            onClick={() => setShowThemeOverlay(true)}
-          >
-            {locale.portfolioEditor.themeEditor || 'Theme'}
-          </button>
+          {!isReadOnlyVersion && (
+            <button
+              className="btn-theme"
+              onClick={() => setShowThemeOverlay(true)}
+            >
+              {locale.portfolioEditor.themeEditor || 'Theme'}
+            </button>
+          )}
           {!isReadOnlyVersion && (
             <button className="btn-ai" onClick={handleOpenAi}>
               {locale.portfolioEditor.tryAi || 'Try AI'}

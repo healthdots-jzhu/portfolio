@@ -86,8 +86,11 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
 
   const fontFamily = translations.theme?.fontFamily || 'Montserrat';
 
-  // Apply both font and color theme tokens whenever translations change
-  applyTheme(translations.theme);
+  // Apply color theme tokens in an effect to avoid DOM writes during render
+  // and StrictMode double-invoke side effects.
+  useEffect(() => {
+    applyTheme(translations?.theme);
+  }, [translations]);
 
   const basePrefix = personId
     ? (versionId ? `/preview/${versionId}/${personId}` : `/p/${personId}`)
