@@ -6,9 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment (staging, beta, prod)'
+        description: 'Target environment'
         required: false
         default: 'beta'
+        type: choice
+        options:
+          - staging
+          - beta
+          - prod
 
 permissions:
   contents: read
