@@ -167,6 +167,13 @@
   gap: 3rem;
 }
 
+.home-engagements > h2 {
+  text-align: center;
+  font-size: var(--font-size-title);
+  margin-bottom: 0;
+  color: var(--color-header);
+}
+
 .home-engagement-item {
   display: flex;
   flex-direction: column;
@@ -207,7 +214,6 @@
   background: var(--color-accent);
   color: var(--color-bg, #fff);
   text-decoration: none;
-  border: 1px solid var(--color-header);
   border-radius: 8px;
   font-weight: 500;
   font-size: 1rem;

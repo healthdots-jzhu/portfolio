@@ -93,6 +93,33 @@ public class PortfoliosController : ControllerBase
             return BadRequest(new { error = $"This portfolio already has the maximum allowed number of assets ({maxFiles}). Please delete an asset before uploading a new one." });
         }
 
+        // Normalize content type from file extension when the browser sends a generic type
+        // (e.g. image/avif is not registered on all OS, so Windows may send application/octet-stream)
+        var contentType = file.ContentType?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(contentType) || contentType == "application/octet-stream")
+        {
+            var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+            contentType = ext switch
+            {
+                ".avif" => "image/avif",
+                ".png"  => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".gif"  => "image/gif",
+                ".webp" => "image/webp",
+                ".mp4"  => "video/mp4",
+                ".mov"  => "video/quicktime",
+                ".avi"  => "video/x-msvideo",
+                ".mkv"  => "video/x-matroska",
+                ".webm" => "video/webm",
+                ".pdf"  => "application/pdf",
+                ".doc"  => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls"  => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                _ => contentType ?? string.Empty
+            };
+        }
+
         var allowedTypes = new[] {
             // Images
             "image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/avif-sequence",
@@ -103,7 +130,7 @@ public class PortfoliosController : ControllerBase
             "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         };
-        if (!allowedTypes.Contains(file.ContentType))
+        if (!allowedTypes.Contains(contentType))
         {
             return BadRequest(new { error = "Unsupported file type" });
         }
@@ -111,7 +138,7 @@ public class PortfoliosController : ControllerBase
         // Validate file signature (magic bytes)
         using (var fileStream = file.OpenReadStream())
         {
-            if (!Portfolio.Api.Utils.FileSignatureValidator.IsValidSignature(fileStream, file.ContentType))
+            if (!Portfolio.Api.Utils.FileSignatureValidator.IsValidSignature(fileStream, contentType))
             {
                 return BadRequest(new { error = "File content does not match its type (possible fake or corrupt file)" });
             }
@@ -127,7 +154,7 @@ public class PortfoliosController : ControllerBase
         }
 
         // Upload to S3 (pass PersonId to place object under img/{personId}/...)
-        await _s3Service.UploadAssetAsync(portfolio.PersonId, file.FileName, file.OpenReadStream(), file.ContentType);
+        await _s3Service.UploadAssetAsync(portfolio.PersonId, file.FileName, file.OpenReadStream(), contentType);
 
         // Create asset record
         var asset = new Portfolio.Api.Models.PortfolioAsset
@@ -135,7 +162,7 @@ public class PortfoliosController : ControllerBase
             Id = Guid.NewGuid(),
             PortfolioId = portfolio.Id,
             AssetKey = s3Key,
-            FileType = file.ContentType,
+            FileType = contentType,
             FileSize = file.Length,
             CreatedAt = DateTimeOffset.UtcNow
         };
