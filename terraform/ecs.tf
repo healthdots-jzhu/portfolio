@@ -135,8 +135,8 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${var.s3_bucket_name}",
-          "arn:aws:s3:::${var.s3_bucket_name}/*"
+          "arn:aws:s3:::${var.s3_bucket_frontend}",
+          "arn:aws:s3:::${var.s3_bucket_frontend}/*"
         ]
       },
       {

@@ -272,7 +272,6 @@ jobs:
           echo "TF_VAR_ecs_task_cpu=${{ vars.ECS_TASK_CPU }}" >> $GITHUB_ENV
           echo "TF_VAR_ecs_task_memory=${{ vars.ECS_TASK_MEMORY }}" >> $GITHUB_ENV
           echo "TF_VAR_ecs_service_desired_count=${{ vars.ECS_SERVICE_DESIRED_COUNT }}" >> $GITHUB_ENV
-          echo "TF_VAR_s3_bucket_name=${{ vars.S3_BUCKET_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_acm_certificate_arn=${{ vars.ACM_CERTIFICATE_ARN }}" >> $GITHUB_ENV
           echo "TF_VAR_tf_state_key=${{ vars.TF_STATE_KEY }}" >> $GITHUB_ENV
           echo "TF_VAR_tf_state_bucket=${{ vars.TF_STATE_BUCKET }}" >> $GITHUB_ENV

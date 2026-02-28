@@ -4,7 +4,6 @@ output "variables_created" {
     [for k in keys(github_actions_environment_variable.s3_bucket_frontend_env) : "${k}:S3_BUCKET_FRONTEND"],
     [for k in keys(github_actions_environment_variable.tf_state_key_env) : "${k}:TF_STATE_KEY"],
     [for k in keys(github_actions_environment_variable.aws_region_env) : "${k}:AWS_REGION"],
-    [for k in keys(github_actions_environment_variable.s3_bucket_name_env) : "${k}:S3_BUCKET_NAME"],
     [for k in keys(github_actions_environment_variable.ecs_task_cpu_env) : "${k}:ECS_TASK_CPU"],
     [for k in keys(github_actions_environment_variable.ecs_task_memory_env) : "${k}:ECS_TASK_MEMORY"],
     [for k in keys(github_actions_environment_variable.ecs_service_desired_count_env) : "${k}:ECS_SERVICE_DESIRED_COUNT"],

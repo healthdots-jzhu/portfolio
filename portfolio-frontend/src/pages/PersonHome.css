@@ -172,6 +172,7 @@
   font-size: var(--font-size-title);
   margin-bottom: 0;
   color: var(--color-header);
+  padding-top: 2rem;
 }
 
 .home-engagement-item {
@@ -179,11 +180,6 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 2rem 0;
-  border-top: 1px solid var(--color-gray);
-}
-
-.home-engagement-item:first-child {
-  border-top: none;
 }
 
 .home-engagement-content {
