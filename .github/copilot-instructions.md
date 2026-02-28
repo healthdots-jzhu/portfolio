@@ -125,6 +125,7 @@ Workflow design notes:
 - Always place user-facing text in the locale JSON files under `src/locales/app/*.json` and reference those keys from code (use `useAppLocale` or `getAppLabel`).
 - Use the shared toast utility at `src/utils/toast.js` for transient UI messages (use `showToastLocalized('messages.someKey')`).
 - Do not hard-code English strings in service modules; fetch localized labels before showing UI text.
+- For UI changes, read more instructions in `portfolio-frontend/.github/copilot-instructions.md`
 
 ## High-Risk Areas
 - Auth and claim handling (`Program.cs`, Cognito config).
@@ -137,3 +138,6 @@ Workflow design notes:
 - After any correction from the user, update this copilot instructions file (copilot-instructions.md) to reflect the new guidance.
 - Write rules for yourself that prevent the same mistakes in the future.
 - Research the existing codebase of the relevant components (backend, frontend, infrastructure) and find possibilities to refactor existing code to improve reusability, flexibility, maintainability and consistency before suggesting changes. For example, if the change is potentially applicable to other areas or future features, check if there are existing utilities, patterns or abstractions in both codebases that can be leveraged to implement the change in a way that benefits all relevant components. Refactor existing code to extract common logic, create reusable components or services, and ensure that the new implementation follows established conventions and best practices in the codebase. This will help to prevent code duplication, reduce technical debt, and make future changes easier to implement.
+
+## Code Review
+- When you are asked to review the code changes, output the detailed review notes into a txt file in the logs folder. Name the file with the current timestamp following "code-review-" pattern, for example: `logs/code-review-20240601-120000.txt`.

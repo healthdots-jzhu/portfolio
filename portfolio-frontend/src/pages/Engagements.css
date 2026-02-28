@@ -24,7 +24,7 @@
 }
 
 .engagements-tagline {
-  font-size: 1.1rem;
+  font-size: var(--font-size-label);
   color: var(--color-muted);
   margin-bottom: 1.5rem;
   line-height: 1.4;
@@ -109,7 +109,7 @@
   cursor: pointer;
   padding: 0.5rem 0;
   margin-top: 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--font-size-small);
 }
 
 /* Showcase section */

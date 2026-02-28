@@ -29,13 +29,13 @@
 }
 
 .simon-saves-hero h1 {
-  font-size: var(--font-size-hero);
+  font-size: 2.5rem;
   margin-bottom: 1rem;
   color: var(--color-header);
 }
 
 .simon-saves-hero-subtitle {
-  font-size: 1rem;
+  font-size: var(--font-size-subtitle);
   color: var(--color-muted);
   margin-bottom: 2rem;
   line-height: 1.6;
@@ -75,7 +75,7 @@
 }
 
 .simon-saves-role-title {
-  font-size: 1.1rem;
+  font-size: var(--font-size-label);
   color: var(--color-muted);
   margin-bottom: 0.75rem;
 }

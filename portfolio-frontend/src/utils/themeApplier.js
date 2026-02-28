@@ -37,8 +37,8 @@ export const DEFAULT_FONT_SIZES = {
   title:    '2rem',
   subtitle: '1.5rem',
   body:     '1rem',
-  label:    '0.875rem',
-  small:    '0.75rem',
+  label:    '1.1rem',
+  small:    '0.875rem',
 };
 
 /** Default color values – must stay in sync with :root in index.css */
