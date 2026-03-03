@@ -12,7 +12,8 @@ resource "aws_ecs_cluster" "main" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    # Temporarily allow replacement during this deployment. Revert to true after apply
+    prevent_destroy = false
   }
 }
 
