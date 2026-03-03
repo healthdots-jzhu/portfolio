@@ -38,7 +38,7 @@ public class PortfoliosController : ControllerBase
     private readonly ILocaleValidator _localeValidator;
     private readonly ILogger<PortfoliosController> _logger;
     private readonly Portfolio.Api.Services.IDynamoCacheService _cacheService;
-    private const string DynamoCacheTableKey = "localesCache";
+    private const string DynamoCacheTableKey = "LocalesCache";
     private readonly string? _resolvedDynamoCacheTableName;
 
     private string? ResolveDynamoCacheTableName(string key)

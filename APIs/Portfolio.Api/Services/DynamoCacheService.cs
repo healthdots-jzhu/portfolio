@@ -15,6 +15,7 @@ namespace Portfolio.Api.Services
     public interface IDynamoCacheService
     {
         Task<string?> GetAsync(string key, string? tableName = null);
+        Task<(bool found, string? value)> TryGetAsync(string key, string? tableName = null);
         Task SetAsync(string key, string json, string? tableName = null);
         Task InvalidateForPersonAsync(string personId, string? tableName = null);
     }
@@ -60,10 +61,15 @@ namespace Portfolio.Api.Services
 
         public async Task<string?> GetAsync(string key, string? tableName = null)
         {
-            if (string.IsNullOrWhiteSpace(tableName)) return null;
+            var (found, value) = await TryGetAsync(key, tableName);
+            return found ? value : null;
+        }
+
+        public async Task<(bool found, string? value)> TryGetAsync(string key, string? tableName = null)
+        {
+            if (string.IsNullOrWhiteSpace(tableName)) return (false, null);
             var table = tableName;
 
-            // compression decision handled by stored IsCompressed flag; no local compression setting needed for Get
             try
             {
                 var request = new GetItemRequest
@@ -73,47 +79,52 @@ namespace Portfolio.Api.Services
                     {
                         ["CacheKey"] = new AttributeValue { S = key }
                     },
-                    ProjectionExpression = "#v, ExpiresAt",
+                    ProjectionExpression = "#v, ExpiresAt, IsCompressed",
                     ExpressionAttributeNames = new Dictionary<string, string> { ["#v"] = "Value" }
                 };
 
                 var resp = await _dynamoDb.GetItemAsync(request);
-                if (resp.Item == null || resp.Item.Count == 0) return null;
+                if (resp.Item == null || resp.Item.Count == 0) return (false, null);
 
                 if (resp.Item.TryGetValue("ExpiresAt", out var expiresAttr) && long.TryParse(expiresAttr.N, out var epoch))
                 {
                     if (DateTimeOffset.FromUnixTimeSeconds(epoch) < DateTimeOffset.UtcNow)
                     {
                         await _dynamoDb.DeleteItemAsync(new DeleteItemRequest { TableName = table!, Key = new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = key } } });
-                        return null;
+                        return (false, null);
                     }
                 }
 
                 if (resp.Item.TryGetValue("Value", out var valueAttr))
                 {
-                    // Handle compressed values if stored as Base64 with IsCompressed flag
                     if (resp.Item.TryGetValue("IsCompressed", out var compAttr) && compAttr?.BOOL == true)
                     {
                         try
                         {
-                            return DecompressFromBase64(valueAttr.S);
+                            return (true, DecompressFromBase64(valueAttr.S));
                         }
                         catch (Exception ex)
                         {
                             _logger.LogWarning(ex, "Failed to decompress cached value for key {Key}", key);
-                            return null;
+                            return (false, null);
                         }
                     }
 
-                    return valueAttr.S;
+                    return (true, valueAttr.S);
                 }
+
+                return (false, null);
+            }
+            catch (Amazon.DynamoDBv2.Model.ResourceNotFoundException rnfe)
+            {
+                _logger.LogWarning(rnfe, "DynamoDB table not found: {Table}", table);
+                return (false, null);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "DynamoDB GetCache failed for key {Key}", key);
+                _logger.LogWarning(ex, "DynamoDB TryGet failed for key {Key}", key);
+                return (false, null);
             }
-
-            return null;
         }
 
         public async Task SetAsync(string key, string json, string? tableName = null)
@@ -144,12 +155,18 @@ namespace Portfolio.Api.Services
                     item["Value"] = new AttributeValue { S = json };
                 }
 
+                _logger.LogDebug("DynamoDB PutItem preparing for key {Key} into table {Table}", key, table);
                 await _dynamoDb.PutItemAsync(new PutItemRequest { TableName = table!, Item = item });
                 try
                 {
                     _logger.LogDebug("DynamoDB PutItem succeeded for key {Key} into table {Table}", key, table);
                 }
                 catch { }
+            }
+            catch (Amazon.DynamoDBv2.Model.ResourceNotFoundException rnfe)
+            {
+                _logger.LogWarning(rnfe, "DynamoDB table not found when setting cache for key {Key}: {Table}. Ensure the table exists and the app is in the correct AWS account/region.", key, table);
+                return;
             }
             catch (Exception ex)
             {
