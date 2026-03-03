@@ -37,8 +37,9 @@ public class PortfoliosController : ControllerBase
     private readonly IGitHubModelsService _gitHubModelsService;
     private readonly ILocaleValidator _localeValidator;
     private readonly ILogger<PortfoliosController> _logger;
+    private readonly Portfolio.Api.Services.IDynamoCacheService _cacheService;
 
-    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IConfiguration configuration, IS3Service s3Service, IShortIdGenerator shortIdGenerator, IGitHubModelsService gitHubModelsService, ILocaleValidator localeValidator, ILogger<PortfoliosController> logger)
+    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IConfiguration configuration, IS3Service s3Service, IShortIdGenerator shortIdGenerator, IGitHubModelsService gitHubModelsService, ILocaleValidator localeValidator, ILogger<PortfoliosController> logger, Portfolio.Api.Services.IDynamoCacheService cacheService)
     {
         _context = context;
         _currentUser = currentUser;
@@ -48,7 +49,10 @@ public class PortfoliosController : ControllerBase
         _gitHubModelsService = gitHubModelsService;
         _localeValidator = localeValidator;
         _logger = logger;
+        _cacheService = cacheService;
     }
+
+    // Cache behavior delegated to IDynamoCacheService
 
     [HttpPost("{personId}/assets")]
     [RequestSizeLimit(10_000_000)] // 10MB limit
@@ -135,15 +139,6 @@ public class PortfoliosController : ControllerBase
             return BadRequest(new { error = "Unsupported file type" });
         }
 
-        // Validate file signature (magic bytes)
-        using (var fileStream = file.OpenReadStream())
-        {
-            if (!Portfolio.Api.Utils.FileSignatureValidator.IsValidSignature(fileStream, contentType))
-            {
-                return BadRequest(new { error = "File content does not match its type (possible fake or corrupt file)" });
-            }
-        }
-
         // Use same S3 key logic as S3Service (use PersonId so keys are stable and human-readable)
         string sanitizedFileName = SanitizeFileName(file.FileName);
         string sanitizedPortfolioId = SanitizePathSegment(portfolio.PersonId);
@@ -153,8 +148,18 @@ public class PortfoliosController : ControllerBase
             return Conflict(new { error = "A file with the same name already exists. Please rename your file or delete the existing one before uploading." });
         }
 
-        // Upload to S3 (pass PersonId to place object under img/{personId}/...)
-        await _s3Service.UploadAssetAsync(portfolio.PersonId, file.FileName, file.OpenReadStream(), contentType);
+        // Validate file signature (magic bytes) and upload using a single stream instance
+        using (var uploadStream = file.OpenReadStream())
+        {
+            if (!Portfolio.Api.Utils.FileSignatureValidator.IsValidSignature(uploadStream, contentType))
+            {
+                return BadRequest(new { error = "File content does not match its type (possible fake or corrupt file)" });
+            }
+
+            uploadStream.Position = 0;
+            // Upload to S3 (pass PersonId to place object under img/{personId}/...)
+            await _s3Service.UploadAssetAsync(portfolio.PersonId, file.FileName, uploadStream, contentType);
+        }
 
         // Create asset record
         var asset = new Portfolio.Api.Models.PortfolioAsset
@@ -169,6 +174,9 @@ public class PortfoliosController : ControllerBase
         _context.PortfolioAssets.Add(asset);
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
         await _context.SaveChangesAsync();
+
+        // Invalidate cache for this personId because assets changed
+        _ = _cacheService.InvalidateForPersonAsync(portfolio.PersonId);
 
         return Ok(new
         {
@@ -220,7 +228,11 @@ public class PortfoliosController : ControllerBase
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
         await _context.SaveChangesAsync();
 
+        // Invalidate cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId);
+
         return NoContent();
+
     }
 
     private static string SanitizeFileName(string fileName)
@@ -329,6 +341,14 @@ public class PortfoliosController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetPortfolio(string personId)
     {
+        // Try cache first
+        var cacheKey = personId;
+        var cached = await _cacheService.GetAsync(cacheKey);
+        if (cached is not null)
+        {
+            return Content(cached, "application/json");
+        }
+
         var portfolio = await _context.Portfolios
             .Include(p => p.Locales)
             .Where(p => p.PersonId == personId && p.IsActive)
@@ -346,7 +366,7 @@ public class PortfoliosController : ControllerBase
             .OrderBy(l => l)
             .ToList();
 
-        return Ok(new
+        var payload = new
         {
             portfolio.Id,
             portfolio.PersonId,
@@ -354,7 +374,12 @@ public class PortfoliosController : ControllerBase
             portfolio.Subdomain,
             portfolio.CreatedAt,
             AvailableLanguages = availableLanguages
-        });
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(payload);
+        _ = _cacheService.SetAsync(cacheKey, json); // fire-and-forget cache set
+
+        return Content(json, "application/json");
     }
 
     /// <summary>
@@ -364,6 +389,13 @@ public class PortfoliosController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetLocale(string personId, string language)
     {
+        var cacheKey = personId + "#" + language;
+        var cached = await _cacheService.GetAsync(cacheKey);
+        if (cached is not null)
+        {
+            return Content(cached, "application/json");
+        }
+
         var locale = await _context.PortfolioLocales
             .Include(l => l.Portfolio)
             .Where(l => l.Portfolio.PersonId == personId && l.Portfolio.IsActive && l.Language == language)
@@ -374,7 +406,9 @@ public class PortfoliosController : ControllerBase
             return NotFound(new { error = "Locale not found" });
         }
 
-        return Content(locale.ContentJson, "application/json");
+        var json = locale.ContentJson ?? "{}";
+        _ = _cacheService.SetAsync(cacheKey, json);
+        return Content(json, "application/json");
     }
 
     /// <summary>
@@ -812,6 +846,9 @@ public class PortfoliosController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        // Invalidate cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId);
+
         return Ok(new { message = "Portfolio deactivated successfully" });
     }
 
@@ -851,6 +888,9 @@ public class PortfoliosController : ControllerBase
 
         _context.Portfolios.Add(portfolio);
         await _context.SaveChangesAsync();
+
+        // Invalidate any existing cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId);
 
         return CreatedAtAction(nameof(GetPortfolio), new { personId = portfolio.PersonId }, new
         {
@@ -915,6 +955,9 @@ public class PortfoliosController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        // Invalidate cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId);
+
         return Ok(new
         {
             portfolio.Id,
@@ -960,6 +1003,8 @@ public class PortfoliosController : ControllerBase
                 _context.PortfolioLocales.Remove(locale);
                 portfolio.UpdatedAt = DateTimeOffset.UtcNow;
                 await _context.SaveChangesAsync();
+                // Invalidate cache for this personId
+                _ = _cacheService.InvalidateForPersonAsync(personId);
                 return Ok(new { message = "Locale removed successfully", language });
             }
             return Ok(new { message = "Locale already empty", language });
@@ -985,6 +1030,9 @@ public class PortfoliosController : ControllerBase
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        // Invalidate cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId);
 
         return Ok(new { message = "Locale updated successfully", language, updatedAt = locale.UpdatedAt });
     }

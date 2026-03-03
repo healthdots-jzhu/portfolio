@@ -150,8 +150,50 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
           "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*"
         ]
       }
+      ,
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:UpdateItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.portfolio_cache.arn
+        ]
+      }
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# DynamoDB table used as HTTP response cache for API
+resource "aws_dynamodb_table" "portfolio_cache" {
+  name         = "${var.project_name}-${var.environment}-cache"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "CacheKey"
+
+  attribute {
+    name = "CacheKey"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "ExpiresAt"
+    enabled        = true
+  }
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-cache"
+  }
 
   lifecycle {
     prevent_destroy = true
