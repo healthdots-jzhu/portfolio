@@ -197,7 +197,7 @@ resource "aws_dynamodb_table" "portfolio_cache" {
   }
 
   lifecycle {
-    prevent_destroy = false
+    prevent_destroy = true
   }
 }
 

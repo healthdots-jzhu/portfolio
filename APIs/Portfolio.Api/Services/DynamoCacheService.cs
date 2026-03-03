@@ -1,5 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
@@ -10,35 +14,61 @@ namespace Portfolio.Api.Services
 {
     public interface IDynamoCacheService
     {
-        Task<string?> GetAsync(string key);
-        Task SetAsync(string key, string json);
-        Task InvalidateForPersonAsync(string personId);
+        Task<string?> GetAsync(string key, string? tableName = null);
+        Task SetAsync(string key, string json, string? tableName = null);
+        Task InvalidateForPersonAsync(string personId, string? tableName = null);
     }
 
     public class DynamoCacheService : IDynamoCacheService
     {
         private readonly IAmazonDynamoDB _dynamoDb;
-        private readonly string? _tableName;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<DynamoCacheService> _logger;
-        private readonly bool _enabled;
+        
 
         public DynamoCacheService(IAmazonDynamoDB dynamoDb, IConfiguration configuration, ILogger<DynamoCacheService> logger)
         {
             _dynamoDb = dynamoDb ?? throw new ArgumentNullException(nameof(dynamoDb));
             _logger = logger;
-            _tableName = configuration["DynamoCache:TableName"] ?? Environment.GetEnvironmentVariable("DynamoCache__TableName");
-            _enabled = !string.IsNullOrWhiteSpace(_tableName);
+            _configuration = configuration;
+
+            // No fallback table name in this service; callers must pass the desired `tableName`.
         }
 
-        public async Task<string?> GetAsync(string key)
+        private bool IsCompressionEnabledForTable(string tableName)
         {
-            if (!_enabled) return null;
+            if (string.IsNullOrWhiteSpace(tableName)) return false;
+            try
+            {
+                var dyn = _configuration.GetSection("DynamoCache");
+                var tables = dyn.GetSection("Tables");
+                if (tables.Exists())
+                {
+                    foreach (var child in tables.GetChildren())
+                    {
+                        var tn = child["TableName"];
+                        if (!string.IsNullOrWhiteSpace(tn) && string.Equals(tn, tableName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return child.GetValue<bool?>("EnableCompression") ?? false;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
 
+        public async Task<string?> GetAsync(string key, string? tableName = null)
+        {
+            if (string.IsNullOrWhiteSpace(tableName)) return null;
+            var table = tableName;
+
+            // compression decision handled by stored IsCompressed flag; no local compression setting needed for Get
             try
             {
                 var request = new GetItemRequest
                 {
-                    TableName = _tableName!,
+                    TableName = table!,
                     Key = new Dictionary<string, AttributeValue>
                     {
                         ["CacheKey"] = new AttributeValue { S = key }
@@ -54,13 +84,27 @@ namespace Portfolio.Api.Services
                 {
                     if (DateTimeOffset.FromUnixTimeSeconds(epoch) < DateTimeOffset.UtcNow)
                     {
-                        await _dynamoDb.DeleteItemAsync(new DeleteItemRequest { TableName = _tableName!, Key = new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = key } } });
+                        await _dynamoDb.DeleteItemAsync(new DeleteItemRequest { TableName = table!, Key = new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = key } } });
                         return null;
                     }
                 }
 
                 if (resp.Item.TryGetValue("Value", out var valueAttr))
                 {
+                    // Handle compressed values if stored as Base64 with IsCompressed flag
+                    if (resp.Item.TryGetValue("IsCompressed", out var compAttr) && compAttr?.BOOL == true)
+                    {
+                        try
+                        {
+                            return DecompressFromBase64(valueAttr.S);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to decompress cached value for key {Key}", key);
+                            return null;
+                        }
+                    }
+
                     return valueAttr.S;
                 }
             }
@@ -72,9 +116,13 @@ namespace Portfolio.Api.Services
             return null;
         }
 
-        public async Task SetAsync(string key, string json)
+        public async Task SetAsync(string key, string json, string? tableName = null)
         {
-            if (!_enabled) return;
+            if (string.IsNullOrWhiteSpace(tableName)) return;
+            var table = tableName;
+
+            // Determine compression setting for this table
+            var compressionEnabled = IsCompressionEnabledForTable(tableName);
 
             try
             {
@@ -82,11 +130,26 @@ namespace Portfolio.Api.Services
                 var item = new Dictionary<string, AttributeValue>
                 {
                     ["CacheKey"] = new AttributeValue { S = key },
-                    ["Value"] = new AttributeValue { S = json },
                     ["ExpiresAt"] = new AttributeValue { N = expires }
                 };
 
-                await _dynamoDb.PutItemAsync(new PutItemRequest { TableName = _tableName!, Item = item });
+                if (compressionEnabled)
+                {
+                    var compressed = CompressToBase64(json);
+                    item["Value"] = new AttributeValue { S = compressed };
+                    item["IsCompressed"] = new AttributeValue { BOOL = true };
+                }
+                else
+                {
+                    item["Value"] = new AttributeValue { S = json };
+                }
+
+                await _dynamoDb.PutItemAsync(new PutItemRequest { TableName = table!, Item = item });
+                try
+                {
+                    _logger.LogDebug("DynamoDB PutItem succeeded for key {Key} into table {Table}", key, table);
+                }
+                catch { }
             }
             catch (Exception ex)
             {
@@ -94,22 +157,44 @@ namespace Portfolio.Api.Services
             }
         }
 
-        public async Task InvalidateForPersonAsync(string personId)
+        private static string CompressToBase64(string text)
         {
-            if (!_enabled) return;
+            var bytes = Encoding.UTF8.GetBytes(text);
+            using var ms = new MemoryStream();
+            using (var gzip = new GZipStream(ms, CompressionLevel.Optimal, true))
+            {
+                gzip.Write(bytes, 0, bytes.Length);
+            }
+            return Convert.ToBase64String(ms.ToArray());
+        }
+
+        private static string DecompressFromBase64(string base64)
+        {
+            var compressed = Convert.FromBase64String(base64);
+            using var inMs = new MemoryStream(compressed);
+            using var gzip = new GZipStream(inMs, CompressionMode.Decompress);
+            using var outMs = new MemoryStream();
+            gzip.CopyTo(outMs);
+            return Encoding.UTF8.GetString(outMs.ToArray());
+        }
+
+        public async Task InvalidateForPersonAsync(string personId, string? tableName = null)
+        {
+            if (string.IsNullOrWhiteSpace(tableName)) return;
+            var table = tableName;
 
             try
             {
                 await _dynamoDb.DeleteItemAsync(new DeleteItemRequest
                 {
-                    TableName = _tableName!,
+                    TableName = table!,
                     Key = new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = personId } }
                 });
 
                 var prefix = personId + "#";
                 var scanReq = new ScanRequest
                 {
-                    TableName = _tableName!,
+                    TableName = table!,
                     ProjectionExpression = "CacheKey",
                     FilterExpression = "begins_with(CacheKey, :p)",
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue> { [":p"] = new AttributeValue { S = prefix } }
@@ -124,7 +209,7 @@ namespace Portfolio.Api.Services
                         {
                             await _dynamoDb.DeleteItemAsync(new DeleteItemRequest
                             {
-                                TableName = _tableName!,
+                                TableName = table!,
                                 Key = new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = keyAttr.S } }
                             });
                         }
