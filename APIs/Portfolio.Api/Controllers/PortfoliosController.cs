@@ -368,15 +368,20 @@ public class PortfoliosController : ControllerBase
 
         var payload = new
         {
-            portfolio.Id,
-            portfolio.PersonId,
-            portfolio.DisplayName,
-            portfolio.Subdomain,
-            portfolio.CreatedAt,
-            AvailableLanguages = availableLanguages
+            id = portfolio.Id,
+            personId = portfolio.PersonId,
+            displayName = portfolio.DisplayName,
+            subdomain = portfolio.Subdomain,
+            createdAt = portfolio.CreatedAt,
+            availableLanguages = availableLanguages
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(payload);
+        // Serialize using camelCase property names for JS clients and store that
+        var json = System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+        });
+
         _ = _cacheService.SetAsync(cacheKey, json); // fire-and-forget cache set
 
         return Content(json, "application/json");

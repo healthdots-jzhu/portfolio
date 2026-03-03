@@ -164,7 +164,8 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
           "dynamodb:BatchWriteItem"
         ]
         Resource = [
-          aws_dynamodb_table.portfolio_cache.arn
+          aws_dynamodb_table.portfolio_cache.arn,
+          "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.project_name}-*"
         ]
       }
     ]
@@ -177,7 +178,7 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
 
 # DynamoDB table used as HTTP response cache for API
 resource "aws_dynamodb_table" "portfolio_cache" {
-  name         = "${var.project_name}-${var.environment}-cache"
+  name         = "${var.project_name}-portfolio-${var.environment}-cache"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "CacheKey"
 
