@@ -12,8 +12,7 @@ resource "aws_ecs_cluster" "main" {
   }
 
   lifecycle {
-    # Temporarily allow replacement during this deployment. Revert to true after apply
-    prevent_destroy = false
+    prevent_destroy = true
   }
 }
 
@@ -194,11 +193,11 @@ resource "aws_dynamodb_table" "portfolio_cache" {
   }
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-cache"
+    Name = "${var.project_name}-portfolio-${var.environment}-cache"
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
