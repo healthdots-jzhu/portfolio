@@ -170,6 +170,8 @@ data "aws_iam_policy_document" "ci_policy_doc" {
       "events:ListTagsForResource",
       "events:ListTargetsByRule",
       "events:PutRule",
+      "events:TagResource",
+      "events:UntagResource",
       "events:PutTargets",
 
       # CloudWatch Alarms for autoscaling
