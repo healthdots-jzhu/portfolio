@@ -1,0 +1,16 @@
+.loading-spinner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.loading-spinner-icon {
+  color: #3b82f6;
+}
+
+.loading-spinner-label {
+  font-size: 0.95rem;
+  color: #6b7280;
+  text-align: center;
+}

@@ -6,6 +6,8 @@ import { json } from '@codemirror/lang-json';
 import { getAccessToken } from '../services/authService';
 import { portfolioApi } from '../services/portfolioApi';
 import { useAppLocale } from '../hooks/useAppLocale';
+import useDelayedLoading from '../hooks/useDelayedLoading';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { getVersionStatusLabel, getVersionStatusClass, VersionStatusNames, VersionStatusEnum } from '../utils/versionStatusEnum';
 import { validateLocaleContent } from '../utils/localeValidator';
 import { LANGUAGE_OPTIONS, getLanguageName, searchLanguages } from '../utils/languageOptions';
@@ -90,6 +92,8 @@ export default function PortfolioEditor() {
   const [viewLoading, setViewLoading] = useState(false);
   const [error, setError] = useState(null);
   const languageDropdownRef = useRef(null);
+  const showLoading = useDelayedLoading(loading);
+  const showViewLoading = useDelayedLoading(viewLoading);
 
   const normalizeContentForDiff = (contentStr) => {
     if (contentStr === null || contentStr === undefined) return '';
@@ -1035,10 +1039,11 @@ export default function PortfolioEditor() {
   if (loading) {
     return (
       <div className="portfolio-editor">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>{locale.portfolioEditor.loadingEditor}</p>
-        </div>
+        {showLoading && (
+          <div className="loading-container">
+            <LoadingSpinner label={locale.portfolioEditor.loadingEditor} />
+          </div>
+        )}
       </div>
     );
   }
@@ -1522,12 +1527,12 @@ export default function PortfolioEditor() {
         )}
 
         <div className="editor-main">
-          {viewLoading && (
+          {showViewLoading && (
             <div className="editor-loading-overlay">
-              <div className="loading-spinner"></div>
-              <div className="loading-text">
-                {saving ? (locale.portfolioEditor.saving || 'Saving...') : locale.portfolioEditor.loadingEditor}
-              </div>
+              <LoadingSpinner
+                label={saving ? (locale.portfolioEditor.saving || 'Saving...') : locale.portfolioEditor.loadingEditor}
+                size="2x"
+              />
             </div>
           )}
           <div className="editor-toolbar">

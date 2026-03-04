@@ -4,6 +4,8 @@ import { LanguageProvider, useTranslations } from './context/LanguageContext';
 import { personExists, getAvailablePersons } from './locales';
 import { portfolioApi } from './services/portfolioApi';
 import { applyFontFamily } from './utils/fontLoader';
+import useDelayedLoading from './hooks/useDelayedLoading';
+import LoadingSpinner from './components/LoadingSpinner';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Landing from './pages/Landing';
@@ -117,6 +119,7 @@ function PersonLoader() {
   const { personId, versionId } = useParams();
   const [exists, setExists] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
+  const showLoading = useDelayedLoading(loading);
 
   React.useEffect(() => {
     const checkExists = async () => {
@@ -134,8 +137,8 @@ function PersonLoader() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <p>Loading portfolio...</p>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+        {showLoading && <LoadingSpinner label="Loading portfolio..." />}
       </div>
     );
   }

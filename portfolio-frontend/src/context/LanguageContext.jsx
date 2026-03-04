@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loadTranslations, getAvailableLanguages } from '../locales';
 import { applyTheme } from '../utils/themeApplier';
+import useDelayedLoading from '../hooks/useDelayedLoading';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const LanguageContext = createContext();
 
@@ -68,22 +70,13 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
   }, [translations]);
 
   // If loading, show a minimal loading state
+  const showLoadingIndicator = useDelayedLoading(loading || !translations);
+
   if (loading || !translations) {
     return (
-      <LanguageContext.Provider value={{
-        personId: personId || '',
-        language,
-        availableLanguages: ['en'],
-        setLanguage,
-        fontFamily: 'Montserrat',
-        loading: true,
-        error: null,
-        // During loading, suppress showing translation paths by returning empty strings
-        t: () => '',
-        resolvePath: (path) => path || '',
-      }}>
-        {children}
-      </LanguageContext.Provider>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+        {showLoadingIndicator && <LoadingSpinner label="Loading..." />}
+      </div>
     );
   }
 
