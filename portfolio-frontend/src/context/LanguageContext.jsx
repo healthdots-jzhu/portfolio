@@ -74,9 +74,9 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
 
   if (loading || !translations) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-        {showLoadingIndicator && <LoadingSpinner label="Loading..." />}
-      </div>
+      <>
+        {showLoadingIndicator && <LoadingSpinner label="Loading..." className="loading-spinner-fullscreen" />}
+      </>
     );
   }
 

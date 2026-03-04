@@ -58,9 +58,9 @@ const AuthCallback = () => {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-        {showLoading && <LoadingSpinner label="Completing sign-in..." />}
-      </div>
+      <>
+        {showLoading && <LoadingSpinner label="Completing sign-in..." className="loading-spinner-fullscreen" />}
+      </>
     );
   }
 

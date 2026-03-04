@@ -137,9 +137,9 @@ function PersonLoader() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-        {showLoading && <LoadingSpinner label="Loading portfolio..." />}
-      </div>
+      <>
+        {showLoading && <LoadingSpinner label="Loading portfolio..." className="loading-spinner-fullscreen" />}
+      </>
     );
   }
 
