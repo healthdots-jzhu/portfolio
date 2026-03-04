@@ -236,30 +236,6 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Log credential resolution for easier debugging in dev
-try
-{
-    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
-    startupLogger.LogInformation("Aws:Region={Region}, Aws:Profile={Profile}, CredentialsResolved={Resolved}", awsRegionName ?? "(none)", awsProfileName ?? "(none)", awsCredentials is not null);
-}
-catch
-{
-    // swallow logging errors during startup diagnostic logging
-}
-
-// Log ASPNETCORE_ENVIRONMENT and resolved DynamoCache table name for diagnostics
-try
-{
-    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
-    var aspEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? app.Environment.EnvironmentName;
-    var localesCacheTable = app.Configuration["DynamoCache:Tables:LocalesCache:TableName"] ?? "(not configured)";
-    startupLogger.LogInformation("Startup: ASPNETCORE_ENVIRONMENT={Env}, Resolved DynamoCache.LocalesCache.TableName={Table}", aspEnv, localesCacheTable);
-}
-catch
-{
-    // ignore logging errors during startup diagnostics
-}
-
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Beta"))
 {
     app.UseSwagger();

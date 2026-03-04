@@ -154,6 +154,17 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
       {
         Effect = "Allow"
         Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = [
+          "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
+        ]
+      }
+      ,
+      {
+        Effect = "Allow"
+        Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:DeleteItem",
