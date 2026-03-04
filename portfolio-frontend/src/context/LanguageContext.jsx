@@ -10,11 +10,77 @@ const getNestedValue = (obj, path) =>
   path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
 
 export const LanguageProvider = ({ children, personId, versionId }) => {
-  const [language, setLanguage] = useState('en');
+  const COOKIE_NAME = 'portfolio_language';
+  const COOKIE_MAX_DAYS = 365;
+
+  const getCookie = (name) => {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.split('; ').find((row) => row.startsWith(`${name}=`));
+    return match ? decodeURIComponent(match.split('=')[1]) : null;
+  };
+
+  const setCookie = (name, value, days = COOKIE_MAX_DAYS) => {
+    if (typeof document === 'undefined') return;
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    const secure = window.location && window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Expires=${expires}; SameSite=Lax${secure}`;
+  };
+
+  const detectInitialLanguage = () => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return 'en';
+    const params = new URLSearchParams(window.location.search || '');
+    const urlLang = params.get('lang') || params.get('locale');
+    if (urlLang) {
+      console.debug('LanguageContext.detectInitialLanguage - url search:', window.location.search, 'detected lang:', urlLang);
+      return urlLang;
+    }
+    const cookieLang = getCookie(COOKIE_NAME);
+    if (cookieLang) return cookieLang;
+    return 'en';
+  };
+
+  const [language, setLanguageState] = useState(() => detectInitialLanguage());
   const [translations, setTranslations] = useState(null);
   const [availableLanguages, setAvailableLanguages] = useState(['en']);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // wrapper to persist cookie when language is changed programmatically
+  const setLanguage = (lang) => {
+    setLanguageState(lang);
+    try {
+      setCookie(COOKIE_NAME, lang);
+    } catch (e) {
+      console.warn('Failed to set language cookie', e);
+    }
+  };
+
+  // ensure cookie is synced after mount / whenever language changes
+  useEffect(() => {
+    try {
+      setCookie(COOKIE_NAME, language);
+    } catch (e) {
+      // ignore
+    }
+  }, [language]);
+
+  // On client mount, re-check URL `lang`/`locale` param and apply it.
+  // This fixes cases where the initial render didn't pick up the query string
+  // (for example during hydration or router redirects).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search || '');
+      const urlLang = params.get('lang') || params.get('locale');
+      if (urlLang && urlLang !== language) {
+        console.debug('LanguageContext: applying URL lang override', urlLang);
+        setLanguage(urlLang);
+      }
+    } catch (e) {
+      // ignore malformed URL
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load translations when personId, versionId, or language changes
   useEffect(() => {
