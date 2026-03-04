@@ -811,15 +811,27 @@ export default function PortfolioEditor() {
         );
       }
       await portfolioApi.publishVersion(portfolio.id, selectedVersionId, token);
-      
+
+      // Clear client cache so subsequent reads return the newly published Live content
+      portfolioApi.clearCache();
+
       // Reload versions
       const versionHistory = await portfolioApi.getVersionHistory(portfolio.id, token);
       setVersions(versionHistory);
-      
-      // Update currentVersion
-      const updated = versionHistory.find(v => v.id === selectedVersionId);
-      setCurrentVersion(updated || null);
-      
+
+      // After publishing, switch the editor to Live and load the published content
+      setSelectedVersionId('live');
+      setCurrentVersion(null);
+
+      // Refresh portfolio metadata (available languages) and live locale content
+      const updatedPortfolio = await portfolioApi.getPortfolio(personId, { noCache: true });
+      setPortfolio(updatedPortfolio);
+      setLanguages(updatedPortfolio.availableLanguages || ['en']);
+
+      const liveContent = await portfolioApi.getLocale(personId, currentLanguage, { noCache: true });
+      setContent(liveContent);
+      setOriginalContent(liveContent);
+
       setHasChanges(false);
       setDraftContent({}); // Clear all draft content after publish
       alert(locale.messages.versionPublished);
