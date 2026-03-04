@@ -247,6 +247,19 @@ catch
     // swallow logging errors during startup diagnostic logging
 }
 
+// Log ASPNETCORE_ENVIRONMENT and resolved DynamoCache table name for diagnostics
+try
+{
+    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+    var aspEnv = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? app.Environment.EnvironmentName;
+    var localesCacheTable = app.Configuration["DynamoCache:Tables:LocalesCache:TableName"] ?? "(not configured)";
+    startupLogger.LogInformation("Startup: ASPNETCORE_ENVIRONMENT={Env}, Resolved DynamoCache.LocalesCache.TableName={Table}", aspEnv, localesCacheTable);
+}
+catch
+{
+    // ignore logging errors during startup diagnostics
+}
+
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Beta"))
 {
     app.UseSwagger();
