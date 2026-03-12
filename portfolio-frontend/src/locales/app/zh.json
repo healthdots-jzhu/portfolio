@@ -71,7 +71,33 @@
       "error": "错误",
       "failed": "加载作品集数据失败",
       "returHome": "返回主页",
-      "loadingEditor": "加载编辑器..."
+      "loadingEditor": "加载编辑器...",
+      "themeEditor": "主题",
+      "manageAssets": "管理资源"
+    },
+    "themeEditor": {
+      "title": "主题编辑器",
+      "close": "关闭",
+      "fontFamily": "字体",
+      "colors": "颜色",
+      "editColor": "编辑颜色",
+      "resetDefaults": "恢复默认值",
+      "bg": "背景",
+      "header": "标题",
+      "text": "正文",
+      "muted": "辅助文字",
+      "accent": "主强调色",
+      "accentSecondary": "次强调色",
+      "link": "卡片链接",
+      "surface": "卡片背景",
+      "footer": "页脚文字",
+      "fontSizes": "字号",
+      "size_hero": "主标题",
+      "size_title": "节标题",
+      "size_subtitle": "副标题",
+      "size_body": "正文",
+      "size_label": "标签",
+      "size_small": "小字"
     },
     "validation": {
       "required": "必填字段",
@@ -110,7 +136,8 @@
       "cannotDeletePublished": "已发布的版本无法删除。",
       "requiresAuth": "在创建版本之前，请保存您的更改",
       "confirmRequired": "发布需要确认",
-      "loadingPortfolios": "加载您的作品集..."
+        "loadingPortfolios": "加载您的作品集...",
+        "sessionExpiredSigningIn": "会话已过期 — 正在为您登录..."
     },
     "errors": {
       "authRequired": "需要身份验证",

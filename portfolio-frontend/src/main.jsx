@@ -3,10 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
 import './index.css';
-import { initTokenAutoRefresh } from './services/authService';
-
-// Initialize token auto-refresh on app startup (if a token already exists)
-initTokenAutoRefresh();
+// No global activity listeners — token refresh is triggered from API calls.
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

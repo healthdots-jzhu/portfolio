@@ -8,7 +8,7 @@ const FONT_WEIGHTS = ':wght@400;500;600;700';
 const FALLBACK_FONT_WEIGHTS = ':wght@400;700';
 
 // Map of fonts to their Google Fonts names, weights, and fallback fonts
-const FONT_REGISTRY = {
+export const FONT_REGISTRY = {
   'Montserrat': { weights: ':wght@400;600;700', fallback: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   'Poppins': { weights: ':wght@400;600;700', fallback: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   'Playfair Display': { weights: ':wght@700', fallback: 'Georgia, serif' },

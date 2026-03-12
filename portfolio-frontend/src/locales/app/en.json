@@ -71,7 +71,33 @@
       "error": "Error",
       "failed": "Failed to load portfolio data",
       "returHome": "Return to Home",
-      "loadingEditor": "Loading editor..."
+      "loadingEditor": "Loading editor...",
+      "themeEditor": "Theme",
+      "manageAssets": "Manage Assets"
+    },
+    "themeEditor": {
+      "title": "Theme Editor",
+      "close": "Close",
+      "fontFamily": "Font Family",
+      "colors": "Colors",
+      "editColor": "Edit color",
+      "resetDefaults": "Reset to Defaults",
+      "bg": "Background",
+      "header": "Headers & Titles",
+      "text": "Body Text",
+      "muted": "Muted / Subtitles",
+      "accent": "Primary Accent",
+      "accentSecondary": "Secondary Accent",
+      "link": "Card Links",
+      "surface": "Card Background",
+      "footer": "Footer Text",
+      "fontSizes": "Font Sizes",
+      "size_hero": "Hero Title",
+      "size_title": "Section Title",
+      "size_subtitle": "Subtitle",
+      "size_body": "Body Text",
+      "size_label": "Labels",
+      "size_small": "Fine Print"
     },
     "validation": {
       "required": "Required field",
@@ -110,7 +136,8 @@
       "cannotDeletePublished": "Published versions cannot be deleted.",
       "requiresAuth": "Please save your changes before creating a version",
       "confirmRequired": "Confirmation required to publish",
-      "loadingPortfolios": "Loading your portfolios..."
+      "loadingPortfolios": "Loading your portfolios...",
+      "sessionExpiredSigningIn": "Session expired — signing you in..."
     },
     "errors": {
       "authRequired": "Authentication required",

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { getAccessToken } from '../services/authService';
 import { portfolioApi } from '../services/portfolioApi';
 import { useAppLocale } from '../hooks/useAppLocale';
+import useDelayedLoading from '../hooks/useDelayedLoading';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { Verify as PuzzleCaptcha } from 'react-puzzle-captcha';
 import './PortfolioManager.css';
 import '../styles/react-puzzle-captcha.css';
@@ -24,6 +26,7 @@ export default function PortfolioManager() {
   const [captchaPassed, setCaptchaPassed] = useState(false);
   const navigate = useNavigate();
   const locale = useAppLocale();
+  const showLoading = useDelayedLoading(loading);
 
   useEffect(() => {
     loadPortfolios();
@@ -116,10 +119,11 @@ export default function PortfolioManager() {
   if (loading) {
     return (
       <div className="portfolio-manager">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>{locale.portfolioEditor.loading}</p>
-        </div>
+        {showLoading && (
+          <div className="loading-container">
+            <LoadingSpinner label={locale.portfolioEditor.loading} />
+          </div>
+        )}
       </div>
     );
   }

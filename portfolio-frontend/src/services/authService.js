@@ -1,7 +1,15 @@
+import { showToastLocalized } from '../utils/toast';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.healthdots.net';
 
 let authConfig = null;
-let refreshTimeoutId = null;
+
+// How close (in seconds) to `exp` we'll allow before refreshing on activity
+const ACCESS_TOKEN_REFRESH_BUFFER_SEC = 60; // refresh window
+// Debounce/rate-limit settings to avoid duplicate refresh requests
+const REFRESH_DEBOUNCE_MS = 1000; // 1 second
+let refreshInFlight = null;
+let lastRefreshAttempt = 0;
 
 const buildRedirectUri = (config) => {
   // Prefer relative redirectPath from backend; fall back to absolute redirectUri if provided
@@ -35,29 +43,50 @@ const decodeJwt = (token) => {
   }
 };
 
-const scheduleTokenRefresh = async () => {
-  if (refreshTimeoutId) {
-    clearTimeout(refreshTimeoutId);
-    refreshTimeoutId = null;
+// Previously we scheduled a background timer to refresh the access token.
+// New behavior: do NOT automatically re-issue tokens in the background. Instead
+// expose a helper callers can invoke on user activity to refresh when within
+// the configured buffer window.
+export const isAccessTokenNearExpiry = () => {
+  const token = getAccessToken();
+  if (!token) return false;
+  const payload = decodeJwt(token);
+  if (!payload || !payload.exp) return false;
+  const nowSec = Math.floor(Date.now() / 1000);
+  return (payload.exp - nowSec) <= ACCESS_TOKEN_REFRESH_BUFFER_SEC;
+};
+
+export const maybeRefreshAccessTokenOnActivity = async () => {
+  if (!isAccessTokenNearExpiry()) return;
+
+  const now = Date.now();
+  // If a refresh is already in flight, await and reuse it.
+  if (refreshInFlight) {
+    try {
+      return await refreshInFlight;
+    } catch (e) {
+      // fall through to allow retry
+    }
   }
 
-  const token = getAccessToken();
-  if (!token) return;
+  // Rate-limit attempts to avoid bursts
+  if (now - lastRefreshAttempt < REFRESH_DEBOUNCE_MS) return;
+  lastRefreshAttempt = now;
 
-  const payload = decodeJwt(token);
-  if (!payload || !payload.exp) return;
-
-  const nowSec = Math.floor(Date.now() / 1000);
-  const bufferSec = 60; // refresh 60s before expiry
-  const delayMs = Math.max((payload.exp - bufferSec - nowSec) * 1000, 0);
-
-  refreshTimeoutId = setTimeout(async () => {
+  refreshInFlight = (async () => {
     try {
-      await refreshAccessToken();
-    } catch (e) {
-      console.error('Auto refresh failed:', e);
+      return await refreshAccessToken();
+    } finally {
+      refreshInFlight = null;
     }
-  }, delayMs);
+  })();
+
+  try {
+    return await refreshInFlight;
+  } catch (e) {
+    console.error('Refresh on activity failed:', e);
+    throw e;
+  }
 };
 
 /**
@@ -135,12 +164,10 @@ export const exchangeCodeForTokens = async (code) => {
       document.cookie = `accessToken=${token}${domainAttr}; path=/; expires=${expiresDate.toUTCString()}; secure; samesite=lax`;
       // If refresh token is provided, store it too (Cognito returns when scope includes offline_access)
       if (data.refresh_token) {
-        const refreshExpiresDays = 30; // Typical Cognito default; adjust to your app client settings
+        const refreshExpiresDays = 1; // store refresh token cookie for 1 day
         const refreshExpires = new Date(Date.now() + refreshExpiresDays * 24 * 60 * 60 * 1000);
         document.cookie = `refreshToken=${data.refresh_token}${domainAttr}; path=/; expires=${refreshExpires.toUTCString()}; secure; samesite=lax`;
       }
-      // Schedule auto refresh based on token exp
-      await scheduleTokenRefresh();
     }
     
     return data;
@@ -199,10 +226,6 @@ export const clearTokens = () => {
   const domainAttr = isLocalhost ? '' : '; domain=.healthdots.net';
   document.cookie = `accessToken=${domainAttr}; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; secure; samesite=lax`;
   document.cookie = `refreshToken=${domainAttr}; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; secure; samesite=lax`;
-  if (refreshTimeoutId) {
-    clearTimeout(refreshTimeoutId);
-    refreshTimeoutId = null;
-  }
 };
 
 /**
@@ -245,13 +268,67 @@ export const refreshAccessToken = async () => {
     const domainAttr = isLocalhost ? '' : '; domain=.healthdots.net';
     document.cookie = `accessToken=${token}${domainAttr}; path=/; expires=${expiresDate.toUTCString()}; secure; samesite=lax`;
   }
-  await scheduleTokenRefresh();
   return data;
 };
 
 export const initTokenAutoRefresh = async () => {
-  const token = getAccessToken();
-  if (token) {
-    await scheduleTokenRefresh();
+  // No background auto-refresh. Callers should invoke `maybeRefreshAccessTokenOnActivity`
+  // on user interactions (clicks, navigation, etc.) to refresh when needed.
+};
+
+/**
+ * Redirect the user to the identity provider (Cognito) to sign in.
+ * This builds the authorize URL from the backend auth config and navigates.
+ */
+export const redirectToLogin = async () => {
+  try {
+    const config = await getAuthConfig();
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      response_type: 'code',
+      scope: 'email openid phone',
+      redirect_uri: config.redirectUri,
+    });
+    const authUrl = `https://${config.domain}/oauth2/authorize?${params.toString()}`;
+    // Store current location to return after sign-in
+    sessionStorage.setItem('preAuthUrl', window.location.href);
+    // Show a localized non-blocking toast then redirect
+    try {
+      showToastLocalized('messages.sessionExpiredSigningIn', 3000);
+      // Small delay so user can see the message
+      setTimeout(() => { window.location.href = authUrl; }, 700);
+    } catch (e) {
+      console.debug('showToastLocalized failed:', e);
+      window.location.href = authUrl;
+    }
+  } catch (e) {
+    console.error('Failed to redirect to login:', e);
+    throw e;
+  }
+};
+
+/**
+ * Redirect the user to Cognito Hosted UI logout endpoint to terminate the Cognito session
+ * and then return the user to the app. Falls back to local-only logout if the redirect fails.
+ */
+export const redirectToLogout = async () => {
+  try {
+    const config = await getAuthConfig();
+    // Destination Cognito will redirect back to after logout. Use app root by default.
+    const logoutUri = window.location.origin + '/';
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      logout_uri: logoutUri
+    });
+
+    // Clear local tokens first so UI updates immediately
+    clearTokens();
+
+    // Navigate to the Hosted UI logout which clears the Cognito session cookie
+    window.location.href = `https://${config.domain}/logout?${params.toString()}`;
+  } catch (err) {
+    console.error('Hosted logout failed, falling back to local logout:', err);
+    clearTokens();
+    window.location.href = '/';
   }
 };

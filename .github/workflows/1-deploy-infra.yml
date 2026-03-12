@@ -4,9 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment (staging, beta, prod)'
+        description: 'Target environment'
         required: false
         default: 'beta'
+        type: choice
+        options:
+          - staging
+          - beta
+          - prod
       postgres_connection_string:
         description: 'Postgres connection string (optional; only used for manual runs to update secret)'
         required: false
@@ -137,7 +142,42 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             echo "Manual run: will update secret values if inputs provided."
 
+            validate_postgres() {
+              local v="$1"
+              # minimal length
+              if [ ${#v} -lt 20 ]; then
+                echo "ERROR: Postgres connection string is too short (must be >=20 chars)"
+                return 1
+              fi
+              # require common keywords
+              for kw in "Host=" "Port=" "Database=" "Username=" "Password="; do
+                if ! echo "$v" | grep -q "$kw"; then
+                  echo "ERROR: Postgres connection string missing required token: $kw"
+                  return 1
+                fi
+              done
+              return 0
+            }
+
+            validate_github_token() {
+              local v="$1"
+              if [ ${#v} -lt 20 ]; then
+                echo "ERROR: GitHub Models API token is too short (must be >=20 chars)"
+                return 1
+              fi
+              # Accept common GitHub token prefixes
+              if echo "$v" | grep -Eq "ghp_|github_pat_|github_"; then
+                return 0
+              fi
+              echo "ERROR: GitHub Models API token missing expected prefix (ghp_, github_pat_, or github_)"
+              return 1
+            }
+
             if [ -n "$POSTGRES_INPUT" ]; then
+              if ! validate_postgres "${POSTGRES_INPUT}"; then
+                echo "Refusing to store invalid Postgres connection string."
+                exit 1
+              fi
               if create_or_put_secret "$SECRET_POSTGRES_NAME" "${POSTGRES_INPUT}"; then
                 echo "Stored value for $SECRET_POSTGRES_NAME"
               else
@@ -154,6 +194,10 @@ jobs:
             fi
 
             if [ -n "$GITHUB_INPUT" ]; then
+              if ! validate_github_token "${GITHUB_INPUT}"; then
+                echo "Refusing to store invalid GitHub Models API token."
+                exit 1
+              fi
               if create_or_put_secret "$SECRET_GITHUB_NAME" "${GITHUB_INPUT}"; then
                 echo "Stored value for $SECRET_GITHUB_NAME"
               else
@@ -228,7 +272,6 @@ jobs:
           echo "TF_VAR_ecs_task_cpu=${{ vars.ECS_TASK_CPU }}" >> $GITHUB_ENV
           echo "TF_VAR_ecs_task_memory=${{ vars.ECS_TASK_MEMORY }}" >> $GITHUB_ENV
           echo "TF_VAR_ecs_service_desired_count=${{ vars.ECS_SERVICE_DESIRED_COUNT }}" >> $GITHUB_ENV
-          echo "TF_VAR_s3_bucket_name=${{ vars.S3_BUCKET_NAME }}" >> $GITHUB_ENV
           echo "TF_VAR_acm_certificate_arn=${{ vars.ACM_CERTIFICATE_ARN }}" >> $GITHUB_ENV
           echo "TF_VAR_tf_state_key=${{ vars.TF_STATE_KEY }}" >> $GITHUB_ENV
           echo "TF_VAR_tf_state_bucket=${{ vars.TF_STATE_BUCKET }}" >> $GITHUB_ENV

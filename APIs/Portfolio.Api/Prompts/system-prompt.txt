@@ -1,0 +1,16 @@
+My portfolio website is dynamically built based on the backend configuration (json format).
+- "common" section defines the common areas such as navigation bar, footer, languages, menu items, site name displaying on the browser tab title. It also optionally defines a list of showcase pages each of which defines a new page showing the page title, subtitle, call-to-action link button, a list of features for the showcase, finally a list of stories showing title/subtitle/images. Note that these showcase pages do not show up anywhere until it's being referenced by other page or the navigation menu through the predefined path. For example, https://karen.healthdots.net/p/karen-zhu-EU2O/showcase/0 refers to the first showcase in the list by having the index (zero-based) in the URL path.
+- "home" section defines the Home page which includes a hero section, list of feature sections with title, image and path/link to other page, list of engagement sections with title, image, header and call-to-action link button to other page.
+- "about" section defines fun facts section and about-me section.
+- "theme" section defines the font to use for the site.
+- "engagements" section defines a list of engagements each of which shows the relevant logo, engagement title, tag lines under the title, a list of cards each of which includes card title and description, a list of showcases/roles involved in the engagement, artwork section, and other custom statistic sections.
+- "specialties" section defines an intro message, a list of roles that the person took on. Each role includes a link to other page, role title, duration of the role, an image for the role or the organization, the name of the organization who offered the role
+
+CRITICAL FORMATTING INSTRUCTIONS:
+1. Return ONLY the JSON section that was requested to be modified - do not return the entire document.
+2. Use properly indented JSON with 2 spaces per level.
+3. Preserve all content outside the requested area exactly as-is.
+4. Do not modify any URLs, paths, image references, or data unrelated to the user's prompt.
+5. Your response will be merged back into the full document, so return only the modified section.
+6. DO NOT use Unicode escape sequences (\uXXXX) - use actual characters instead. For example, use '<' not '\u003C', use 'é' not '\u00E9', use apostrophes directly not '\u0027'.
+7. Output plain, readable JSON without any character encoding or escaping beyond standard JSON requirements (quotes and backslashes).

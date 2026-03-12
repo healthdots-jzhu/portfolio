@@ -129,13 +129,14 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
+          "s3:GetObjectAttributes",
           "s3:PutObject",
           "s3:DeleteObject",
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${var.s3_bucket_name}",
-          "arn:aws:s3:::${var.s3_bucket_name}/*"
+          "arn:aws:s3:::${var.s3_bucket_frontend}",
+          "arn:aws:s3:::${var.s3_bucket_frontend}/*"
         ]
       },
       {
@@ -149,8 +150,62 @@ resource "aws_iam_role_policy" "ecs_task_permissions" {
           "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*"
         ]
       }
+      ,
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = [
+          "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
+        ]
+      }
+      ,
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:UpdateItem",
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem"
+        ]
+        Resource = [
+          aws_dynamodb_table.portfolio_cache.arn,
+          "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.project_name}-*"
+        ]
+      }
     ]
   })
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# DynamoDB table used as HTTP response cache for API
+resource "aws_dynamodb_table" "portfolio_cache" {
+  name         = "${var.project_name}-portfolio-${var.environment}-cache"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "CacheKey"
+
+  attribute {
+    name = "CacheKey"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "ExpiresAt"
+    enabled        = true
+  }
+
+  tags = {
+    Name = "${var.project_name}-portfolio-${var.environment}-cache"
+  }
 
   lifecycle {
     prevent_destroy = true

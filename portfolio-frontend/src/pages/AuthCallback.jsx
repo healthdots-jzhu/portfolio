@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { exchangeCodeForTokens } from '../services/authService';
+import useDelayedLoading from '../hooks/useDelayedLoading';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -8,6 +10,7 @@ const AuthCallback = () => {
   const [error, setError] = React.useState(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const hasProcessed = useRef(false);
+  const showLoading = useDelayedLoading(isLoading);
 
   useEffect(() => {
     // Prevent double execution in React StrictMode
@@ -55,10 +58,9 @@ const AuthCallback = () => {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <h2>Completing sign-in...</h2>
-        <p>Please wait while we process your authentication.</p>
-      </div>
+      <>
+        {showLoading && <LoadingSpinner label="Completing sign-in..." className="loading-spinner-fullscreen" />}
+      </>
     );
   }
 

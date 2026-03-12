@@ -113,6 +113,13 @@ var ssmClient = awsCredentials is not null
 
 builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(s3Client);
 builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(ssmClient);
+var dynamoClient = awsCredentials is not null
+    ? (awsRegion is not null ? new Amazon.DynamoDBv2.AmazonDynamoDBClient(awsCredentials, awsRegion) : new Amazon.DynamoDBv2.AmazonDynamoDBClient(awsCredentials))
+    : (awsRegion is not null ? new Amazon.DynamoDBv2.AmazonDynamoDBClient(awsRegion) : new Amazon.DynamoDBv2.AmazonDynamoDBClient());
+
+builder.Services.AddSingleton<Amazon.DynamoDBv2.IAmazonDynamoDB>(dynamoClient);
+// Register DynamoDB cache service
+builder.Services.AddSingleton<Portfolio.Api.Services.IDynamoCacheService, Portfolio.Api.Services.DynamoCacheService>();
 builder.Services.AddScoped<Portfolio.Api.Services.IS3Service, Portfolio.Api.Services.S3Service>();
 // Memory cache and token provider for GitHub Models API token caching
 builder.Services.AddMemoryCache();
@@ -184,7 +191,8 @@ builder.Services.AddHttpClient("GitHubModels", client =>
         try { client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", gitHubModelsApiToken); } catch { }
     }
     
-    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 30));
+    // Increase default timeout for potentially long model generation calls
+    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 120));
 })
 .AddHttpMessageHandler<Portfolio.Api.Services.GitHubModelsRetryHandler>();
 
@@ -227,17 +235,6 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
-
-// Log credential resolution for easier debugging in dev
-try
-{
-    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
-    startupLogger.LogInformation("Aws:Region={Region}, Aws:Profile={Profile}, CredentialsResolved={Resolved}", awsRegionName ?? "(none)", awsProfileName ?? "(none)", awsCredentials is not null);
-}
-catch
-{
-    // swallow logging errors during startup diagnostic logging
-}
 
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Beta"))
 {

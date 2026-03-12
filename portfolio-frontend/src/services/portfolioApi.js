@@ -1,7 +1,36 @@
   // ...existing code...
 // API service for portfolio backend
+import { maybeRefreshAccessTokenOnActivity, getAccessToken, redirectToLogin } from './authService';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const API_PREFIX = '/api';
+
+// Wrapper used for all API fetches so we can trigger the on-activity refresh
+// attempt before performing the request and ensure we use the freshest
+// access token (either provided or read from cookie after refresh).
+const apiFetch = async (url, opts = {}, providedToken) => {
+  try {
+    await maybeRefreshAccessTokenOnActivity();
+  } catch (e) {
+    // non-fatal — continue with request using whatever token we have
+    console.debug('maybeRefreshAccessTokenOnActivity failed', e);
+  }
+
+  const token = providedToken || getAccessToken();
+  const headers = { ...(opts.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+
+  const response = await fetch(url, { ...opts, headers });
+
+  if (response.status === 401) {
+    try {
+      await redirectToLogin();
+    } catch (e) {
+      console.error('Redirect to login failed:', e);
+    }
+    throw new Error('Authentication required');
+  }
+
+  return response;
+};
 
 class PortfolioApiService {
   /**
@@ -10,16 +39,33 @@ class PortfolioApiService {
    */
   async uploadAsset(personId, file, token) {
     const formData = new FormData();
-    formData.append('file', file);
-    // Optionally add file type or other metadata
+    // If the browser didn't resolve a MIME type (e.g. image/avif not registered on the OS),
+    // retype the file via a Blob so the multipart Content-Type header is correct.
+    const EXTENSION_MIME_MAP = {
+      avif: 'image/avif', webp: 'image/webp', png: 'image/png',
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+      mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo',
+      mkv: 'video/x-matroska', webm: 'video/webm',
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      xls: 'application/vnd.ms-excel',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+    let uploadFile = file;
+    if (!file.type || file.type === 'application/octet-stream') {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      const resolvedType = EXTENSION_MIME_MAP[ext];
+      if (resolvedType) {
+        uploadFile = new File([file], file.name, { type: resolvedType });
+      }
+    }
+    formData.append('file', uploadFile);
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/assets`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/assets`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
         body: formData,
-      });
+      }, token);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || `API error: ${response.status}`);
@@ -37,12 +83,9 @@ class PortfolioApiService {
    */
   async deleteAsset(personId, assetId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/assets/${assetId}`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/assets/${assetId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      });
+      }, token);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -75,7 +118,7 @@ class PortfolioApiService {
 
     try {
       const ts = noCache ? `?_ts=${Date.now()}` : '';
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}${ts}` , {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}${ts}` , {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -128,7 +171,7 @@ class PortfolioApiService {
     const requestPromise = (async () => {
       try {
         const ts = noCache ? `?_ts=${Date.now()}` : '';
-        const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}${ts}`, {
+        const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}${ts}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -178,13 +221,12 @@ class PortfolioApiService {
    */
   async getUserPortfolios(token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-      });
+      }, token);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -216,15 +258,14 @@ class PortfolioApiService {
 
     try {
       const ts = noCache ? `?_ts=${Date.now()}` : '';
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/edit/${personId}${ts}`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/edit/${personId}${ts}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
           ...(noCache ? { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } : {}),
         },
         cache: noCache ? 'no-store' : 'default',
-      });
+      }, token);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -264,14 +305,13 @@ class PortfolioApiService {
       
       console.log(`updateLocale request - personId: ${personId}, language: ${language}, contentJson: ${body.contentJson}`);
       
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(body),
-      });
+      }, token);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -300,18 +340,17 @@ class PortfolioApiService {
    */
   async createPortfolio(displayName, preferredPersonId, subdomain, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           displayName,
           preferredPersonId,
           subdomain,
         }),
-      });
+      }, token);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -337,13 +376,12 @@ class PortfolioApiService {
    */
   async getVersionHistory(portfolioId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -371,13 +409,12 @@ class PortfolioApiService {
     
     const requestPromise = (async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}`, {
+        const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
           },
-        });
+        }, token);
 
         if (!response.ok) {
           throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -398,24 +435,54 @@ class PortfolioApiService {
   }
 
   /**
+   * Generate locale content using AI
+   * POST /api/portfolios/{personId}/locales/{language}/generate
+   */
+  async generateLocaleWithAI(personId, language, area, prompt, versionId, languages, token) {
+    try {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/locales/${language}/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          area,
+          versionId,
+          languages
+        }),
+      }, token);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to generate locale with AI:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a new version (snapshot of current state)
    * Requires authentication
    * POST /api/portfolios/{portfolioId}/versions
    */
   async createVersion(portfolioId, label, changeDescription, stage, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           label,
           changeDescription,
           stage,
         }),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -435,13 +502,12 @@ class PortfolioApiService {
    */
   async stageVersion(portfolioId, versionId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/stage`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/stage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -461,13 +527,12 @@ class PortfolioApiService {
    */
   async unstageVersion(portfolioId, versionId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/unstage`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/unstage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -487,13 +552,12 @@ class PortfolioApiService {
    */
   async deleteVersion(portfolioId, versionId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -516,13 +580,12 @@ class PortfolioApiService {
    */
   async getStagedVersions(portfolioId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/staged`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/staged`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -542,14 +605,13 @@ class PortfolioApiService {
    */
   async updateVersionStatus(versionId, status, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/versions/${versionId}/status`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/versions/${versionId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ status }),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -569,14 +631,13 @@ class PortfolioApiService {
    */
   async publishVersion(portfolioId, versionId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/publish`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/publish`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ confirmed: true }),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -599,13 +660,12 @@ class PortfolioApiService {
    */
   async copyVersionToNew(portfolioId, versionId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/copy`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/copy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -625,14 +685,13 @@ class PortfolioApiService {
    */
   async updateVersionContent(versionId, language, contentJson, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/versions/${versionId}/locales/${language}`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/versions/${versionId}/locales/${language}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ contentJson }),
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -662,14 +721,13 @@ class PortfolioApiService {
       
       console.log(`validateLocale request - portfolioId: ${portfolioId}, language: ${language}, contentJson: ${normalizedContent}`);
       
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/validate`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/validate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
-      });
+      }, token);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -693,15 +751,14 @@ class PortfolioApiService {
     const { noCache = false } = options;
     try {
       const ts = noCache ? `?_ts=${Date.now()}` : '';
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/preview/${versionId}/locales/${language}${ts}`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/preview/${versionId}/locales/${language}${ts}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
           ...(noCache ? { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } : {}),
         },
         cache: noCache ? 'no-store' : 'default',
-      });
+      }, token);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
@@ -725,14 +782,13 @@ class PortfolioApiService {
       
       console.log(`updateVersionLocale request - portfolioId: ${portfolioId}, versionId: ${versionId}, language: ${language}, contentJson: ${body.contentJson}`);
       
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/locales/${language}`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}/versions/${versionId}/locales/${language}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(body),
-      });
+      }, token);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -772,13 +828,12 @@ class PortfolioApiService {
    */
   async deletePortfolio(portfolioId, token) {
     try {
-      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}`, {
+      const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${portfolioId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-      });
+      }, token);
       if (!response.ok) {
         throw new Error(`API error: ${response.status} ${response.statusText}`);
       }

@@ -71,7 +71,33 @@
       "error": "Erreur",
       "failed": "Échec du chargement des données du portefeuille",
       "returHome": "Retour à l'Accueil",
-      "loadingEditor": "Chargement de l'éditeur..."
+      "loadingEditor": "Chargement de l'éditeur...",
+      "themeEditor": "Thème",
+      "manageAssets": "Gérer les ressources"
+    },
+    "themeEditor": {
+      "title": "Éditeur de thème",
+      "close": "Fermer",
+      "fontFamily": "Famille de polices",
+      "colors": "Couleurs",
+      "editColor": "Modifier la couleur",
+      "resetDefaults": "Rétablir les valeurs par défaut",
+      "bg": "Arrière-plan",
+      "header": "Titres et en-têtes",
+      "text": "Corps du texte",
+      "muted": "Discret / Sous-titres",
+      "accent": "Accent principal",
+      "accentSecondary": "Accent secondaire",
+      "link": "Liens de carte",
+      "surface": "Arrière-plan des cartes",
+      "footer": "Texte du pied de page",
+      "fontSizes": "Tailles de police",
+      "size_hero": "Titre principal",
+      "size_title": "Titre de section",
+      "size_subtitle": "Sous-titre",
+      "size_body": "Corps du texte",
+      "size_label": "Étiquettes",
+      "size_small": "Petits caractères"
     },
     "validation": {
       "required": "Champ obligatoire",
@@ -110,7 +136,8 @@
       "cannotDeletePublished": "Les versions publiées ne peuvent pas être supprimées.",
       "requiresAuth": "Veuillez enregistrer vos modifications avant de créer une version",
       "confirmRequired": "Confirmation requise pour publier",
-      "loadingPortfolios": "Chargement de vos portefeuilles..."
+      "loadingPortfolios": "Chargement de vos portefeuilles...",
+      "sessionExpiredSigningIn": "Session expirée — connexion en cours..."
     },
     "errors": {
       "authRequired": "Authentification requise",

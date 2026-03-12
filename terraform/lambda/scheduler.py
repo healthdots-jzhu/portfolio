@@ -82,11 +82,21 @@ def handle_ec2(action: str) -> Dict[str, Any]:
         Dictionary with operation result
     """
     try:
-        # Check current state
+        # If the schedule is requesting a start, skip EC2 start so it remains manual.
+        if action == 'start':
+            logger.info("Skipping EC2 start due to manual-start policy")
+            return {
+                'instance_id': EC2_INSTANCE_ID,
+                'action': 'skipped',
+                'status': 'skipped_manual_start',
+                'reason': 'EC2 start is manual; scheduler will not start the instance'
+            }
+
+        # For stop actions, check current state and stop if appropriate
         response = ec2.describe_instances(InstanceIds=[EC2_INSTANCE_ID])
         current_state = response['Reservations'][0]['Instances'][0]['State']['Name']
         logger.info(f"EC2 current state: {current_state}")
-        
+
         if action == 'stop':
             if current_state in ['running', 'pending']:
                 ec2.stop_instances(InstanceIds=[EC2_INSTANCE_ID])
@@ -105,26 +115,7 @@ def handle_ec2(action: str) -> Dict[str, Any]:
                     'action': 'skipped',
                     'status': 'already_stopped'
                 }
-                
-        elif action == 'start':
-            if current_state in ['stopped', 'stopping']:
-                ec2.start_instances(InstanceIds=[EC2_INSTANCE_ID])
-                logger.info(f"Starting EC2 instance: {EC2_INSTANCE_ID}")
-                return {
-                    'instance_id': EC2_INSTANCE_ID,
-                    'previous_state': current_state,
-                    'action': 'started',
-                    'status': 'success'
-                }
-            else:
-                logger.info(f"EC2 instance already running or starting: {current_state}")
-                return {
-                    'instance_id': EC2_INSTANCE_ID,
-                    'state': current_state,
-                    'action': 'skipped',
-                    'status': 'already_running'
-                }
-                
+
     except Exception as e:
         logger.error(f"Error handling EC2: {str(e)}")
         return {

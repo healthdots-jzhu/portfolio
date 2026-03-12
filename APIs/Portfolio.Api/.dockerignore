@@ -16,4 +16,4 @@ portfolio-frontend/node_modules/
 **/.github
 *.nupkg
 publish/
-appsettings.*.json
+

@@ -678,15 +678,7 @@ resource "aws_iam_role_policy" "lambda_scheduler" {
         ]
         Resource = "*"
       },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = "arn:aws:logs:*:*:*"
-      }
+      # Removed CloudWatch Logs permissions per request (Lambda will not write logs)
     ]
   })
   lifecycle {
@@ -694,22 +686,12 @@ resource "aws_iam_role_policy" "lambda_scheduler" {
   }
 }
 
-# CloudWatch Log Group for Lambda
-resource "aws_cloudwatch_log_group" "lambda_scheduler" {
-  name              = "/aws/lambda/${aws_lambda_function.resource_scheduler.function_name}"
-  retention_in_days = 7
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-scheduler-logs"
-  }
-}
-
 # EventBridge Rule to stop resources at 12AM ET (5AM UTC during DST, 6AM UTC during standard time)
 # Using 5AM UTC for simplicity - adjust as needed for DST changes
 resource "aws_cloudwatch_event_rule" "stop_resources" {
   name                = "${var.project_name}-${var.environment}-stop-resources"
-  description         = "Stop EC2 and RDS at 12AM ET daily"
-  schedule_expression = "cron(0 5 * * ? *)"  # 12AM ET = 5AM UTC (during DST)
+  description         = "Stop EC2 and RDS at 7:00PM ET daily"
+  schedule_expression = "cron(0 0 * * ? *)"  # 7:00PM ET = 00:00 UTC (EST conversion)
 
   tags = {
     Name = "${var.project_name}-${var.environment}-stop-rule"
@@ -730,8 +712,8 @@ resource "aws_cloudwatch_event_target" "stop_resources" {
 # Using 2PM UTC for simplicity - adjust as needed for DST changes
 resource "aws_cloudwatch_event_rule" "start_resources" {
   name                = "${var.project_name}-${var.environment}-start-resources"
-  description         = "Start EC2 and RDS at 9AM ET daily"
-  schedule_expression = "cron(0 14 * * ? *)"  # 9AM ET = 2PM UTC (during DST)
+  description         = "Start EC2 and RDS at 9:45AM ET on weekdays (Mon-Fri)"
+  schedule_expression = "cron(45 14 ? * MON-FRI *)"  # 9:45AM ET = 14:45 UTC (weekday-only)
 
   tags = {
     Name = "${var.project_name}-${var.environment}-start-rule"

@@ -6,9 +6,12 @@ import { json } from '@codemirror/lang-json';
 import { getAccessToken } from '../services/authService';
 import { portfolioApi } from '../services/portfolioApi';
 import { useAppLocale } from '../hooks/useAppLocale';
+import useDelayedLoading from '../hooks/useDelayedLoading';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { getVersionStatusLabel, getVersionStatusClass, VersionStatusNames, VersionStatusEnum } from '../utils/versionStatusEnum';
 import { validateLocaleContent } from '../utils/localeValidator';
 import { LANGUAGE_OPTIONS, getLanguageName, searchLanguages } from '../utils/languageOptions';
+import ThemeEditorPanel from '../components/ThemeEditorPanel';
 import './PortfolioEditor.css';
 
 export default function PortfolioEditor() {
@@ -25,6 +28,13 @@ export default function PortfolioEditor() {
     const [compareDiff, setCompareDiff] = useState([]);
     const [compareLoading, setCompareLoading] = useState(false);
     const [compareError, setCompareError] = useState(null);
+    const [showAiOverlay, setShowAiOverlay] = useState(false);
+    const [aiArea, setAiArea] = useState('');
+    const [aiPrompt, setAiPrompt] = useState('');
+    const [aiSelectedLanguages, setAiSelectedLanguages] = useState([]);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState(null);
+  const [showThemeOverlay, setShowThemeOverlay] = useState(false);
   const { personId } = useParams();
   const navigate = useNavigate();
   const locale = useAppLocale();
@@ -82,6 +92,8 @@ export default function PortfolioEditor() {
   const [viewLoading, setViewLoading] = useState(false);
   const [error, setError] = useState(null);
   const languageDropdownRef = useRef(null);
+  const showLoading = useDelayedLoading(loading);
+  const showViewLoading = useDelayedLoading(viewLoading);
 
   const normalizeContentForDiff = (contentStr) => {
     if (contentStr === null || contentStr === undefined) return '';
@@ -242,6 +254,91 @@ export default function PortfolioEditor() {
     }
   };
 
+  const handleOpenAi = () => {
+    setAiArea('');
+    setAiPrompt('');
+    setAiSelectedLanguages([currentLanguage]);
+    setAiError(null);
+    setShowAiOverlay(true);
+  };
+
+  const handleAiSubmit = async () => {
+    if (!aiArea) {
+      setAiError(locale.portfolioEditor.aiAreaRequired || 'Please select an area to modify');
+      return;
+    }
+    if (!aiPrompt.trim()) {
+      setAiError(locale.portfolioEditor.aiPromptRequired || 'Please describe what you want to change');
+      return;
+    }
+    if (aiSelectedLanguages.length === 0) {
+      setAiError(locale.portfolioEditor.aiLanguageRequired || 'Please select at least one language');
+      return;
+    }
+
+    try {
+      setAiLoading(true);
+      setAiError(null);
+      const token = await getAccessToken();
+
+      const versionId = selectedVersionId === 'live' ? null : selectedVersionId;
+
+      const result = await portfolioApi.generateLocaleWithAI(
+        personId,
+        currentLanguage,
+        aiArea,
+        aiPrompt,
+        versionId,
+        aiSelectedLanguages,
+        token
+      );
+
+      // Success - close overlay, refresh data, and show comparison
+      setShowAiOverlay(false);
+      setAiLoading(false);
+
+      // Reload portfolio and versions
+      portfolioApi.clearCache();
+      await loadPortfolioData();
+
+      // Switch to the new/updated version
+      setSelectedVersionId(result.versionId);
+
+      // Open compare overlay to show changes
+      setCompareVersionA('live');
+      setCompareVersionB(result.versionId);
+      setShowCompareOverlay(true);
+
+      // Automatically show differences
+      setTimeout(async () => {
+        try {
+          const [leftContent, rightContent] = await Promise.all([
+            fetchCompareContent('live', currentLanguage),
+            fetchCompareContent(result.versionId, currentLanguage)
+          ]);
+          const normalizedLeft = normalizeContentForDiff(leftContent);
+          const normalizedRight = normalizeContentForDiff(rightContent);
+          const diff = computeLineDiff(normalizedLeft, normalizedRight);
+          setCompareDiff(diff);
+        } catch (err) {
+          console.error('Failed to show diff:', err);
+        }
+      }, 500);
+
+    } catch (err) {
+      setAiError((err && err.message) || 'Failed to generate content with AI');
+      setAiLoading(false);
+    }
+  };
+
+  const toggleAiLanguage = (lang) => {
+    if (aiSelectedLanguages.includes(lang)) {
+      setAiSelectedLanguages(aiSelectedLanguages.filter(l => l !== lang));
+    } else {
+      setAiSelectedLanguages([...aiSelectedLanguages, lang]);
+    }
+  };
+
   // Fetch assets when overlay opens or paging changes
   useEffect(() => {
     const fetchAssets = async () => {
@@ -271,10 +368,11 @@ export default function PortfolioEditor() {
     fetchAssets();
   }, [showAssetsOverlay, assetsPage, assetsPageSize, personId]);
 
-  // Determine if current view should be read-only (Published/Archived version)
-  const isReadOnlyVersion = selectedVersionId !== 'live' &&
+  // Determine if current view should be read-only (Live, Published, or Archived version)
+  const isReadOnlyVersion = selectedVersionId === 'live' || 
+    (selectedVersionId !== 'live' &&
     !!currentVersion &&
-    (currentVersion.status === VersionStatusEnum.Published || currentVersion.status === VersionStatusEnum.Archived);
+    (currentVersion.status === VersionStatusEnum.Published || currentVersion.status === VersionStatusEnum.Archived));
 
   useEffect(() => {
     loadPortfolioData();
@@ -713,15 +811,27 @@ export default function PortfolioEditor() {
         );
       }
       await portfolioApi.publishVersion(portfolio.id, selectedVersionId, token);
-      
+
+      // Clear client cache so subsequent reads return the newly published Live content
+      portfolioApi.clearCache();
+
       // Reload versions
       const versionHistory = await portfolioApi.getVersionHistory(portfolio.id, token);
       setVersions(versionHistory);
-      
-      // Update currentVersion
-      const updated = versionHistory.find(v => v.id === selectedVersionId);
-      setCurrentVersion(updated || null);
-      
+
+      // After publishing, switch the editor to Live and load the published content
+      setSelectedVersionId('live');
+      setCurrentVersion(null);
+
+      // Refresh portfolio metadata (available languages) and live locale content
+      const updatedPortfolio = await portfolioApi.getPortfolio(personId, { noCache: true });
+      setPortfolio(updatedPortfolio);
+      setLanguages(updatedPortfolio.availableLanguages || ['en']);
+
+      const liveContent = await portfolioApi.getLocale(personId, currentLanguage, { noCache: true });
+      setContent(liveContent);
+      setOriginalContent(liveContent);
+
       setHasChanges(false);
       setDraftContent({}); // Clear all draft content after publish
       alert(locale.messages.versionPublished);
@@ -738,12 +848,25 @@ export default function PortfolioEditor() {
       setSaving(true);
       const token = await getAccessToken();
       
-      // Copy content from the selected version to a new draft
-      const newVersion = await portfolioApi.copyVersionToNew(
-        portfolio.id,
-        selectedVersionId,
-        token
-      );
+      let newVersion;
+      
+      if (selectedVersionId === 'live') {
+        // For live version, create a new draft snapshot from current state
+        newVersion = await portfolioApi.createVersion(
+          portfolio.id,
+          null,
+          'Copied from live',
+          false,
+          token
+        );
+      } else {
+        // Copy content from the selected version to a new draft
+        newVersion = await portfolioApi.copyVersionToNew(
+          portfolio.id,
+          selectedVersionId,
+          token
+        );
+      }
       
       // Reload versions and switch to the new draft
       const versionHistory = await portfolioApi.getVersionHistory(portfolio.id, token);
@@ -928,10 +1051,11 @@ export default function PortfolioEditor() {
   if (loading) {
     return (
       <div className="portfolio-editor">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>{locale.portfolioEditor.loadingEditor}</p>
-        </div>
+        {showLoading && (
+          <div className="loading-container">
+            <LoadingSpinner label={locale.portfolioEditor.loadingEditor} />
+          </div>
+        )}
       </div>
     );
   }
@@ -966,6 +1090,19 @@ export default function PortfolioEditor() {
           >
             {locale.portfolioEditor.manageAssets || 'Manage Assets'}
           </button>
+          {!isReadOnlyVersion && (
+            <button
+              className="btn-theme"
+              onClick={() => setShowThemeOverlay(true)}
+            >
+              {locale.portfolioEditor.themeEditor || 'Theme'}
+            </button>
+          )}
+          {!isReadOnlyVersion && (
+            <button className="btn-ai" onClick={handleOpenAi}>
+              {locale.portfolioEditor.tryAi || 'Try AI'}
+            </button>
+          )}
           <button className="btn-compare" onClick={handleOpenCompare}>
             {locale.portfolioEditor.compare || 'Compare'}
           </button>
@@ -1005,6 +1142,7 @@ export default function PortfolioEditor() {
                     id="asset-upload-input"
                     type="file"
                     style={{ display: 'none' }}
+                    accept="image/png,image/jpeg,image/gif,image/webp,image/avif,.avif,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.doc,.docx,.xls,.xlsx"
                     multiple
                     onChange={handleAssetUpload}
                   />
@@ -1215,6 +1353,105 @@ export default function PortfolioEditor() {
             <div className="compare-modal-backdrop" onClick={() => setShowCompareOverlay(false)}></div>
           </div>
         )}
+        {showAiOverlay && (
+          <div className="ai-overlay">
+            <div className="ai-modal">
+              <div className="ai-modal-header">
+                <h2>{locale.portfolioEditor.tryAi || 'Try AI'}</h2>
+                <button
+                  className="ai-modal-close"
+                  onClick={() => setShowAiOverlay(false)}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="ai-modal-body">
+                <div className="ai-form">
+                  <div className="ai-field">
+                    <label>{locale.portfolioEditor.aiSelectArea || 'Select Area to Modify'}</label>
+                    <select
+                      value={aiArea}
+                      onChange={(e) => {
+                        setAiArea(e.target.value);
+                        setAiError(null);
+                      }}
+                    >
+                      <option value="">{locale.portfolioEditor.aiChooseArea || 'Choose an area...'}</option>
+                      <option value="Languages">Languages</option>
+                      <option value="Menu">Menu</option>
+                      <option value="Footer">Footer</option>
+                      <option value="Showcase Pages">Showcase Pages</option>
+                      <option value="Theme">Theme</option>
+                      <option value="Home Page">Home Page</option>
+                      <option value="About Me Page">About Me Page</option>
+                      <option value="Engagements Page">Engagements Page</option>
+                      <option value="Specialties Page">Specialties Page</option>
+                    </select>
+                  </div>
+
+                  <div className="ai-field">
+                    <label>{locale.portfolioEditor.aiDescribeChange || 'Describe what you want to change'}</label>
+                    <textarea
+                      value={aiPrompt}
+                      onChange={(e) => {
+                        setAiPrompt(e.target.value);
+                        setAiError(null);
+                      }}
+                      placeholder={locale.portfolioEditor.aiPromptPlaceholder || 'E.g., Change the footer text to include social media links...'}
+                      rows={5}
+                    />
+                  </div>
+
+                  <div className="ai-field">
+                    <label>{locale.portfolioEditor.aiSelectLanguages || 'Apply to Languages'}</label>
+                    <div className="ai-language-checkboxes">
+                      {languages.map((lang) => (
+                        <label key={lang} className="ai-language-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={aiSelectedLanguages.includes(lang)}
+                            onChange={() => toggleAiLanguage(lang)}
+                          />
+                          <span>{lang.toUpperCase()} - {getLanguageName(lang)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {aiError && (
+                    <div className="ai-error">
+                      {aiError}
+                    </div>
+                  )}
+
+                  <div className="ai-actions">
+                    <button
+                      className="ai-submit-btn"
+                      onClick={handleAiSubmit}
+                      disabled={aiLoading}
+                    >
+                      {aiLoading
+                        ? (locale.portfolioEditor.aiProcessing || 'Processing...')
+                        : (locale.portfolioEditor.aiSubmit || 'Submit')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="ai-modal-backdrop" onClick={() => !aiLoading && setShowAiOverlay(false)}></div>
+          </div>
+        )}
+        {showThemeOverlay && (
+          <ThemeEditorPanel
+            content={content}
+            onApply={(newContent) => {
+              setContent(newContent);
+            }}
+            onClose={() => setShowThemeOverlay(false)}
+          />
+        )}
         {showVersionHistory && (
           <div className={`editor-sidebar ${showVersionHistory ? 'mobile-visible' : ''}`}>
             <div className="version-history">
@@ -1302,12 +1539,12 @@ export default function PortfolioEditor() {
         )}
 
         <div className="editor-main">
-          {viewLoading && (
+          {showViewLoading && (
             <div className="editor-loading-overlay">
-              <div className="loading-spinner"></div>
-              <div className="loading-text">
-                {saving ? (locale.portfolioEditor.saving || 'Saving...') : locale.portfolioEditor.loadingEditor}
-              </div>
+              <LoadingSpinner
+                label={saving ? (locale.portfolioEditor.saving || 'Saving...') : locale.portfolioEditor.loadingEditor}
+                size="2x"
+              />
             </div>
           )}
           <div className="editor-toolbar">
@@ -1422,7 +1659,7 @@ export default function PortfolioEditor() {
                 </>
               )}
               
-              {selectedVersionId !== 'live' && currentVersion && (currentVersion.status === VersionStatusEnum.Published || currentVersion.status === VersionStatusEnum.Archived) && (
+              {(selectedVersionId === 'live' || (selectedVersionId !== 'live' && currentVersion && (currentVersion.status === VersionStatusEnum.Published || currentVersion.status === VersionStatusEnum.Archived))) && (
                 <button 
                   onClick={handleCopyToNewVersion} 
                   className="btn-copy"
@@ -1469,6 +1706,14 @@ export default function PortfolioEditor() {
                   </ul>
                 </div>
               )}
+
+            </div>
+          )}
+
+          {/* Unsaved changes banner (e.g. theme/font changes) */}
+          {hasChanges && (
+            <div className="unsaved-warning" role="status" aria-live="polite">
+              {locale.portfolioEditor.unsavedChangesMessage || '* some change is not yet saved'}
             </div>
           )}
 

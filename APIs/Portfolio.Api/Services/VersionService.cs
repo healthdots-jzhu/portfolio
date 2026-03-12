@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Portfolio.Api.Data;
 using Portfolio.Api.Models;
 using Portfolio.Api.Models.Dto;
@@ -25,11 +26,37 @@ public class VersionService : IVersionService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<VersionService> _logger;
+    private readonly IConfiguration _configuration;
+    private readonly IDynamoCacheService _cacheService;
+    private readonly string? _resolvedDynamoCacheTableName;
 
-    public VersionService(AppDbContext context, ILogger<VersionService> logger)
+    public VersionService(AppDbContext context, ILogger<VersionService> logger, IConfiguration configuration, IDynamoCacheService cacheService)
     {
         _context = context;
         _logger = logger;
+        _configuration = configuration;
+        _cacheService = cacheService;
+        _resolvedDynamoCacheTableName = ResolveDynamoCacheTableName("LocalesCache");
+    }
+
+    private string? ResolveDynamoCacheTableName(string key)
+    {
+        try
+        {
+            var tables = _configuration.GetSection("DynamoCache:Tables");
+            if (tables.Exists())
+            {
+                var tableName = tables.GetSection(key)["TableName"];
+                if (!string.IsNullOrWhiteSpace(tableName)) return tableName;
+            }
+
+            var legacy = _configuration["DynamoCache:TableName"];
+            return string.IsNullOrWhiteSpace(legacy) ? null : legacy;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public async Task<PortfolioVersion> CreateVersionAsync(string portfolioId, Guid userId, CreateVersionRequest request)
@@ -202,6 +229,20 @@ public class VersionService : IVersionService
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            // Invalidate server-side cache so public GetLocale returns the newly published content
+            try
+            {
+                var personId = version.Portfolio?.PersonId;
+                if (!string.IsNullOrWhiteSpace(personId) && !string.IsNullOrWhiteSpace(_resolvedDynamoCacheTableName))
+                {
+                    await _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to invalidate cache after publishing version {VersionId}", version.Id);
+            }
+
             return version;
         }
         catch (Exception)
@@ -290,59 +331,109 @@ public class VersionService : IVersionService
             return null;
         }
 
-        // Get the next version number
-        var maxVersionNumber = await _context.PortfolioVersions
-            .Where(v => v.PortfolioId == sourceVersion.PortfolioId && !v.IsDeleted)
-            .MaxAsync(v => (int?)v.VersionNumber) ?? 0;
-
         // Create new snapshot from source version's locale snapshot
         var snapshotJson = sourceVersion.LocaleSnapshot;
 
-        // Create the new version
-        var newVersion = new PortfolioVersion
+        // Retry logic to handle concurrent inserts that may cause unique constraint
+        // violations on (PortfolioId, VersionNumber). This mirrors CreateVersionAsync.
+        const int maxRetries = 3;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            PortfolioId = sourceVersion.PortfolioId,
-            VersionNumber = maxVersionNumber + 1,
-            Status = VersionStatus.Draft,
-            Label = $"Restored from v{sourceVersion.VersionNumber}",
-            ChangeDescription = null,
-            LocaleSnapshot = snapshotJson,
-            CreatedBy = userId,
-            CreatedAt = DateTimeOffset.UtcNow,
-            PublishedAt = null,
-            IsCurrentPublished = false,
-            IsDeleted = false
-        };
-
-        _context.PortfolioVersions.Add(newVersion);
-        await _context.SaveChangesAsync();
-
-        // Also update live content with the snapshot
-        var localeData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(snapshotJson) ?? new();
-        foreach (var kvp in localeData)
-        {
-            var language = kvp.Key;
-            var contentJson = kvp.Value.GetRawText();
-            var locale = await _context.PortfolioLocales
-                .FirstOrDefaultAsync(l => l.PortfolioId == sourceVersion.PortfolioId && l.Language == language);
-
-            if (locale != null)
+            // Use a transaction and lock the portfolio row to serialize version-number
+            // assignment for this portfolio. This prevents two concurrent requests
+            // from reading the same max VersionNumber.
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                locale.ContentJson = contentJson;
-            }
-            else
-            {
-                _context.PortfolioLocales.Add(new PortfolioLocale
+                // Lock portfolio row FOR UPDATE
+                await _context.Database.ExecuteSqlInterpolatedAsync($"SELECT 1 FROM \"Portfolios\" WHERE \"Id\" = {sourceVersion.PortfolioId} FOR UPDATE");
+
+                // Re-read max version number while holding the lock
+                var maxVersionNumber = await _context.PortfolioVersions
+                    .Where(v => v.PortfolioId == sourceVersion.PortfolioId)
+                    .MaxAsync(v => (int?)v.VersionNumber) ?? 0;
+
+                // Create the new version
+                var newVersion = new PortfolioVersion
                 {
                     PortfolioId = sourceVersion.PortfolioId,
-                    Language = language,
-                    ContentJson = contentJson
-                });
+                    VersionNumber = maxVersionNumber + 1,
+                    Status = VersionStatus.Draft,
+                    Label = $"Restored from v{sourceVersion.VersionNumber}",
+                    ChangeDescription = null,
+                    LocaleSnapshot = snapshotJson,
+                    CreatedBy = userId,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    PublishedAt = null,
+                    IsCurrentPublished = false,
+                    IsDeleted = false
+                };
+
+                _context.PortfolioVersions.Add(newVersion);
+                await _context.SaveChangesAsync();
+
+                // Also update live content with the snapshot
+                var localeData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(snapshotJson) ?? new();
+                foreach (var kvp in localeData)
+                {
+                    var language = kvp.Key;
+                    var contentJson = kvp.Value.GetRawText();
+                    var locale = await _context.PortfolioLocales
+                        .FirstOrDefaultAsync(l => l.PortfolioId == sourceVersion.PortfolioId && l.Language == language);
+
+                    if (locale != null)
+                    {
+                        locale.ContentJson = contentJson;
+                    }
+                    else
+                    {
+                        _context.PortfolioLocales.Add(new PortfolioLocale
+                        {
+                            PortfolioId = sourceVersion.PortfolioId,
+                            Language = language,
+                            ContentJson = contentJson
+                        });
+                    }
+                }
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                // Invalidate server-side cache for this portfolio so public GetLocale returns updated content
+                try
+                {
+                    var personId = portfolio?.PersonId;
+                    if (!string.IsNullOrWhiteSpace(personId) && !string.IsNullOrWhiteSpace(_resolvedDynamoCacheTableName))
+                    {
+                        await _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to invalidate cache after copying version {VersionId}", versionId);
+                }
+
+                return newVersion;
+            }
+            catch (DbUpdateException ex) when (attempt < maxRetries - 1 && IsUniqueConstraintViolation(ex))
+            {
+                _logger.LogWarning(ex, "Version number conflict when copying version {VersionId} for portfolio {PortfolioId}, attempt {Attempt}",
+                    versionId, sourceVersion.PortfolioId, attempt + 1);
+
+                // Rollback, clear tracked entities and retry
+                await transaction.RollbackAsync();
+                _context.ChangeTracker.Clear();
+                await Task.Delay(TimeSpan.FromMilliseconds(50 * (attempt + 1)));
+                continue;
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
-        await _context.SaveChangesAsync();
 
-        return newVersion;
+        throw new InvalidOperationException($"Failed to copy version {versionId} due to concurrent version-number conflicts after {maxRetries} attempts");
     }
 
     public async Task<bool> UpdateVersionLocaleAsync(int versionId, string language, string contentJson)

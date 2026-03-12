@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useTranslations } from '../context/LanguageContext';
 import { parseIconSyntax } from '../utils/parseIconSyntax';
+import useDelayedLoading from '../hooks/useDelayedLoading';
+import LoadingSpinner from '../components/LoadingSpinner';
 import './Engagements.css';
 
 const Engagements = () => {
@@ -8,6 +10,7 @@ const Engagements = () => {
   const [expandedCards, setExpandedCards] = useState({});
   const contentRefs = useRef({});
   const [isClipped, setIsClipped] = useState({});
+  const showLoading = useDelayedLoading(loading);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -15,7 +18,11 @@ const Engagements = () => {
 
   // Wait for translations to load before accessing engagements data
   if (loading) {
-    return <div className="engagements-page-wrapper">Loading...</div>;
+    return (
+      <div className="engagements-page-wrapper" style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+        {showLoading && <LoadingSpinner />}
+      </div>
+    );
   }
 
   // Support multiple engagements (array) while remaining backwards-compatible

@@ -4,6 +4,8 @@ import { LanguageProvider, useTranslations } from './context/LanguageContext';
 import { personExists, getAvailablePersons } from './locales';
 import { portfolioApi } from './services/portfolioApi';
 import { applyFontFamily } from './utils/fontLoader';
+import useDelayedLoading from './hooks/useDelayedLoading';
+import LoadingSpinner from './components/LoadingSpinner';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Landing from './pages/Landing';
@@ -26,7 +28,8 @@ import './App.css';
 // Subdomain to person ID mapping
 const SUBDOMAIN_MAP = {
   'karen': 'karen-zhu-EU2O',
-  'jason': 'jason-zhu-EU1O'
+  'jason': 'jason-zhu-EU1O',
+  'tracey': 'portfolio-9f2f80a6',
 };
 
 function SubdomainRedirect() {
@@ -116,6 +119,7 @@ function PersonLoader() {
   const { personId, versionId } = useParams();
   const [exists, setExists] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
+  const showLoading = useDelayedLoading(loading);
 
   React.useEffect(() => {
     const checkExists = async () => {
@@ -133,9 +137,9 @@ function PersonLoader() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <p>Loading portfolio...</p>
-      </div>
+      <>
+        {showLoading && <LoadingSpinner label="Loading portfolio..." className="loading-spinner-fullscreen" />}
+      </>
     );
   }
 

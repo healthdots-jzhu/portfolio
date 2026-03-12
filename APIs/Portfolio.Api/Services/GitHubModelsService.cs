@@ -49,7 +49,10 @@ namespace Portfolio.Api.Services
                 throw new ModelGenerationException("GitHub Models API token is not configured");
             }
 
-            _logger.LogDebug("Using GitHub Models token from {Source}", tokenSource);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("Using GitHub Models token from {Source}", tokenSource);
+            }
 
             var client = _httpClientFactory.CreateClient("GitHubModels");
 
@@ -57,13 +60,14 @@ namespace Portfolio.Api.Services
             var requestPath = "v1/responses";
             object payload;
 
-            // Build a strict instruction asking for pure JSON object output.
-            var instruction = $"You are a JSON generator. Produce a single JSON object, no surrounding text. The object must be valid JSON and represent the locale content for language '{language}'. Respond only with JSON.";
+            // Use provided system prompt or default instruction
+            var instruction = options?.SystemPrompt ?? $"You are a JSON generator. Produce a single JSON object, no surrounding text. The object must be valid JSON and represent the locale content for language '{language}'. Respond only with JSON.";
 
             if (!string.IsNullOrWhiteSpace(baseUrl) && baseUrl.Contains("models.github.ai", StringComparison.OrdinalIgnoreCase))
             {
                 // models.github.ai expects a chat/completions-like payload with messages
                 requestPath = "inference/chat/completions";
+                // Use max_completion_tokens (Responses API style) to be compatible with newer models
                 payload = new
                 {
                     model = model,
@@ -72,7 +76,7 @@ namespace Portfolio.Api.Services
                         new { role = "user", content = prompt }
                     },
                     temperature = options?.Temperature,
-                    max_tokens = options?.MaxTokens
+                    max_completion_tokens = options?.MaxTokens
                 };
 
                 // Ensure Accept header is standard JSON for this host (named client already set a default; override if needed)
@@ -82,6 +86,7 @@ namespace Portfolio.Api.Services
             {
                 // Default to GitHub Responses API shape
                 requestPath = "v1/responses";
+                // Responses API expects max_completion_tokens instead of max_tokens
                 payload = new
                 {
                     model = model,
@@ -89,7 +94,7 @@ namespace Portfolio.Api.Services
                     {
                         prompt = instruction + "\n\n" + prompt,
                         language = language,
-                        max_tokens = options?.MaxTokens,
+                        max_completion_tokens = options?.MaxTokens,
                         temperature = options?.Temperature
                     }
                 };
@@ -137,6 +142,14 @@ namespace Portfolio.Api.Services
                 if (respText.Length > maxResponseSize)
                 {
                     throw new ModelGenerationException("Model response exceeds allowed size");
+                }
+
+                // Optionally log the raw model response for debugging (disabled by default)
+                var logResponse = _configuration.GetValue<bool>("GitHubModels:LogResponseText", false);
+                if (logResponse && _logger.IsEnabled(LogLevel.Debug))
+                {
+                    // Truncate for logs to avoid huge payloads in debug output
+                    _logger.LogDebug("GitHub Models raw response: {Response}", Truncate(respText, 2000));
                 }
 
                 // Parse the wrapper response and attempt to extract the assistant content
@@ -241,33 +254,85 @@ namespace Portfolio.Api.Services
                     throw new ModelGenerationException("Assistant content exceeds allowed size");
                 }
 
-                // Attempt to parse assistantText as JSON (the desired locale object)
-                try
+                // Attempt to parse assistantText as JSON (the desired locale object).
+                // Some models return a quoted JSON string or use unicode-escaped quotes (e.g. "\\u0022").
+                // Handle these cases by unwrapping string values and unescaping unicode sequences
+                // until we obtain an object/array or exhaust recovery attempts.
+                // First, aggressively unescape any Unicode sequences in the entire response
+                string resolved = UnescapeUnicodeSequences(assistantText);
+                // Also handle common JSON escapes
+                resolved = resolved.Replace("\\\"", "\"").Replace("\\\\", "\\");
+                
+                for (int attempt = 0; attempt < 4; attempt++)
                 {
-                    using var localeDoc = JsonDocument.Parse(assistantText);
-                    if (localeDoc.RootElement.ValueKind != JsonValueKind.Object && localeDoc.RootElement.ValueKind != JsonValueKind.Array)
+                    try
                     {
-                        throw new ModelGenerationException("Assistant content is not a JSON object or array");
-                    }
+                        using var localeDoc = JsonDocument.Parse(resolved);
+                        var rootKind = localeDoc.RootElement.ValueKind;
+                        if (rootKind == JsonValueKind.Object || rootKind == JsonValueKind.Array)
+                        {
+                            return localeDoc.RootElement.GetRawText();
+                        }
 
-                    var localeJson = localeDoc.RootElement.GetRawText();
-                    return localeJson;
+                        if (rootKind == JsonValueKind.String)
+                        {
+                            // Unwrap the string and try again
+                            var inner = localeDoc.RootElement.GetString();
+                            if (string.IsNullOrWhiteSpace(inner)) break;
+                            resolved = inner;
+                            continue;
+                        }
+
+                        break;
+                    }
+                    catch (JsonException)
+                    {
+                        // Try to unescape common unicode-escaped sequences like \\u0022 and simple backslash-escapes
+                        var unescaped = UnescapeUnicodeSequences(resolved);
+                        // Also unescape escaped quotes/backslashes
+                        unescaped = unescaped.Replace("\\\"", "\"").Replace("\\\\", "\\");
+                        if (unescaped == resolved) break;
+                        resolved = unescaped;
+                        continue;
+                    }
                 }
-                catch (JsonException ex)
-                {
-                    _logger.LogWarning(ex, "Assistant content is not valid JSON: {Snippet}", Truncate(assistantText, 600));
-                    throw new ModelGenerationException("Assistant content was not valid JSON", ex);
-                }
+
+                _logger.LogWarning("Assistant content could not be normalized to JSON: {Snippet}", Truncate(assistantText, 600));
+                throw new ModelGenerationException("Assistant content was not valid JSON");
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
+                // Caller cancelled via the provided CancellationToken - propagate
                 throw;
+            }
+            catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+            {
+                // HttpClient.Timeout triggers TaskCanceledException without the caller's token
+                _logger.LogError(ex, "Model generation request timed out");
+                throw new ModelGenerationException("Model generation request timed out", ex);
             }
             catch (Exception ex) when (!(ex is ModelGenerationException))
             {
                 _logger.LogError(ex, "Model generation failed");
                 throw new ModelGenerationException("Model generation failed", ex);
             }
+        }
+
+        private static string UnescapeUnicodeSequences(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return input;
+            return System.Text.RegularExpressions.Regex.Replace(input, "\\\\u([0-9A-Fa-f]{4})", m =>
+            {
+                try
+                {
+                    var code = Convert.ToInt32(m.Groups[1].Value, 16);
+                    return char.ConvertFromUtf32(code);
+                }
+                catch
+                {
+                    return m.Value;
+                }
+            });
         }
 
         private static string Truncate(string s, int max)
