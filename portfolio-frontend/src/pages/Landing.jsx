@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAuthConfig, getAccessToken, clearTokens, redirectToLogin } from '../services/authService';
+import { getAuthConfig, getAccessToken, redirectToLogin, redirectToLogout } from '../services/authService';
 import { useAppLocale } from '../hooks/useAppLocale';
 import '../App.css';
 import './Landing.css';
@@ -39,8 +39,7 @@ const Landing = () => {
   }, []);
 
   const handleLogout = () => {
-    clearTokens();
-    window.location.href = '/';
+    redirectToLogout();
   };
 
   return (

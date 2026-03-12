@@ -19,6 +19,7 @@ const PersonHome = () => {
   };
 
   const topEngagements = Array.isArray(t('home.topEngagements')) ? t('home.topEngagements') : [];
+  const topEngagementsTitle = t('home.topEngagementsTitle');
 
   // Helper function to resolve link paths
   const resolveLink = (link) => {
@@ -64,6 +65,7 @@ const PersonHome = () => {
       {/* Top Engagements */}
       {topEngagements.length > 0 && (
         <section className="home-engagements">
+          {topEngagementsTitle && <h2>{topEngagementsTitle}</h2>}
           {topEngagements.map((engagement, index) => {
             const resolvedPath = resolveLink(engagement.cta_path);
             return (

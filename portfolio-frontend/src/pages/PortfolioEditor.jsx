@@ -6,9 +6,12 @@ import { json } from '@codemirror/lang-json';
 import { getAccessToken } from '../services/authService';
 import { portfolioApi } from '../services/portfolioApi';
 import { useAppLocale } from '../hooks/useAppLocale';
+import useDelayedLoading from '../hooks/useDelayedLoading';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { getVersionStatusLabel, getVersionStatusClass, VersionStatusNames, VersionStatusEnum } from '../utils/versionStatusEnum';
 import { validateLocaleContent } from '../utils/localeValidator';
 import { LANGUAGE_OPTIONS, getLanguageName, searchLanguages } from '../utils/languageOptions';
+import ThemeEditorPanel from '../components/ThemeEditorPanel';
 import './PortfolioEditor.css';
 
 export default function PortfolioEditor() {
@@ -31,6 +34,7 @@ export default function PortfolioEditor() {
     const [aiSelectedLanguages, setAiSelectedLanguages] = useState([]);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState(null);
+  const [showThemeOverlay, setShowThemeOverlay] = useState(false);
   const { personId } = useParams();
   const navigate = useNavigate();
   const locale = useAppLocale();
@@ -88,6 +92,8 @@ export default function PortfolioEditor() {
   const [viewLoading, setViewLoading] = useState(false);
   const [error, setError] = useState(null);
   const languageDropdownRef = useRef(null);
+  const showLoading = useDelayedLoading(loading);
+  const showViewLoading = useDelayedLoading(viewLoading);
 
   const normalizeContentForDiff = (contentStr) => {
     if (contentStr === null || contentStr === undefined) return '';
@@ -805,15 +811,27 @@ export default function PortfolioEditor() {
         );
       }
       await portfolioApi.publishVersion(portfolio.id, selectedVersionId, token);
-      
+
+      // Clear client cache so subsequent reads return the newly published Live content
+      portfolioApi.clearCache();
+
       // Reload versions
       const versionHistory = await portfolioApi.getVersionHistory(portfolio.id, token);
       setVersions(versionHistory);
-      
-      // Update currentVersion
-      const updated = versionHistory.find(v => v.id === selectedVersionId);
-      setCurrentVersion(updated || null);
-      
+
+      // After publishing, switch the editor to Live and load the published content
+      setSelectedVersionId('live');
+      setCurrentVersion(null);
+
+      // Refresh portfolio metadata (available languages) and live locale content
+      const updatedPortfolio = await portfolioApi.getPortfolio(personId, { noCache: true });
+      setPortfolio(updatedPortfolio);
+      setLanguages(updatedPortfolio.availableLanguages || ['en']);
+
+      const liveContent = await portfolioApi.getLocale(personId, currentLanguage, { noCache: true });
+      setContent(liveContent);
+      setOriginalContent(liveContent);
+
       setHasChanges(false);
       setDraftContent({}); // Clear all draft content after publish
       alert(locale.messages.versionPublished);
@@ -1033,10 +1051,11 @@ export default function PortfolioEditor() {
   if (loading) {
     return (
       <div className="portfolio-editor">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>{locale.portfolioEditor.loadingEditor}</p>
-        </div>
+        {showLoading && (
+          <div className="loading-container">
+            <LoadingSpinner label={locale.portfolioEditor.loadingEditor} />
+          </div>
+        )}
       </div>
     );
   }
@@ -1071,6 +1090,14 @@ export default function PortfolioEditor() {
           >
             {locale.portfolioEditor.manageAssets || 'Manage Assets'}
           </button>
+          {!isReadOnlyVersion && (
+            <button
+              className="btn-theme"
+              onClick={() => setShowThemeOverlay(true)}
+            >
+              {locale.portfolioEditor.themeEditor || 'Theme'}
+            </button>
+          )}
           {!isReadOnlyVersion && (
             <button className="btn-ai" onClick={handleOpenAi}>
               {locale.portfolioEditor.tryAi || 'Try AI'}
@@ -1115,6 +1142,7 @@ export default function PortfolioEditor() {
                     id="asset-upload-input"
                     type="file"
                     style={{ display: 'none' }}
+                    accept="image/png,image/jpeg,image/gif,image/webp,image/avif,.avif,video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.doc,.docx,.xls,.xlsx"
                     multiple
                     onChange={handleAssetUpload}
                   />
@@ -1415,6 +1443,15 @@ export default function PortfolioEditor() {
             <div className="ai-modal-backdrop" onClick={() => !aiLoading && setShowAiOverlay(false)}></div>
           </div>
         )}
+        {showThemeOverlay && (
+          <ThemeEditorPanel
+            content={content}
+            onApply={(newContent) => {
+              setContent(newContent);
+            }}
+            onClose={() => setShowThemeOverlay(false)}
+          />
+        )}
         {showVersionHistory && (
           <div className={`editor-sidebar ${showVersionHistory ? 'mobile-visible' : ''}`}>
             <div className="version-history">
@@ -1502,12 +1539,12 @@ export default function PortfolioEditor() {
         )}
 
         <div className="editor-main">
-          {viewLoading && (
+          {showViewLoading && (
             <div className="editor-loading-overlay">
-              <div className="loading-spinner"></div>
-              <div className="loading-text">
-                {saving ? (locale.portfolioEditor.saving || 'Saving...') : locale.portfolioEditor.loadingEditor}
-              </div>
+              <LoadingSpinner
+                label={saving ? (locale.portfolioEditor.saving || 'Saving...') : locale.portfolioEditor.loadingEditor}
+                size="2x"
+              />
             </div>
           )}
           <div className="editor-toolbar">
@@ -1669,6 +1706,14 @@ export default function PortfolioEditor() {
                   </ul>
                 </div>
               )}
+
+            </div>
+          )}
+
+          {/* Unsaved changes banner (e.g. theme/font changes) */}
+          {hasChanges && (
+            <div className="unsaved-warning" role="status" aria-live="polite">
+              {locale.portfolioEditor.unsavedChangesMessage || '* some change is not yet saved'}
             </div>
           )}
 

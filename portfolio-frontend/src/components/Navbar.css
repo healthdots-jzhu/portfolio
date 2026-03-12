@@ -3,22 +3,22 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   padding: 1rem 1rem;
-  background-color: #fff;
+  background-color: var(--color-bg);
   font-family: var(--font-primary), Arial, sans-serif;
   gap: 1.5rem;
   position: relative;
 }
 
 .navbar-logo {
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 400;
-  color: #232946;
+  color: var(--color-header);
   letter-spacing: 0.5px;
   cursor: pointer;
   transition: transform 0.3s ease, letter-spacing 0.3s ease;
   text-decoration: none;
   display: inline-block;
-  font-family: inherit;
+  font-family: var(--font-uvn),var(--font-display),serif-logo
 }
 
 .navbar-logo:hover {
@@ -77,14 +77,14 @@
 
 .navbar-links li a {
   text-decoration: none;
-  color: #303053;
+  color: var(--color-header);
   font-weight: 500;
   letter-spacing: 0.5px;
   transition: color 0.2s;
 }
 
 .navbar-links li a:hover {
-  color: #6c63ff;
+  color: var(--color-accent);
 }
 
 .navbar-controls {
@@ -144,7 +144,7 @@
 }
 
 .login-button {
-  background: #6c63ff;
+  background: var(--color-accent);
   color: white;
   border: none;
   padding: 0.5rem 1.2rem;
@@ -171,7 +171,7 @@
   display: block;
   height: 3px;
   width: 100%;
-  background: #232946;
+  background: var(--color-header);
   border-radius: 4px;
   transition: transform 0.3s ease, opacity 0.3s ease;
 }

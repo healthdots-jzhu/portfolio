@@ -37,8 +37,32 @@ public class PortfoliosController : ControllerBase
     private readonly IGitHubModelsService _gitHubModelsService;
     private readonly ILocaleValidator _localeValidator;
     private readonly ILogger<PortfoliosController> _logger;
+    private readonly Portfolio.Api.Services.IDynamoCacheService _cacheService;
+    private const string DynamoCacheTableKey = "LocalesCache";
+    private readonly string? _resolvedDynamoCacheTableName;
 
-    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IConfiguration configuration, IS3Service s3Service, IShortIdGenerator shortIdGenerator, IGitHubModelsService gitHubModelsService, ILocaleValidator localeValidator, ILogger<PortfoliosController> logger)
+    private string? ResolveDynamoCacheTableName(string key)
+    {
+        try
+        {
+            var tables = _configuration.GetSection("DynamoCache:Tables");
+            if (tables.Exists())
+            {
+                var tableName = tables.GetSection(key)["TableName"];
+                if (!string.IsNullOrWhiteSpace(tableName)) return tableName;
+            }
+
+            // Fallback to legacy flat config
+            var legacy = _configuration["DynamoCache:TableName"];
+            return string.IsNullOrWhiteSpace(legacy) ? null : legacy;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IConfiguration configuration, IS3Service s3Service, IShortIdGenerator shortIdGenerator, IGitHubModelsService gitHubModelsService, ILocaleValidator localeValidator, ILogger<PortfoliosController> logger, Portfolio.Api.Services.IDynamoCacheService cacheService)
     {
         _context = context;
         _currentUser = currentUser;
@@ -48,7 +72,11 @@ public class PortfoliosController : ControllerBase
         _gitHubModelsService = gitHubModelsService;
         _localeValidator = localeValidator;
         _logger = logger;
+        _cacheService = cacheService;
+        _resolvedDynamoCacheTableName = ResolveDynamoCacheTableName(DynamoCacheTableKey);
     }
+
+    // Cache behavior delegated to IDynamoCacheService
 
     [HttpPost("{personId}/assets")]
     [RequestSizeLimit(10_000_000)] // 10MB limit
@@ -93,9 +121,36 @@ public class PortfoliosController : ControllerBase
             return BadRequest(new { error = $"This portfolio already has the maximum allowed number of assets ({maxFiles}). Please delete an asset before uploading a new one." });
         }
 
+        // Normalize content type from file extension when the browser sends a generic type
+        // (e.g. image/avif is not registered on all OS, so Windows may send application/octet-stream)
+        var contentType = file.ContentType?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(contentType) || contentType == "application/octet-stream")
+        {
+            var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+            contentType = ext switch
+            {
+                ".avif" => "image/avif",
+                ".png"  => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".gif"  => "image/gif",
+                ".webp" => "image/webp",
+                ".mp4"  => "video/mp4",
+                ".mov"  => "video/quicktime",
+                ".avi"  => "video/x-msvideo",
+                ".mkv"  => "video/x-matroska",
+                ".webm" => "video/webm",
+                ".pdf"  => "application/pdf",
+                ".doc"  => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls"  => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                _ => contentType ?? string.Empty
+            };
+        }
+
         var allowedTypes = new[] {
             // Images
-            "image/png", "image/jpeg", "image/gif", "image/webp",
+            "image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/avif-sequence",
             // Videos
             "video/mp4", "video/quicktime", "video/x-msvideo", "video/x-matroska", "video/webm",
             // Documents
@@ -103,18 +158,9 @@ public class PortfoliosController : ControllerBase
             "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         };
-        if (!allowedTypes.Contains(file.ContentType))
+        if (!allowedTypes.Contains(contentType))
         {
             return BadRequest(new { error = "Unsupported file type" });
-        }
-
-        // Validate file signature (magic bytes)
-        using (var fileStream = file.OpenReadStream())
-        {
-            if (!Portfolio.Api.Utils.FileSignatureValidator.IsValidSignature(fileStream, file.ContentType))
-            {
-                return BadRequest(new { error = "File content does not match its type (possible fake or corrupt file)" });
-            }
         }
 
         // Use same S3 key logic as S3Service (use PersonId so keys are stable and human-readable)
@@ -126,8 +172,18 @@ public class PortfoliosController : ControllerBase
             return Conflict(new { error = "A file with the same name already exists. Please rename your file or delete the existing one before uploading." });
         }
 
-        // Upload to S3 (pass PersonId to place object under img/{personId}/...)
-        await _s3Service.UploadAssetAsync(portfolio.PersonId, file.FileName, file.OpenReadStream(), file.ContentType);
+        // Validate file signature (magic bytes) and upload using a single stream instance
+        using (var uploadStream = file.OpenReadStream())
+        {
+            if (!Portfolio.Api.Utils.FileSignatureValidator.IsValidSignature(uploadStream, contentType))
+            {
+                return BadRequest(new { error = "File content does not match its type (possible fake or corrupt file)" });
+            }
+
+            uploadStream.Position = 0;
+            // Upload to S3 (pass PersonId to place object under img/{personId}/...)
+            await _s3Service.UploadAssetAsync(portfolio.PersonId, file.FileName, uploadStream, contentType);
+        }
 
         // Create asset record
         var asset = new Portfolio.Api.Models.PortfolioAsset
@@ -135,13 +191,16 @@ public class PortfoliosController : ControllerBase
             Id = Guid.NewGuid(),
             PortfolioId = portfolio.Id,
             AssetKey = s3Key,
-            FileType = file.ContentType,
+            FileType = contentType,
             FileSize = file.Length,
             CreatedAt = DateTimeOffset.UtcNow
         };
         _context.PortfolioAssets.Add(asset);
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
         await _context.SaveChangesAsync();
+
+        // Invalidate cache for this personId because assets changed
+        _ = _cacheService.InvalidateForPersonAsync(portfolio.PersonId, _resolvedDynamoCacheTableName);
 
         return Ok(new
         {
@@ -193,7 +252,11 @@ public class PortfoliosController : ControllerBase
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
         await _context.SaveChangesAsync();
 
+        // Invalidate cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+
         return NoContent();
+
     }
 
     private static string SanitizeFileName(string fileName)
@@ -302,6 +365,15 @@ public class PortfoliosController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetPortfolio(string personId)
     {
+        // Try cache first
+        var cacheKey = personId;
+        var cacheTable = _resolvedDynamoCacheTableName;
+        var cached = await _cacheService.GetAsync(cacheKey, cacheTable);
+        if (cached is not null)
+        {
+            return Content(cached, "application/json");
+        }
+
         var portfolio = await _context.Portfolios
             .Include(p => p.Locales)
             .Where(p => p.PersonId == personId && p.IsActive)
@@ -319,15 +391,25 @@ public class PortfoliosController : ControllerBase
             .OrderBy(l => l)
             .ToList();
 
-        return Ok(new
+        var payload = new
         {
-            portfolio.Id,
-            portfolio.PersonId,
-            portfolio.DisplayName,
-            portfolio.Subdomain,
-            portfolio.CreatedAt,
-            AvailableLanguages = availableLanguages
+            id = portfolio.Id,
+            personId = portfolio.PersonId,
+            displayName = portfolio.DisplayName,
+            subdomain = portfolio.Subdomain,
+            createdAt = portfolio.CreatedAt,
+            availableLanguages = availableLanguages
+        };
+
+        // Serialize using camelCase property names for JS clients and store that
+        var json = System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
         });
+
+        _ = _cacheService.SetAsync(cacheKey, json, cacheTable); // fire-and-forget cache set
+
+        return Content(json, "application/json");
     }
 
     /// <summary>
@@ -337,6 +419,14 @@ public class PortfoliosController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetLocale(string personId, string language)
     {
+        var cacheKey = personId + "#" + language;
+        var cacheTable = _resolvedDynamoCacheTableName;
+        var cached = await _cacheService.GetAsync(cacheKey, cacheTable);
+        if (cached is not null)
+        {
+            return Content(cached, "application/json");
+        }
+
         var locale = await _context.PortfolioLocales
             .Include(l => l.Portfolio)
             .Where(l => l.Portfolio.PersonId == personId && l.Portfolio.IsActive && l.Language == language)
@@ -347,7 +437,9 @@ public class PortfoliosController : ControllerBase
             return NotFound(new { error = "Locale not found" });
         }
 
-        return Content(locale.ContentJson, "application/json");
+        var json = locale.ContentJson ?? "{}";
+        _ = _cacheService.SetAsync(cacheKey, json, cacheTable);
+        return Content(json, "application/json");
     }
 
     /// <summary>
@@ -785,6 +877,9 @@ public class PortfoliosController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        // Invalidate cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+
         return Ok(new { message = "Portfolio deactivated successfully" });
     }
 
@@ -824,6 +919,9 @@ public class PortfoliosController : ControllerBase
 
         _context.Portfolios.Add(portfolio);
         await _context.SaveChangesAsync();
+
+        // Invalidate any existing cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
 
         return CreatedAtAction(nameof(GetPortfolio), new { personId = portfolio.PersonId }, new
         {
@@ -888,6 +986,9 @@ public class PortfoliosController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+            // Invalidate cache for this personId
+            _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+
         return Ok(new
         {
             portfolio.Id,
@@ -933,6 +1034,8 @@ public class PortfoliosController : ControllerBase
                 _context.PortfolioLocales.Remove(locale);
                 portfolio.UpdatedAt = DateTimeOffset.UtcNow;
                 await _context.SaveChangesAsync();
+                // Invalidate cache for this personId
+                _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
                 return Ok(new { message = "Locale removed successfully", language });
             }
             return Ok(new { message = "Locale already empty", language });
@@ -958,6 +1061,9 @@ public class PortfoliosController : ControllerBase
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        // Invalidate cache for this personId
+        _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
 
         return Ok(new { message = "Locale updated successfully", language, updatedAt = locale.UpdatedAt });
     }

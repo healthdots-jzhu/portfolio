@@ -32,6 +32,17 @@ public class S3Service : IS3Service
             if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return false;
 
+            // S3 returns 403 Forbidden instead of 404 for non-existent keys in some bucket-policy
+            // configurations (e.g. when ListBucket is restricted by an org SCP or bucket policy).
+            // For an existence check whose sole purpose is duplicate-name prevention, treat any
+            // Forbidden response as "unknown / assume non-existent" and let the upload proceed.
+            // The subsequent PutObject will surface a real IAM error if credentials are truly invalid.
+            if (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                _logger?.LogWarning(ex, "S3 returned Forbidden when checking existence of key {S3Key}; treating as non-existent and allowing upload to continue.", s3Key);
+                return false;
+            }
+
             // IMDS/credentials-related errors often surface as AmazonServiceException or AmazonClientException.
             // If the exception message indicates inability to retrieve credentials from IMDS, return false
             // to avoid crashing the web request in local dev. Log the condition for visibility.

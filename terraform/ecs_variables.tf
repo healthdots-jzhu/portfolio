@@ -29,7 +29,7 @@ variable "api_certificate_arn_index" {
   default     = 0
 }
 
-variable "s3_bucket_name" {
+variable "s3_bucket_frontend" {
   type        = string
   description = "S3 bucket name for portfolio assets"
   default     = "healthdots-portfolio-web-app-001"

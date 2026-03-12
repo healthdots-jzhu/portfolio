@@ -1,0 +1,30 @@
+﻿Code Review Notes
+Target commit: cd1e7ea7015ede1bd1bbe7a1cb31f95b66b5ed09 (main)
+Reviewed at: 2026-02-27
+
+Findings (ordered by severity)
+
+1) Medium - Theme reset path is bypassed when a portfolio has no theme object
+- File: portfolio-frontend/src/context/LanguageContext.jsx:65-69
+- Evidence: applyTheme is only called when translations?.theme is truthy.
+- Why this is a problem: applyTheme() already contains fallback-reset logic for missing theme/colors. With the current guard, switching from a themed portfolio to one without theme can leave stale CSS variables from the previous portfolio.
+- Recommended approach: always call applyTheme(translations?.theme) inside the effect; remove the truthy guard so reset logic executes when theme is absent.
+
+2) Low - Close icon text is still mojibake in Theme Editor
+- File: portfolio-frontend/src/components/ThemeEditorPanel.jsx:124
+- Evidence: button text renders as "Ã—".
+- Why this is a problem: users will see garbled text instead of a proper close icon.
+- Recommended approach: replace with a clean UTF-8 multiplication sign (×) or ASCII-safe fallback/icon component.
+
+Checks performed
+- Build: npm run build (passes)
+- Scope reviewed from commit file list:
+  - portfolio-frontend/src/components/ThemeEditorPanel.jsx
+  - portfolio-frontend/src/context/LanguageContext.jsx
+  - portfolio-frontend/src/locales/app/en.json
+  - portfolio-frontend/src/locales/app/fr.json
+  - portfolio-frontend/src/locales/app/zh.json
+
+Notes
+- Previously reported hook-order issue in LanguageContext has been fixed by moving the theme effect before conditional returns.
+- Localization for theme editor labels, including close aria-label key, is now present in en/fr/zh app locale files.

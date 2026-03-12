@@ -1,0 +1,39 @@
+.loading-spinner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.loading-spinner-icon {
+  color: #3b82f6;
+}
+
+.loading-spinner-label {
+  font-size: 0.95rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* Fullscreen centered variant */
+.loading-spinner-fullscreen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 9999;
+}
+
+.loading-spinner-fullscreen .loading-spinner-icon {
+  /* Increase icon size for fullscreen use and override FA size if needed */
+  font-size: 5rem !important;
+  color: #3b82f6;
+}
+
+.loading-spinner-fullscreen .loading-spinner-label {
+  font-size: 1.5rem;
+  color: #374151;
+}

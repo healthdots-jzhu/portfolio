@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Portfolio.Api.Data;
 using Portfolio.Api.Models;
 using Portfolio.Api.Models.Dto;
@@ -25,11 +26,37 @@ public class VersionService : IVersionService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<VersionService> _logger;
+    private readonly IConfiguration _configuration;
+    private readonly IDynamoCacheService _cacheService;
+    private readonly string? _resolvedDynamoCacheTableName;
 
-    public VersionService(AppDbContext context, ILogger<VersionService> logger)
+    public VersionService(AppDbContext context, ILogger<VersionService> logger, IConfiguration configuration, IDynamoCacheService cacheService)
     {
         _context = context;
         _logger = logger;
+        _configuration = configuration;
+        _cacheService = cacheService;
+        _resolvedDynamoCacheTableName = ResolveDynamoCacheTableName("LocalesCache");
+    }
+
+    private string? ResolveDynamoCacheTableName(string key)
+    {
+        try
+        {
+            var tables = _configuration.GetSection("DynamoCache:Tables");
+            if (tables.Exists())
+            {
+                var tableName = tables.GetSection(key)["TableName"];
+                if (!string.IsNullOrWhiteSpace(tableName)) return tableName;
+            }
+
+            var legacy = _configuration["DynamoCache:TableName"];
+            return string.IsNullOrWhiteSpace(legacy) ? null : legacy;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public async Task<PortfolioVersion> CreateVersionAsync(string portfolioId, Guid userId, CreateVersionRequest request)
@@ -202,6 +229,20 @@ public class VersionService : IVersionService
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            // Invalidate server-side cache so public GetLocale returns the newly published content
+            try
+            {
+                var personId = version.Portfolio?.PersonId;
+                if (!string.IsNullOrWhiteSpace(personId) && !string.IsNullOrWhiteSpace(_resolvedDynamoCacheTableName))
+                {
+                    await _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to invalidate cache after publishing version {VersionId}", version.Id);
+            }
+
             return version;
         }
         catch (Exception)
@@ -357,6 +398,20 @@ public class VersionService : IVersionService
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
+
+                // Invalidate server-side cache for this portfolio so public GetLocale returns updated content
+                try
+                {
+                    var personId = portfolio?.PersonId;
+                    if (!string.IsNullOrWhiteSpace(personId) && !string.IsNullOrWhiteSpace(_resolvedDynamoCacheTableName))
+                    {
+                        await _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to invalidate cache after copying version {VersionId}", versionId);
+                }
 
                 return newVersion;
             }

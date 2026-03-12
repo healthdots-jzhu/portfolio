@@ -306,3 +306,29 @@ export const redirectToLogin = async () => {
     throw e;
   }
 };
+
+/**
+ * Redirect the user to Cognito Hosted UI logout endpoint to terminate the Cognito session
+ * and then return the user to the app. Falls back to local-only logout if the redirect fails.
+ */
+export const redirectToLogout = async () => {
+  try {
+    const config = await getAuthConfig();
+    // Destination Cognito will redirect back to after logout. Use app root by default.
+    const logoutUri = window.location.origin + '/';
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      logout_uri: logoutUri
+    });
+
+    // Clear local tokens first so UI updates immediately
+    clearTokens();
+
+    // Navigate to the Hosted UI logout which clears the Cognito session cookie
+    window.location.href = `https://${config.domain}/logout?${params.toString()}`;
+  } catch (err) {
+    console.error('Hosted logout failed, falling back to local logout:', err);
+    clearTokens();
+    window.location.href = '/';
+  }
+};

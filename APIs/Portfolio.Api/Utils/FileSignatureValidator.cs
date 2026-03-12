@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Portfolio.Api.Utils
 {
@@ -30,6 +31,12 @@ namespace Portfolio.Api.Utils
 
         public static bool IsValidSignature(Stream fileStream, string mimeType)
         {
+            if (string.Equals(mimeType, "image/avif", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(mimeType, "image/avif-sequence", StringComparison.OrdinalIgnoreCase))
+            {
+                return IsValidAvifSignature(fileStream);
+            }
+
             if (!Signatures.TryGetValue(mimeType, out var validSignatures))
                 return false;
 
@@ -59,6 +66,34 @@ namespace Portfolio.Api.Utils
                 }
             }
             return false;
+        }
+
+        private static bool IsValidAvifSignature(Stream fileStream)
+        {
+            var buffer = new byte[64];
+            var originalPosition = fileStream.CanSeek ? fileStream.Position : 0;
+            int bytesRead = fileStream.Read(buffer, 0, buffer.Length);
+            if (fileStream.CanSeek) fileStream.Position = originalPosition;
+
+            if (bytesRead < 16)
+                return false;
+
+            // AVIF is an ISOBMFF file with an ftyp box and avif/avis brand.
+            if (buffer[4] != (byte)'f' || buffer[5] != (byte)'t' || buffer[6] != (byte)'y' || buffer[7] != (byte)'p')
+                return false;
+
+            bool IsAvifBrandAt(int offset) =>
+                buffer[offset] == (byte)'a' &&
+                buffer[offset + 1] == (byte)'v' &&
+                buffer[offset + 2] == (byte)'i' &&
+                (buffer[offset + 3] == (byte)'f' || buffer[offset + 3] == (byte)'s');
+
+            if (IsAvifBrandAt(8))
+                return true;
+
+            return Enumerable.Range(16, bytesRead - 16)
+                .Where(i => (i - 16) % 4 == 0 && i + 3 < bytesRead)
+                .Any(IsAvifBrandAt);
         }
     }
 }

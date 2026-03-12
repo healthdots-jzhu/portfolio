@@ -39,8 +39,28 @@ class PortfolioApiService {
    */
   async uploadAsset(personId, file, token) {
     const formData = new FormData();
-    formData.append('file', file);
-    // Optionally add file type or other metadata
+    // If the browser didn't resolve a MIME type (e.g. image/avif not registered on the OS),
+    // retype the file via a Blob so the multipart Content-Type header is correct.
+    const EXTENSION_MIME_MAP = {
+      avif: 'image/avif', webp: 'image/webp', png: 'image/png',
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+      mp4: 'video/mp4', mov: 'video/quicktime', avi: 'video/x-msvideo',
+      mkv: 'video/x-matroska', webm: 'video/webm',
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      xls: 'application/vnd.ms-excel',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+    let uploadFile = file;
+    if (!file.type || file.type === 'application/octet-stream') {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      const resolvedType = EXTENSION_MIME_MAP[ext];
+      if (resolvedType) {
+        uploadFile = new File([file], file.name, { type: resolvedType });
+      }
+    }
+    formData.append('file', uploadFile);
     try {
       const response = await apiFetch(`${API_BASE_URL}${API_PREFIX}/portfolios/${personId}/assets`, {
         method: 'POST',

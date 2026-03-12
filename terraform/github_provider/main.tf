@@ -231,15 +231,6 @@ resource "github_actions_environment_variable" "rds_multi_az_env" {
   depends_on    = [github_repository_environment.env]
 }
 
-resource "github_actions_environment_variable" "s3_bucket_name_env" {
-  for_each      = { for k, v in local.envs : k => v if lookup(v, "s3_bucket_name", "") != "" }
-  repository    = var.repository
-  environment   = each.key
-  variable_name = "S3_BUCKET_NAME"
-  value         = each.value.s3_bucket_name
-  depends_on    = [github_repository_environment.env]
-}
-
 resource "github_actions_environment_variable" "ecs_task_cpu_env" {
   for_each      = { for k, v in local.envs : k => v if lookup(v, "ecs_task_cpu", "") != "" }
   repository    = var.repository

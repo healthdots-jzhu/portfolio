@@ -10,7 +10,7 @@
   height: 135px;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 2px 16px #dadee9;
+  box-shadow: 0 2px 16px var(--color-shadow);
 }
 
 .leadership-roles > p {
@@ -55,7 +55,7 @@
 .role-card-image {
   width: 100%;
   border-radius: 12px;
-  background: #f3f3f3;
+  background: var(--color-surface);
   display: block;
   margin: 1.8rem 0 0;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
@@ -74,10 +74,10 @@
 }
 
 .home-hero h1 {
-  font-size: 3rem;
+  font-size: var(--font-size-hero);
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
-  color: #2d3142;
+  color: var(--color-header);
 }
 
 /* Use UVN-Sang-Song for the hero title when available */
@@ -86,18 +86,18 @@
 }
 
 .home-hero-subtitle {
-  font-size: 1.5rem;
-  color: #666;
-  margin-bottom: 1.5rem;
+  font-size: var(--font-size-subtitle);
+  color: var(--color-muted);
+  margin-bottom: 2.5rem;
   font-weight: 400;
 }
 
 .home-hero-intro {
-  font-size: 1.5rem;
+  font-size: var(--font-size-subtitle);
   line-height: 1.8;
   max-width: 800px;
   margin: 0 auto;
-  color: #444;
+  color: var(--color-text);
 }
 
 /* Features/Interests Grid */
@@ -107,9 +107,9 @@
 
 .home-features h2 {
   text-align: center;
-  font-size: 2rem;
+  font-size: var(--font-size-title);
   margin-bottom: 2rem;
-  color: #2d3142;
+  color: var(--color-header);
 }
 
 .home-features-grid {
@@ -156,7 +156,7 @@
 
 .home-feature-item h3 {
   font-size: 1.25rem;
-  color: #2d3142;
+  color: var(--color-header);
   margin: 0;
 }
 
@@ -167,57 +167,60 @@
   gap: 3rem;
 }
 
+.home-engagements > h2 {
+  text-align: center;
+  font-size: var(--font-size-title);
+  margin-bottom: 0;
+  color: var(--color-header);
+  padding-top: 2rem;
+}
+
 .home-engagement-item {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   padding: 2rem 0;
-  border-top: 1px solid #e0e0e0;
-}
-
-.home-engagement-item:first-child {
-  border-top: none;
 }
 
 .home-engagement-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 2.5rem;
 }
 
 .home-engagement-content h4 {
-  font-size: 1.3rem;
-  color: #7fb685;
+  font-size: 1.2rem;
+  color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0;
-  font-weight: 600;
+  font-weight: 550;
 }
 
 .home-engagement-content h2 {
   font-size: 2rem;
-  color: #2d3142;
+  color: var(--color-header);
   margin: 0;
   line-height: 1.3;
 }
 
 .home-engagement-cta {
   display: inline-block;
-  padding: 12px 28px;
-  background: transparent;
-  color: #2d3142;
+  padding: 10px 28px;
+  background: var(--color-accent);
+  color: var(--color-bg, #fff);
   text-decoration: none;
-  border: 2px solid #2d3142;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: 1.5px;
+  transition: background 0.2s ease, color 0.2s ease;
   align-self: flex-start;
 }
 
 .home-engagement-cta:hover {
-  background: #2d3142;
-  color: #fff;
+  background: var(--color-header);
+  color: var(--color-bg, #fff);
 }
 
 .home-engagement-image {
@@ -256,9 +259,10 @@
 @media (min-width: 1024px) {
   .home-hero h1 {
     font-size: 7rem;
+    height: 138px;
   }
 
   .home-engagement-content h2 {
-    font-size: 2.3rem;
+    font-size: 2.5rem;
   }
 }

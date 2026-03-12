@@ -12,13 +12,27 @@
 }
 
 :root {
+  /* Base palette — overridden at runtime by themeApplier.js */
   --color-bg: #ffffff;
   --color-gray: #e8e8e8;
   --color-accent: #6c63ff;
-  --color-header: #232946;
+  --color-header: #2d3142;
   --color-text: #33374c;
-  --color-footer: #888;
+  --color-muted: #666666;
+  --color-footer: #888888;
   --color-shadow: #dadee9aa;
+  /* Extended palette */
+  --color-accent-secondary: #7fb685;
+  --color-link: #504e70;
+  --color-surface: #f8f9fa;
+  /* Type scale — overridden at runtime by themeApplier.js */
+  --font-size-hero: 3rem;
+  --font-size-title: 2rem;
+  --font-size-subtitle: 1.5rem;
+  --font-size-body: 1rem;
+  --font-size-label: 1.1rem;
+  --font-size-small: 0.875rem;
+  /* Font stacks — --font-primary is overridden at runtime by fontLoader.js */
   --font-primary: 'Montserrat', sans-serif;
   --font-secondary: 'Poppins', sans-serif;
   --font-display: 'Playfair Display', serif;
