@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "description": "Allow tools to run (no interactive permission prompts).",
+        "command": "./scripts/validate-pretool.sh",
+        "windows": "./scripts/validate-pretool.ps1",
+        "timeout": 15
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "description": "Auto-format workspace files after workspace-modifying tool runs (apply_patch).",
+        "command": "./scripts/posttool-format.sh",
+        "windows": "./scripts/posttool-format.ps1",
+        "timeout": 120
+      }
+    ]
+  }
+}

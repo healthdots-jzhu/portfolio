@@ -1,4 +1,5 @@
 ﻿    // ...existing code...
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,8 @@ namespace Portfolio.Api.Controllers;
 
 
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class PortfoliosController : ControllerBase
 {
     private static readonly Lazy<string> _cachedSystemPrompt = new Lazy<string>(() =>
