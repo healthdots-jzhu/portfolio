@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Portfolio.Api.Utils;
 using Portfolio.Api.Data;
 using Portfolio.Api.Models;
 using Portfolio.Api.Models.Dto;
@@ -36,28 +37,10 @@ public class VersionService : IVersionService
         _logger = logger;
         _configuration = configuration;
         _cacheService = cacheService;
-        _resolvedDynamoCacheTableName = ResolveDynamoCacheTableName("LocalesCache");
+        _resolvedDynamoCacheTableName = _configuration.ResolveDynamoCacheTableName("LocalesCache");
     }
 
-    private string? ResolveDynamoCacheTableName(string key)
-    {
-        try
-        {
-            var tables = _configuration.GetSection("DynamoCache:Tables");
-            if (tables.Exists())
-            {
-                var tableName = tables.GetSection(key)["TableName"];
-                if (!string.IsNullOrWhiteSpace(tableName)) return tableName;
-            }
-
-            var legacy = _configuration["DynamoCache:TableName"];
-            return string.IsNullOrWhiteSpace(legacy) ? null : legacy;
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    // Dynamo cache table name resolution is handled via IConfiguration extension
 
     public async Task<PortfolioVersion> CreateVersionAsync(string portfolioId, Guid userId, CreateVersionRequest request)
     {
@@ -235,7 +218,14 @@ public class VersionService : IVersionService
                 var personId = version.Portfolio?.PersonId;
                 if (!string.IsNullOrWhiteSpace(personId) && !string.IsNullOrWhiteSpace(_resolvedDynamoCacheTableName))
                 {
-                    await _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+                    var languages = await _context.PortfolioLocales
+                        .Where(l => l.PortfolioId == version.PortfolioId)
+                        .Select(l => l.Language)
+                        .ToListAsync();
+
+                    var keys = new List<string> { personId };
+                    keys.AddRange(languages.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => $"{personId}#{l}"));
+                    await _cacheService.InvalidateKeysAsync(keys, _resolvedDynamoCacheTableName);
                 }
             }
             catch (Exception ex)
@@ -405,7 +395,14 @@ public class VersionService : IVersionService
                     var personId = portfolio?.PersonId;
                     if (!string.IsNullOrWhiteSpace(personId) && !string.IsNullOrWhiteSpace(_resolvedDynamoCacheTableName))
                     {
-                        await _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+                        var languages = await _context.PortfolioLocales
+                            .Where(l => l.PortfolioId == sourceVersion.PortfolioId)
+                            .Select(l => l.Language)
+                            .ToListAsync();
+
+                        var keys = new List<string> { personId };
+                        keys.AddRange(languages.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => $"{personId}#{l}"));
+                        await _cacheService.InvalidateKeysAsync(keys, _resolvedDynamoCacheTableName);
                     }
                 }
                 catch (Exception ex)

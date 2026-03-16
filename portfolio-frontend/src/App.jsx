@@ -30,6 +30,10 @@ const SUBDOMAIN_MAP = {
   'karen': 'karen-zhu-EU2O',
   'jason': 'jason-zhu-EU1O',
   'tracey': 'portfolio-9f2f80a6',
+  'www': 'fa7a2c02',
+  'claims': 'fbab2524',
+  'groupbenefits': 'ccd95b53',
+  'training': '698751aa'
 };
 
 function SubdomainRedirect() {
