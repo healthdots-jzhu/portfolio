@@ -14,7 +14,7 @@ services:
       # AWS / SSM settings
       Aws__Region: ${AWS_REGION}
       AWS_REGION: ${AWS_REGION}
-      AWS_SDK_LOAD_CONFIG: ${AWS_SDK_LOAD_CONFIG:1}
+      AWS_SDK_LOAD_CONFIG: ${AWS_SDK_LOAD_CONFIG:-1}
       #Aws__S3__BucketName: ${AWS_S3_BUCKET}
       #Hashids__ParameterName: ${HASHIDS_PARAMETER}
       # Direct AWS credentials (optional; prefer AWS_PROFILE or IAM role)
