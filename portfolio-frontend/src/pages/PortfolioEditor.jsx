@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
-import { getAccessToken } from '../services/authService';
+import { getAccessToken, redirectToLogin } from '../services/authService';
 import { portfolioApi } from '../services/portfolioApi';
 import { useAppLocale } from '../hooks/useAppLocale';
 import useDelayedLoading from '../hooks/useDelayedLoading';
@@ -12,6 +12,7 @@ import { getVersionStatusLabel, getVersionStatusClass, VersionStatusNames, Versi
 import { validateLocaleContent } from '../utils/localeValidator';
 import { LANGUAGE_OPTIONS, getLanguageName, searchLanguages } from '../utils/languageOptions';
 import ThemeEditorPanel from '../components/ThemeEditorPanel';
+import { showToastLocalized } from '../utils/toast';
 import './PortfolioEditor.css';
 
 export default function PortfolioEditor() {
@@ -91,9 +92,156 @@ export default function PortfolioEditor() {
   const [languageSearch, setLanguageSearch] = useState('');
   const [viewLoading, setViewLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showSessionRecoveryModal, setShowSessionRecoveryModal] = useState(false);
+  const [sessionRecoveryPayload, setSessionRecoveryPayload] = useState('');
   const languageDropdownRef = useRef(null);
   const showLoading = useDelayedLoading(loading);
   const showViewLoading = useDelayedLoading(viewLoading);
+
+  const getAutosaveStorageKey = (versionId = selectedVersionId) => `portfolio-editor-autosave:${personId || 'unknown'}:${versionId || 'live'}`;
+
+  const hasUnsavedDraftChanges = () => hasChanges || Object.keys(draftContent).length > 0;
+
+  const confirmDiscardUnsavedChanges = () => {
+    if (!hasUnsavedDraftChanges()) return true;
+    return window.confirm(locale.messages.unsavedChangesLeaveConfirm || 'You have unsaved changes in this version. Leave and lose these changes?');
+  };
+
+  const requestVersionSwitch = (nextVersionId) => {
+    if (nextVersionId === selectedVersionId) {
+      return true;
+    }
+
+    if (!confirmDiscardUnsavedChanges()) {
+      return false;
+    }
+
+    setDraftContent({});
+    setHasChanges(false);
+    setValidation(null);
+    setSelectedVersionId(nextVersionId);
+    return true;
+  };
+
+  const requestNavigateToPortfolios = () => {
+    if (!confirmDiscardUnsavedChanges()) {
+      return;
+    }
+    navigate('/portfolios');
+  };
+
+  const clearAutosaveDraft = (versionId = selectedVersionId) => {
+    if (!personId) return;
+    try {
+      localStorage.removeItem(getAutosaveStorageKey(versionId));
+    } catch (err) {
+      console.debug('Failed to clear autosave draft:', err);
+    }
+  };
+
+  const persistAutosaveDraft = () => {
+    if (!personId) return;
+
+    const draftSnapshot = {
+      ...draftContent,
+      ...(content !== originalContent ? { [currentLanguage]: content } : {})
+    };
+
+    const hasDraft = Object.values(draftSnapshot).some((value) =>
+      typeof value === 'string' && value.trim() !== ''
+    );
+
+    if (!hasDraft) {
+      clearAutosaveDraft();
+      return;
+    }
+
+    const payload = {
+      personId,
+      selectedVersionId,
+      currentLanguage,
+      draftContent: draftSnapshot,
+      savedAt: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem(getAutosaveStorageKey(selectedVersionId), JSON.stringify(payload));
+    } catch (err) {
+      console.debug('Failed to persist autosave draft:', err);
+    }
+  };
+
+  const isAuthenticationError = (err) => {
+    if (!err) return false;
+    const message = String(err.message || err).toLowerCase();
+    return message.includes('authentication required') || message.includes('unauthorized') || message.includes('401');
+  };
+
+  const buildSessionRecoveryPayload = (triggerAction = 'save') => {
+    const currentSnapshot = {
+      language: currentLanguage,
+      content
+    };
+
+    const draftSnapshot = {
+      ...draftContent,
+      [currentLanguage]: content
+    };
+
+    return JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        triggerAction,
+        personId,
+        selectedVersionId,
+        currentLanguage,
+        currentSnapshot,
+        draftContent: draftSnapshot
+      },
+      null,
+      2
+    );
+  };
+
+  const openSessionRecoveryModal = (triggerAction = 'save') => {
+    setSessionRecoveryPayload(buildSessionRecoveryPayload(triggerAction));
+    setShowSessionRecoveryModal(true);
+  };
+
+  const copySessionRecoveryPayload = async () => {
+    if (!sessionRecoveryPayload) return;
+    try {
+      await navigator.clipboard.writeText(sessionRecoveryPayload);
+      showToastLocalized('messages.sessionDraftCopied');
+    } catch (copyErr) {
+      console.error('Failed to copy recovery payload:', copyErr);
+      showToastLocalized('messages.sessionDraftCopyFailed');
+    }
+  };
+
+  const downloadSessionRecoveryPayload = () => {
+    if (!sessionRecoveryPayload) return;
+    const blob = new Blob([sessionRecoveryPayload], { type: 'application/json;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = `portfolio-draft-recovery-${personId || 'unknown'}-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+  };
+
+  const continueSignInAfterRecovery = async () => {
+    await redirectToLogin();
+  };
+
+  const getEditorAuthTokenOrRecover = async (triggerAction = 'save') => {
+    const token = await getAccessToken();
+    if (token) return token;
+    openSessionRecoveryModal(triggerAction);
+    return null;
+  };
 
   const normalizeContentForDiff = (contentStr) => {
     if (contentStr === null || contentStr === undefined) return '';
@@ -427,6 +575,66 @@ export default function PortfolioEditor() {
     }
   }, [content, originalContent, currentLanguage]);
 
+  useEffect(() => {
+    if (!personId) return;
+
+    const timer = setTimeout(() => {
+      persistAutosaveDraft();
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [personId, selectedVersionId, currentLanguage, content, originalContent, draftContent]);
+
+  useEffect(() => {
+    if (!personId) return;
+
+    let parsed;
+    try {
+      const raw = localStorage.getItem(getAutosaveStorageKey(selectedVersionId));
+      if (!raw) return;
+      parsed = JSON.parse(raw);
+    } catch (err) {
+      console.debug('Failed to parse autosave draft:', err);
+      return;
+    }
+
+    if (!parsed || parsed.personId !== personId || !parsed.draftContent) return;
+    if ((parsed.selectedVersionId || 'live') !== (selectedVersionId || 'live')) return;
+    if (hasUnsavedDraftChanges()) return;
+
+    const restoredDraft = parsed.draftContent;
+    const restoredHasContent = Object.values(restoredDraft).some((value) =>
+      typeof value === 'string' && value.trim() !== ''
+    );
+
+    if (!restoredHasContent) return;
+
+    if (parsed.currentLanguage && parsed.currentLanguage !== currentLanguage) {
+      setCurrentLanguage(parsed.currentLanguage);
+    }
+
+    setDraftContent(restoredDraft);
+
+    const restoreLanguage = parsed.currentLanguage || currentLanguage;
+    if (restoredDraft[restoreLanguage]) {
+      setContent(restoredDraft[restoreLanguage]);
+    }
+
+    setHasChanges(true);
+    showToastLocalized('messages.autosaveRestored');
+  }, [personId, selectedVersionId]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (!hasUnsavedDraftChanges()) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasChanges, draftContent]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -566,7 +774,10 @@ export default function PortfolioEditor() {
         }
       }
 
-      const token = await getAccessToken();
+      const token = await getEditorAuthTokenOrRecover('save');
+      if (!token) {
+        return;
+      }
 
       // Validate with backend for all languages
       for (const lang of languagesToSave) {
@@ -611,6 +822,7 @@ export default function PortfolioEditor() {
         // Reload versions and switch to the new draft
         const versionHistory = await portfolioApi.getVersionHistory(portfolio.id, token);
         setVersions(versionHistory);
+        clearAutosaveDraft('live');
         setSelectedVersionId(newVersion.id);
         
         // Clear cache and reload portfolio data to refresh available languages
@@ -647,8 +859,13 @@ export default function PortfolioEditor() {
       setHasChanges(false);
       setDraftContent({}); // Clear all draft content after save
       setValidation(null);
+      clearAutosaveDraft();
     } catch (err) {
       console.error('Error saving:', err);
+      if (isAuthenticationError(err)) {
+        openSessionRecoveryModal('save');
+        return;
+      }
       alert(`${locale.messages.failedToSave} ${err.message}`);
     } finally {
       setSaving(false);
@@ -686,7 +903,10 @@ export default function PortfolioEditor() {
         }
       }
 
-      const token = await getAccessToken();
+      const token = await getEditorAuthTokenOrRecover('stage');
+      if (!token) {
+        return;
+      }
 
       // Validate with backend for all languages before staging
       for (const lang of languagesToValidate) {
@@ -736,8 +956,13 @@ export default function PortfolioEditor() {
       setHasChanges(false);
       setDraftContent({}); // Clear all draft content after stage
       alert(locale.messages.versionStaged);
+      clearAutosaveDraft();
     } catch (err) {
       console.error('Error staging version:', err);
+      if (isAuthenticationError(err)) {
+        openSessionRecoveryModal('stage');
+        return;
+      }
       alert(`${locale.messages.failedToStage} ${err.message}`);
     } finally {
       setSaving(false);
@@ -775,7 +1000,10 @@ export default function PortfolioEditor() {
         }
       }
 
-      const token = await getAccessToken();
+      const token = await getEditorAuthTokenOrRecover('publish');
+      if (!token) {
+        return;
+      }
 
       // Validate with backend for all languages before publishing
       for (const lang of languagesToValidate) {
@@ -835,8 +1063,13 @@ export default function PortfolioEditor() {
       setHasChanges(false);
       setDraftContent({}); // Clear all draft content after publish
       alert(locale.messages.versionPublished);
+      clearAutosaveDraft();
     } catch (err) {
       console.error('Error publishing version:', err);
+      if (isAuthenticationError(err)) {
+        openSessionRecoveryModal('publish');
+        return;
+      }
       alert(`${locale.messages.failedToPublish} ${err.message}`);
     } finally {
       setSaving(false);
@@ -846,7 +1079,10 @@ export default function PortfolioEditor() {
   const handleCopyToNewVersion = async () => {
     try {
       setSaving(true);
-      const token = await getAccessToken();
+      const token = await getEditorAuthTokenOrRecover('copyToNewVersion');
+      if (!token) {
+        return;
+      }
       
       let newVersion;
       
@@ -876,6 +1112,10 @@ export default function PortfolioEditor() {
       alert(locale.messages.versionCopied);
     } catch (err) {
       console.error('Error copying version:', err);
+      if (isAuthenticationError(err)) {
+        openSessionRecoveryModal('copyToNewVersion');
+        return;
+      }
       alert(`${locale.messages.failedToCopy} ${err.message}`);
     } finally {
       setSaving(false);
@@ -898,7 +1138,10 @@ export default function PortfolioEditor() {
     try {
       setSaving(true);
       setViewLoading(true);
-      const token = await getAccessToken();
+      const token = await getEditorAuthTokenOrRecover('deleteVersion');
+      if (!token) {
+        return;
+      }
       await portfolioApi.deleteVersion(portfolio.id, selectedVersionId, token);
 
       const versionHistory = await portfolioApi.getVersionHistory(portfolio.id, token);
@@ -917,8 +1160,13 @@ export default function PortfolioEditor() {
       setViewLoading(false);
 
       alert(locale.messages.versionDeleted);
+      clearAutosaveDraft();
     } catch (err) {
       console.error('Error deleting version:', err);
+      if (isAuthenticationError(err)) {
+        openSessionRecoveryModal('deleteVersion');
+        return;
+      }
       alert(`${locale.messages.failedToDelete} ${err.message}`);
       setViewLoading(false);
     } finally {
@@ -1075,7 +1323,7 @@ export default function PortfolioEditor() {
     <div className="portfolio-editor">
       <div className="editor-header">
         <div className="editor-title">
-          <button className="btn-back" onClick={() => navigate('/portfolios')}>
+          <button className="btn-back" onClick={requestNavigateToPortfolios}>
             ← {locale.portfolioEditor.back}
           </button>
           <div>
@@ -1118,6 +1366,43 @@ export default function PortfolioEditor() {
         </div>
 
       </div>
+
+      {showSessionRecoveryModal && (
+        <div className="modal-overlay" onClick={() => setShowSessionRecoveryModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{locale.messages.sessionRecoveryTitle || 'Session expired before save'}</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowSessionRecoveryModal(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body session-recovery-body">
+              <p>{locale.messages.sessionRecoveryDescription || 'Your unsaved edits are still here. Copy or download them before signing in again.'}</p>
+              <textarea
+                className="session-recovery-textarea"
+                value={sessionRecoveryPayload}
+                readOnly
+                rows={12}
+              />
+              <div className="session-recovery-actions">
+                <button className="btn-secondary" onClick={copySessionRecoveryPayload}>
+                  {locale.messages.copySessionDraft || 'Copy Draft'}
+                </button>
+                <button className="btn-secondary" onClick={downloadSessionRecoveryPayload}>
+                  {locale.messages.downloadSessionDraft || 'Download Draft'}
+                </button>
+                <button className="btn-primary" onClick={continueSignInAfterRecovery}>
+                  {locale.messages.signInAgain || 'Sign In Again'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="editor-container">
         {/* Asset Management Overlay */}
@@ -1470,7 +1755,8 @@ export default function PortfolioEditor() {
                 <div 
                   className={`version-item ${selectedVersionId === 'live' ? 'selected' : ''}`}
                   onClick={() => {
-                    setSelectedVersionId('live');
+                    const switched = requestVersionSwitch('live');
+                    if (!switched) return;
                     if (window.innerWidth <= 768) {
                       setShowVersionHistory(false);
                     }
@@ -1491,7 +1777,8 @@ export default function PortfolioEditor() {
                     key={version.id} 
                     className={`version-item ${selectedVersionId === version.id ? 'selected' : ''}`}
                     onClick={() => {
-                      setSelectedVersionId(version.id);
+                      const switched = requestVersionSwitch(version.id);
+                      if (!switched) return;
                       if (window.innerWidth <= 768) {
                         setShowVersionHistory(false);
                       }
@@ -1524,7 +1811,8 @@ export default function PortfolioEditor() {
                         className="version-delete-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedVersionId(version.id);
+                          const switched = requestVersionSwitch(version.id);
+                          if (!switched) return;
                           setTimeout(() => handleDeleteVersion(), 0);
                         }}
                         title={locale.portfolioEditor.deleteVersion}
