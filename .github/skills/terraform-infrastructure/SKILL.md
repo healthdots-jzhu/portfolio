@@ -19,6 +19,8 @@ Use this skill for infrastructure work in `terraform`.
 
 - Main stack: `terraform/main.tf`, `terraform/ecs.tf`
 - Variable contracts: `terraform/variables.tf`, `terraform/ecs_variables.tf`
+- Remote state backend declaration: `terraform/backend.tf`
+- State bootstrap and backend notes: `terraform/REMOTE_STATE.md`
 - Bootstrap orchestration: `terraform/bootstrap_orchestration`
 - GitHub OIDC role module: `terraform/ci_aws_oidc`
 - GitHub provider module: `terraform/github_provider`
@@ -27,6 +29,7 @@ Use this skill for infrastructure work in `terraform`.
 
 - Treat Terraform edits as high-blast-radius changes.
 - Call out `prevent_destroy` implications and state impact when changing protected resources.
+- Treat remote state as part of infrastructure safety: S3 backend for state storage and DynamoDB for state locking.
 - Keep API path routing aligned with ALB listener rules and backend `PATH_BASE` handling.
 - If CI permissions, secrets, or repo/environment variables are affected, update bootstrap/orchestration and workflow assumptions together.
 - Prefer scoped, explicit IAM permissions where practical.
@@ -45,8 +48,20 @@ Run Terraform from the relevant folder when practical:
 
 ```powershell
 Set-Location terraform
-terraform init
+terraform init -reconfigure
 terraform plan
+```
+
+When backend/state changes are involved, verify backend inputs are explicit and consistent:
+
+```powershell
+Set-Location terraform
+terraform init -reconfigure `
+	-backend-config="bucket=<tf-state-s3-bucket>" `
+	-backend-config="key=portfolio/terraform.tfstate" `
+	-backend-config="region=<aws-region>" `
+	-backend-config="dynamodb_table=<tf-state-lock-table>" `
+	-backend-config="encrypt=true"
 ```
 
 For bootstrap changes:
@@ -60,6 +75,8 @@ terraform plan -var-file="bootstrap_environments.tfvars"
 ## Common Checks
 
 - Does the change alter state shape, replacement behavior, or protected resources?
+- Did remote state config remain valid: S3 bucket pathing, lock table name, and backend key conventions?
+- Could this change break state locking or increase risk of concurrent applies?
 - Are secret names and environment variable contracts still aligned with the app and workflows?
 - Does ECS still have the right subnet, IAM, and secret access assumptions?
 - If OIDC or CI permissions changed, does the bootstrap workflow still reconcile them?
@@ -68,6 +85,7 @@ terraform plan -var-file="bootstrap_environments.tfvars"
 ## Related Docs
 
 - `terraform/README.md`
+- `terraform/REMOTE_STATE.md`
 - `terraform/bootstrap_orchestration/README.md`
 - `terraform/ci_aws_oidc/README.md`
 - `SECRETS_MANAGER_SETUP.md`
