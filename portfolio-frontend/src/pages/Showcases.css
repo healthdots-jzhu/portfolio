@@ -21,6 +21,15 @@
   padding: 1rem 0;
 }
 
+.showcase-hero-pretitle {
+  margin: 0 0 0.75rem;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .showcase-hero h1 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
@@ -291,6 +300,313 @@
   margin: 0;
 }
 
+/* Pillars style */
+.showcases-pillars-page {
+  padding: 0;
+}
+
+.showcase-item-pillars {
+  margin-bottom: 0;
+}
+
+.pillars-hero {
+  padding: 5rem 2rem 4rem;
+  background: linear-gradient(160deg, #f9fafb 0%, #ffffff 60%);
+  border-bottom: 1px solid var(--color-gray);
+  text-align: left;
+}
+
+.pillars-hero-pretitle {
+  margin: 0 0 1rem;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pillars-hero-title {
+  margin: 0 0 1rem;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1.1;
+  color: var(--color-header);
+}
+
+.pillars-hero-subtitle {
+  margin: 0 0 2rem;
+  max-width: 52rem;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+.pillars-hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.pillars-hero-button {
+  display: inline-block;
+  padding: 0.62rem 1.2rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  color: var(--color-header);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pillars-hero-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(31, 41, 55, 0.1);
+}
+
+.pillars-diagram-section {
+  padding: 4.5rem 2rem;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--color-gray);
+}
+
+.pillars-diagram-header {
+  max-width: 52rem;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+
+.pillars-diagram-pretitle {
+  margin: 0 0 0.75rem;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pillars-diagram-title {
+  margin: 0 0 0.75rem;
+  color: var(--color-header);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+}
+
+.pillars-diagram-subtitle {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+.pillars-diagram-frame {
+  max-width: 68rem;
+  margin: 0 auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  background: #ffffff;
+  padding: 1.25rem;
+}
+
+.pillars-diagram-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.pillars-sections {
+  padding: 0 2rem;
+}
+
+.pillar-section {
+  max-width: 70rem;
+  margin: 0 auto;
+  padding: 4.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pillar-section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 1.8rem;
+}
+
+.pillar-number {
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  line-height: 1;
+  color: #e5e7eb;
+  -webkit-text-stroke: 1px #9ca3af;
+  user-select: none;
+}
+
+.pillar-heading-group {
+  flex: 1;
+}
+
+.pillar-label {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pillar-title {
+  margin: 0 0 0.4rem;
+  color: var(--color-header);
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.pillar-subtitle {
+  margin: 0 0 0.8rem;
+  color: #4b5563;
+  font-style: italic;
+  font-size: 1.02rem;
+}
+
+.pillar-description {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.75;
+  max-width: 54rem;
+}
+
+.pillar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.6rem;
+}
+
+.pillar-tool-chip {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 0.27rem 0.62rem;
+  font-size: 0.78rem;
+  background: #f9fafb;
+  color: #374151;
+}
+
+.pillar-bullets-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.pillar-bullet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pillar-bullet-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: #374151;
+  text-align: left;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.pillar-bullet-item.active {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pillar-bullet-dot {
+  margin-top: 0.45rem;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #9ca3af;
+  flex-shrink: 0;
+}
+
+.pillar-bullet-item.active .pillar-bullet-dot {
+  background: #374151;
+}
+
+.pillar-bullet-title {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.pillar-bullet-detail {
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #6b7280;
+  border-radius: 0 0.8rem 0.8rem 0;
+  background: #fafafa;
+  padding: 1rem 1.1rem;
+}
+
+.pillar-bullet-detail h3 {
+  margin: 0 0 0.55rem;
+  color: var(--color-header);
+  font-size: 1.12rem;
+}
+
+.pillar-bullet-detail p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.75;
+}
+
+.pillars-core-skills {
+  padding: 4.5rem 2rem;
+  background: #111827;
+}
+
+.pillars-core-header {
+  text-align: center;
+  margin-bottom: 1.6rem;
+}
+
+.pillars-core-pretitle {
+  margin: 0 0 0.65rem;
+  color: #9ca3af;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pillars-core-title {
+  margin: 0;
+  color: #f9fafb;
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+}
+
+.pillars-core-rows {
+  max-width: 70rem;
+  margin: 0 auto;
+}
+
+.pillars-core-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+  margin-bottom: 0.6rem;
+}
+
+.pillars-core-skill-chip {
+  border: 1px solid #374151;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.82rem;
+}
+
 /* Desktop layout for features (3 columns on larger screens) */
 @media (min-width: 768px) {
   .showcase-features-grid {
@@ -339,5 +655,26 @@
 
   .showcase-story h2 {
     font-size: var(--font-size-title);
+  }
+}
+
+@media (max-width: 900px) {
+  .pillar-bullets-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .pillars-hero,
+  .pillars-diagram-section,
+  .pillars-sections,
+  .pillars-core-skills {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .pillar-section-header {
+    flex-direction: column;
+    gap: 0.8rem;
   }
 }

@@ -137,7 +137,16 @@
       "requiresAuth": "在创建版本之前，请保存您的更改",
       "confirmRequired": "发布需要确认",
         "loadingPortfolios": "加载您的作品集...",
-        "sessionExpiredSigningIn": "会话已过期 — 正在为您登录..."
+        "sessionExpiredSigningIn": "会话已过期 — 正在为您登录...",
+        "sessionRecoveryTitle": "保存前会话已过期",
+        "sessionRecoveryDescription": "您未保存的编辑仍然保留。请先复制或下载，再重新登录。",
+        "copySessionDraft": "复制草稿",
+        "downloadSessionDraft": "下载草稿",
+        "signInAgain": "重新登录",
+        "sessionDraftCopied": "草稿已复制到剪贴板",
+        "sessionDraftCopyFailed": "无法复制草稿，请使用“下载草稿”。",
+        "autosaveRestored": "已从上一次会话恢复未保存草稿。",
+        "unsavedChangesLeaveConfirm": "此版本有未保存的更改。离开后这些更改将丢失，是否继续？"
     },
     "errors": {
       "authRequired": "需要身份验证",

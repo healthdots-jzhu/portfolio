@@ -1,0 +1,257 @@
+name: '[On-Demand] Destroy Infrastructure (Preserve RDS + Networking)'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment to destroy'
+        required: true
+        default: 'beta'
+        type: choice
+        options:
+          - staging
+          - beta
+          - prod
+      confirm:
+        description: 'Type the environment name to confirm destruction (e.g. "beta")'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ca-central-1
+  ENVIRONMENT: ${{ github.event.inputs.environment }}
+
+jobs:
+  destroy:
+    name: Terraform destroy (preserves RDS, VPC, subnets, security groups, ECR, KMS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Validate confirmation input
+        shell: bash
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "${{ github.event.inputs.environment }}" ]; then
+            echo "ERROR: Confirmation input '${{ github.event.inputs.confirm }}' does not match environment '${{ github.event.inputs.environment }}'."
+            echo "To confirm destruction, you must type the exact environment name in the 'confirm' input."
+            exit 1
+          fi
+          echo "Confirmation validated. Proceeding with destruction of '${{ github.event.inputs.environment }}' environment."
+
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v5.1.1
+        with:
+          role-to-assume: ${{ secrets.CI_AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.14.3"
+
+      - name: Export GitHub variables to TF_VAR_*
+        shell: bash
+        run: |
+          echo "TF_VAR_environment=${{ env.ENVIRONMENT }}" >> $GITHUB_ENV
+          echo "TF_VAR_aws_region=${{ vars.AWS_REGION }}" >> $GITHUB_ENV
+          echo "TF_VAR_s3_bucket_frontend=${{ vars.S3_BUCKET_FRONTEND }}" >> $GITHUB_ENV
+          echo "TF_VAR_project_name=${{ vars.PROJECT_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_vpc_cidr=${{ vars.VPC_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_public_subnet_cidr=${{ vars.PUBLIC_SUBNET_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_public_2b_cidr=${{ vars.PUBLIC_2B_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_subnet_cidr=${{ vars.PRIVATE_SUBNET_CIDR }}" >> $GITHUB_ENV
+          if [ -n "${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" ]; then
+            echo "TF_VAR_rds_ssm_ec2_instance_type=${{ vars.RDS_SSM_EC2_INSTANCE_TYPE }}" >> $GITHUB_ENV
+          fi
+          echo "TF_VAR_rds_instance_class=${{ vars.RDS_INSTANCE_CLASS }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_allocated_storage=${{ vars.RDS_ALLOCATED_STORAGE }}" >> $GITHUB_ENV
+          echo "TF_VAR_postgres_version=${{ vars.POSTGRES_VERSION }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_database_name=${{ vars.RDS_DATABASE_NAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_username=${{ vars.RDS_USERNAME }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_storage_type=${{ vars.RDS_STORAGE_TYPE }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_skip_final_snapshot=${{ vars.RDS_SKIP_FINAL_SNAPSHOT }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_backup_retention_period=${{ vars.RDS_BACKUP_RETENTION_PERIOD }}" >> $GITHUB_ENV
+          echo "TF_VAR_rds_multi_az=${{ vars.RDS_MULTI_AZ }}" >> $GITHUB_ENV
+          echo "TF_VAR_ecs_task_cpu=${{ vars.ECS_TASK_CPU }}" >> $GITHUB_ENV
+          echo "TF_VAR_ecs_task_memory=${{ vars.ECS_TASK_MEMORY }}" >> $GITHUB_ENV
+          echo "TF_VAR_ecs_service_desired_count=${TF_VAR_ecs_service_desired_count:-1}" >> $GITHUB_ENV
+          echo "TF_VAR_acm_certificate_arn=${{ vars.ACM_CERTIFICATE_ARN }}" >> $GITHUB_ENV
+          echo "TF_VAR_tf_state_key=${{ vars.TF_STATE_KEY }}" >> $GITHUB_ENV
+          echo "TF_VAR_tf_state_bucket=${{ vars.TF_STATE_BUCKET }}" >> $GITHUB_ENV
+          echo "TF_VAR_tf_state_dynamodb_table=${{ vars.TF_STATE_DYNAMODB_TABLE }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_2a_cidr=${{ vars.PRIVATE_2A_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_2b_cidr=${{ vars.PRIVATE_2B_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_app_2a_cidr=${{ vars.PRIVATE_APP_2A_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_private_app_2b_cidr=${{ vars.PRIVATE_APP_2B_CIDR }}" >> $GITHUB_ENV
+          echo "TF_VAR_path_base=${{ vars.PATH_BASE }}" >> $GITHUB_ENV
+          echo "TF_VAR_api_subdomain=${{ vars.API_SUBDOMAIN }}" >> $GITHUB_ENV
+          echo "TF_VAR_route53_zone_name=${{ vars.ROUTE53_ZONE_NAME }}" >> $GITHUB_ENV
+          if [ -n "${{ vars.ACM_CERTIFICATE_ARNS }}" ]; then
+            echo 'TF_VAR_acm_certificate_arns=${{ vars.ACM_CERTIFICATE_ARNS }}' >> $GITHUB_ENV
+          else
+            echo "TF_VAR_acm_certificate_arns=[]" >> $GITHUB_ENV
+          fi
+          if [ -n "${{ vars.API_CERTIFICATE_ARN_INDEX }}" ]; then
+            echo "TF_VAR_api_certificate_arn_index=${{ vars.API_CERTIFICATE_ARN_INDEX }}" >> $GITHUB_ENV
+          else
+            echo "TF_VAR_api_certificate_arn_index=0" >> $GITHUB_ENV
+          fi
+
+      - name: Terraform init (S3 backend)
+        run: |
+          terraform init -reconfigure \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ vars.TF_STATE_KEY }}" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ vars.TF_STATE_DYNAMODB_TABLE }}" \
+            -backend-config="encrypt=true"
+
+      - name: Save full state snapshot to S3 (pre-destroy backup)
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform state pull > ../pre_destroy.tfstate
+          STATE_SIZE=$(wc -c < ../pre_destroy.tfstate)
+          echo "State snapshot size: $STATE_SIZE bytes"
+          if [ "$STATE_SIZE" -lt 100 ]; then
+            echo "ERROR: State snapshot is suspiciously small ($STATE_SIZE bytes). Aborting."
+            exit 1
+          fi
+          SNAPSHOT_KEY="terraform-preserved/${{ env.ENVIRONMENT }}/pre_destroy_$(date -u +%Y%m%d_%H%M%S).tfstate"
+          # Also write a fixed-name "latest" snapshot for easy retrieval
+          LATEST_KEY="terraform-preserved/${{ env.ENVIRONMENT }}/pre_destroy_latest.tfstate"
+          aws s3 cp ../pre_destroy.tfstate "s3://${{ vars.TF_STATE_BUCKET }}/${SNAPSHOT_KEY}" --region "${{ vars.AWS_REGION }}"
+          aws s3 cp ../pre_destroy.tfstate "s3://${{ vars.TF_STATE_BUCKET }}/${LATEST_KEY}" --region "${{ vars.AWS_REGION }}"
+          echo "State snapshot uploaded to:"
+          echo "  s3://${{ vars.TF_STATE_BUCKET }}/${SNAPSHOT_KEY}"
+          echo "  s3://${{ vars.TF_STATE_BUCKET }}/${LATEST_KEY} (latest)"
+
+      - name: Strip prevent_destroy from local .tf files (runner only — never committed)
+        shell: bash
+        run: |
+          find . -name "*.tf" -exec sed -i 's/prevent_destroy\s*=\s*true/prevent_destroy = false/g' {} \;
+          echo "prevent_destroy = true removed from all .tf files in runner workspace."
+
+      - name: Remove preserved resources from Terraform state (keeps them in AWS)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Helper: remove a resource from state, silently skip if not present
+          rm_state() {
+            terraform state rm "$1" 2>&1 || true
+          }
+
+          echo "=== Removing networking resources ==="
+          rm_state "aws_vpc.main"
+          rm_state "aws_internet_gateway.main"
+          rm_state "aws_subnet.public"
+          rm_state "aws_subnet.private"
+          rm_state "aws_subnet.private_2a"
+          rm_state "aws_subnet.private_2b"
+          rm_state "aws_subnet.private_app_2a"
+          rm_state "aws_subnet.private_app_2b"
+          rm_state "aws_subnet.public_2b"
+          rm_state "aws_route_table.public"
+          rm_state "aws_route_table.private_app"
+          rm_state "aws_route_table_association.public"
+          rm_state "aws_route_table_association.public_2b"
+          rm_state "aws_route_table_association.private_app_2a"
+          rm_state "aws_route_table_association.private_app_2b"
+
+          echo "=== Removing security groups ==="
+          rm_state "aws_security_group.ec2"
+          rm_state "aws_security_group.rds"
+          rm_state "aws_security_group.vpc_endpoints"
+
+          echo "=== Removing EC2 SSM IAM resources ==="
+          rm_state "aws_iam_role.ec2_ssm_role"
+          rm_state "aws_iam_role_policy_attachment.ssm_policy"
+          rm_state "aws_iam_role_policy.ec2_ssm_ssmmessages"
+          rm_state "aws_iam_instance_profile.ec2_profile"
+
+          echo "=== Removing RDS and dependencies ==="
+          rm_state "aws_db_parameter_group.postgres"
+          rm_state "aws_db_subnet_group.postgres"
+          rm_state "aws_db_instance.postgres-portfolio"
+          rm_state "aws_kms_key.rds"
+          rm_state "aws_kms_alias.rds"
+
+          echo "=== Removing SSM parameter and Hashids salt ==="
+          rm_state "random_password.hashids_salt"
+          rm_state "aws_ssm_parameter.hashids_salt"
+
+          echo "=== Removing ECR repository ==="
+          rm_state "aws_ecr_repository.portfolio_api"
+          rm_state "aws_ecr_lifecycle_policy.portfolio_api_untagged"
+
+          echo "=== Removing ECS IAM roles (prevent_destroy) ==="
+          rm_state "aws_iam_role.ecs_task_execution"
+          rm_state "aws_iam_role_policy_attachment.ecs_task_execution"
+          rm_state "aws_iam_role_policy.ecs_secrets_access"
+          rm_state "aws_iam_role.ecs_task"
+          rm_state "aws_iam_role_policy.ecs_task_permissions"
+
+          echo "Done removing preserved resources from state."
+
+      - name: Empty ALB logs S3 bucket before destroy
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUCKET="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-alb-logs"
+          echo "Emptying S3 bucket: $BUCKET"
+          # Suppress error if bucket doesn't exist (may already be gone or never created)
+          aws s3 rm "s3://${BUCKET}" --recursive --region "${{ vars.AWS_REGION }}" 2>&1 || {
+            echo "Warning: Could not empty bucket '${BUCKET}' (may not exist or already empty). Continuing."
+          }
+
+      - name: Terraform destroy
+        shell: bash
+        run: |
+          terraform destroy -auto-approve
+
+      - name: Destroy summary
+        if: always()
+        shell: bash
+        run: |
+          echo "================================"
+          echo "Destroy workflow complete."
+          echo "Environment: ${{ env.ENVIRONMENT }}"
+          echo ""
+          echo "PRESERVED in AWS (removed from state before destroy):"
+          echo "  - VPC, Internet Gateway, all Subnets, Route Tables"
+          echo "  - Security Groups: ec2, rds, vpc_endpoints"
+          echo "  - EC2 SSM IAM Role + Instance Profile"
+          echo "  - RDS instance: aws_db_instance.postgres-portfolio"
+          echo "  - KMS key + alias for RDS"
+          echo "  - SSM Parameter: hashids_salt"
+          echo "  - ECR repository + lifecycle policy"
+          echo "  - ECS IAM Roles (task execution + task)"
+          echo ""
+          echo "DESTROYED:"
+          echo "  - ECS Cluster, Service, Task Definition"
+          echo "  - CloudWatch Log Group (ECS tasks)"
+          echo "  - Application Load Balancer + Listeners + Target Groups"
+          echo "  - Route53 record for API subdomain"
+          echo "  - ALB Security Group"
+          echo "  - ECS Tasks Security Group + SG rules"
+          echo "  - DynamoDB cache table"
+          echo "  - Auto Scaling target + policy"
+          echo "  - EC2 bastion instance"
+          echo "  - Lambda scheduler + EventBridge rules"
+          echo "  - ALB logs S3 bucket"
+          echo ""
+          echo "State snapshot saved to:"
+          echo "  s3://${{ vars.TF_STATE_BUCKET }}/terraform-preserved/${{ env.ENVIRONMENT }}/pre_destroy_latest.tfstate"
+          echo "================================"

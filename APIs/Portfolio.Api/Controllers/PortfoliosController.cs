@@ -1,4 +1,5 @@
 ﻿    // ...existing code...
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using Portfolio.Api.Data;
 using Portfolio.Api.Models;
 using Portfolio.Api.Services;
 using Portfolio.Api.Models.Dto;
+using Portfolio.Api.Utils;
 
 
 namespace Portfolio.Api.Controllers;
@@ -13,7 +15,8 @@ namespace Portfolio.Api.Controllers;
 
 
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class PortfoliosController : ControllerBase
 {
     private static readonly Lazy<string> _cachedSystemPrompt = new Lazy<string>(() =>
@@ -41,26 +44,7 @@ public class PortfoliosController : ControllerBase
     private const string DynamoCacheTableKey = "LocalesCache";
     private readonly string? _resolvedDynamoCacheTableName;
 
-    private string? ResolveDynamoCacheTableName(string key)
-    {
-        try
-        {
-            var tables = _configuration.GetSection("DynamoCache:Tables");
-            if (tables.Exists())
-            {
-                var tableName = tables.GetSection(key)["TableName"];
-                if (!string.IsNullOrWhiteSpace(tableName)) return tableName;
-            }
-
-            // Fallback to legacy flat config
-            var legacy = _configuration["DynamoCache:TableName"];
-            return string.IsNullOrWhiteSpace(legacy) ? null : legacy;
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    // Dynamo cache table name resolution delegated to IConfiguration extension
 
     public PortfoliosController(AppDbContext context, ICurrentUserProvider currentUser, IConfiguration configuration, IS3Service s3Service, IShortIdGenerator shortIdGenerator, IGitHubModelsService gitHubModelsService, ILocaleValidator localeValidator, ILogger<PortfoliosController> logger, Portfolio.Api.Services.IDynamoCacheService cacheService)
     {
@@ -73,7 +57,7 @@ public class PortfoliosController : ControllerBase
         _localeValidator = localeValidator;
         _logger = logger;
         _cacheService = cacheService;
-        _resolvedDynamoCacheTableName = ResolveDynamoCacheTableName(DynamoCacheTableKey);
+        _resolvedDynamoCacheTableName = _configuration.ResolveDynamoCacheTableName(DynamoCacheTableKey);
     }
 
     // Cache behavior delegated to IDynamoCacheService
@@ -199,8 +183,8 @@ public class PortfoliosController : ControllerBase
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
         await _context.SaveChangesAsync();
 
-        // Invalidate cache for this personId because assets changed
-        _ = _cacheService.InvalidateForPersonAsync(portfolio.PersonId, _resolvedDynamoCacheTableName);
+        // Enqueue cache invalidation based on DB-derived keys
+        _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, portfolio.PersonId, portfolio.Id, _logger);
 
         return Ok(new
         {
@@ -252,8 +236,8 @@ public class PortfoliosController : ControllerBase
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
         await _context.SaveChangesAsync();
 
-        // Invalidate cache for this personId
-        _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+        // Enqueue cache invalidation based on DB-derived keys
+        _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
 
         return NoContent();
 
@@ -877,8 +861,20 @@ public class PortfoliosController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        // Invalidate cache for this personId
-        _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+        // Invalidate cache for this personId (derive keys from Postgres)
+        try
+        {
+            var localeLanguages = await _context.PortfolioLocales
+                .Where(l => l.PortfolioId == portfolio.Id)
+                .Select(l => l.Language)
+                .ToListAsync();
+
+            _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to enqueue cache invalidation for person {PersonId}", personId);
+        }
 
         return Ok(new { message = "Portfolio deactivated successfully" });
     }
@@ -920,8 +916,8 @@ public class PortfoliosController : ControllerBase
         _context.Portfolios.Add(portfolio);
         await _context.SaveChangesAsync();
 
-        // Invalidate any existing cache for this personId
-        _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+        // Enqueue cache invalidation based on DB-derived keys
+        _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, portfolio.PersonId, portfolio.Id, _logger);
 
         return CreatedAtAction(nameof(GetPortfolio), new { personId = portfolio.PersonId }, new
         {
@@ -986,8 +982,8 @@ public class PortfoliosController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-            // Invalidate cache for this personId
-            _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+            // Enqueue cache invalidation using centralized helper (DB-derived keys)
+            _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
 
         return Ok(new
         {
@@ -1034,8 +1030,8 @@ public class PortfoliosController : ControllerBase
                 _context.PortfolioLocales.Remove(locale);
                 portfolio.UpdatedAt = DateTimeOffset.UtcNow;
                 await _context.SaveChangesAsync();
-                // Invalidate cache for this personId
-                _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+                // Enqueue cache invalidation (include the removed locale key explicitly)
+                _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger, new[] { $"{personId}#{language}" });
                 return Ok(new { message = "Locale removed successfully", language });
             }
             return Ok(new { message = "Locale already empty", language });
@@ -1060,10 +1056,11 @@ public class PortfoliosController : ControllerBase
 
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
 
+
         await _context.SaveChangesAsync();
 
-        // Invalidate cache for this personId
-        _ = _cacheService.InvalidateForPersonAsync(personId, _resolvedDynamoCacheTableName);
+        // Enqueue cache invalidation using centralized helper (DB-derived keys)
+        _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
 
         return Ok(new { message = "Locale updated successfully", language, updatedAt = locale.UpdatedAt });
     }

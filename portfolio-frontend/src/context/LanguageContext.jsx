@@ -137,12 +137,30 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
 
   // If loading, show a minimal loading state
   const showLoadingIndicator = useDelayedLoading(loading || !translations);
+  const basePrefix = personId
+    ? (versionId ? `/preview/${versionId}/${personId}` : `/p/${personId}`)
+    : '';
 
   if (loading || !translations) {
+    const fallbackValue = {
+      personId: personId || '',
+      versionId: versionId || null,
+      basePrefix,
+      language,
+      availableLanguages: ['en'],
+      setLanguage,
+      fontFamily: 'Montserrat',
+      loading: true,
+      error: null,
+      t: () => '',
+      resolvePath: (path) => path || '',
+    };
+
     return (
-      <>
-        {showLoadingIndicator && <LoadingSpinner label="Loading..." className="loading-spinner-fullscreen" />}
-      </>
+      <LanguageContext.Provider value={fallbackValue}>
+        {children}
+        {showLoadingIndicator && <LoadingSpinner label="Loading..." className="loading-spinner-overlay" />}
+      </LanguageContext.Provider>
     );
   }
 
@@ -152,10 +170,6 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
   }
 
   const fontFamily = translations.theme?.fontFamily || 'Montserrat';
-
-  const basePrefix = personId
-    ? (versionId ? `/preview/${versionId}/${personId}` : `/p/${personId}`)
-    : '';
 
   const value = {
     personId: personId || '',

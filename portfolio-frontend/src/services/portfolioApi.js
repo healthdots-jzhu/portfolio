@@ -2,7 +2,7 @@
 // API service for portfolio backend
 import { maybeRefreshAccessTokenOnActivity, getAccessToken, redirectToLogin } from './authService';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const API_PREFIX = '/api';
+const API_PREFIX = '/api/v1';
 
 // Wrapper used for all API fetches so we can trigger the on-activity refresh
 // attempt before performing the request and ensure we use the freshest

@@ -484,7 +484,7 @@ resource "aws_lb_target_group" "portfolio_api" {
 
   health_check {
     enabled             = true
-    path                = "/api/health"
+    path                = "/api/v1/health"
     port                = "traffic-port"
     protocol            = "HTTP"
     healthy_threshold   = 2

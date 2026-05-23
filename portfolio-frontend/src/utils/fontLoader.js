@@ -17,9 +17,25 @@ export const FONT_REGISTRY = {
   'Open Sans': { weights: ':wght@400;600;700', fallback: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   'Roboto': { weights: ':wght@400;500;600;700', fallback: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' },
   'Roboto Mono': { weights: ':wght@400;500;600;700', fallback: 'Monaco, "Courier New", monospace' },
+  'DM Mono': { weights: ':wght@400;500', fallback: 'Monaco, "Courier New", monospace' },
   'Comic Neue': { weights: ':wght@400;700', fallback: 'cursive' },
   'Edu NSW ACT Cursive': { weights: '', fallback: 'cursive' },
   'Playball': { weights: '', fallback: 'cursive' },
+};
+
+/**
+ * Normalize a font-family string to the primary family name.
+ * Supports values like `"DM Mono", monospace` and returns `DM Mono`.
+ * @param {string} fontFamily
+ * @returns {string}
+ */
+export const normalizeFontFamilyName = (fontFamily) => {
+  if (!fontFamily) return '';
+  const raw = String(fontFamily).trim();
+  if (!raw) return '';
+
+  const firstFamily = raw.split(',')[0]?.trim() || '';
+  return firstFamily.replace(/^['"]+|['"]+$/g, '').trim();
 };
 
 /**
@@ -31,7 +47,8 @@ export const loadGoogleFont = (fontFamily) => {
   if (!fontFamily) return;
 
   // Normalize font name
-  const normalizedName = fontFamily.trim();
+  const normalizedName = normalizeFontFamilyName(fontFamily);
+  if (!normalizedName) return;
   
   // Check if font is already loaded
   if (document.querySelector(`link[data-font="${normalizedName}"]`)) {
@@ -87,7 +104,8 @@ export const applyFontFamily = (fontFamily) => {
   if (!fontFamily) return;
 
   // Normalize the font name
-  const normalizedName = fontFamily.trim();
+  const normalizedName = normalizeFontFamilyName(fontFamily);
+  if (!normalizedName) return;
   const fontConfig = FONT_REGISTRY[normalizedName] || { weights: FONT_WEIGHTS, fallback: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' };
   
   // Set CSS variable with font name (Google Font will load in background)

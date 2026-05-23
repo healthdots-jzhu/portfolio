@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { HexColorPicker, HexColorInput } from 'react-colorful';
 import { useAppLocale } from '../hooks/useAppLocale';
 import { COLOR_VAR_MAP, DEFAULT_COLORS, FONT_SIZE_VAR_MAP, DEFAULT_FONT_SIZES } from '../utils/themeApplier';
-import { applyFontFamily, FONT_REGISTRY } from '../utils/fontLoader';
+import { applyFontFamily, FONT_REGISTRY, normalizeFontFamilyName } from '../utils/fontLoader';
 import './ThemeEditorPanel.css';
 
 /**
@@ -39,7 +39,8 @@ const parseThemeFromContent = (contentStr) => {
   try {
     const parsed = JSON.parse(contentStr || '{}');
     const colors = { ...DEFAULT_COLORS, ...(parsed.theme?.colors || {}) };
-    const fontFamily = parsed.theme?.fontFamily || 'Montserrat';
+    const requestedFont = normalizeFontFamilyName(parsed.theme?.fontFamily || 'Montserrat');
+    const fontFamily = FONT_REGISTRY[requestedFont] ? requestedFont : 'Montserrat';
     const fontSizes = { ...DEFAULT_FONT_SIZES, ...(parsed.theme?.fontSizes || {}) };
     return { fontFamily, colors, fontSizes };
   } catch {

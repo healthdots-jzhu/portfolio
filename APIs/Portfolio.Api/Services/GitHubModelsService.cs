@@ -80,7 +80,16 @@ namespace Portfolio.Api.Services
                 };
 
                 // Ensure Accept header is standard JSON for this host (named client already set a default; override if needed)
-                try { client.DefaultRequestHeaders.Accept.Clear(); client.DefaultRequestHeaders.Accept.ParseAdd("application/json"); } catch { }
+                try
+                {
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Best-effort header override; if this fails, continue with existing headers.
+                    _logger.LogDebug(ex, "Failed to update Accept header for GitHubModels HttpClient; continuing with existing headers.");
+                }
             }
             else
             {
@@ -98,11 +107,7 @@ namespace Portfolio.Api.Services
                         temperature = options?.Temperature
                     }
                 };
-                var apiVersion = _configuration["GitHubModels:ApiVersion"]; 
-                if (!string.IsNullOrWhiteSpace(apiVersion))
-                {
-                    // will be added to request below
-                }
+
             }
 
             using var req = new HttpRequestMessage(HttpMethod.Post, requestPath);

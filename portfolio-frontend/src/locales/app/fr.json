@@ -137,7 +137,16 @@
       "requiresAuth": "Veuillez enregistrer vos modifications avant de créer une version",
       "confirmRequired": "Confirmation requise pour publier",
       "loadingPortfolios": "Chargement de vos portefeuilles...",
-      "sessionExpiredSigningIn": "Session expirée — connexion en cours..."
+      "sessionExpiredSigningIn": "Session expirée — connexion en cours...",
+      "sessionRecoveryTitle": "Session expirée avant l'enregistrement",
+      "sessionRecoveryDescription": "Vos modifications non enregistrées sont toujours là. Copiez-les ou téléchargez-les avant de vous reconnecter.",
+      "copySessionDraft": "Copier le brouillon",
+      "downloadSessionDraft": "Télécharger le brouillon",
+      "signInAgain": "Se reconnecter",
+      "sessionDraftCopied": "Brouillon copié dans le presse-papiers",
+      "sessionDraftCopyFailed": "Impossible de copier le brouillon. Utilisez Télécharger le brouillon.",
+      "autosaveRestored": "Brouillon non enregistré récupéré depuis votre session précédente.",
+      "unsavedChangesLeaveConfirm": "Vous avez des modifications non enregistrées dans cette version. Quitter et perdre ces modifications ?"
     },
     "errors": {
       "authRequired": "Authentification requise",

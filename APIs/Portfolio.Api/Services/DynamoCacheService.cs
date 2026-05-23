@@ -18,6 +18,7 @@ namespace Portfolio.Api.Services
         Task<(bool found, string? value)> TryGetAsync(string key, string? tableName = null);
         Task SetAsync(string key, string json, string? tableName = null);
         Task InvalidateForPersonAsync(string personId, string? tableName = null);
+        Task InvalidateKeysAsync(IEnumerable<string> keys, string? tableName = null);
     }
 
     public class DynamoCacheService : IDynamoCacheService
@@ -199,15 +200,16 @@ namespace Portfolio.Api.Services
         {
             if (string.IsNullOrWhiteSpace(tableName)) return;
             var table = tableName;
-
             try
             {
+                // Delete the direct personId key if present
                 await _dynamoDb.DeleteItemAsync(new DeleteItemRequest
                 {
                     TableName = table!,
                     Key = new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = personId } }
                 });
 
+                // Delete all keys starting with personId# using paginated scan and batch deletes
                 var prefix = personId + "#";
                 var scanReq = new ScanRequest
                 {
@@ -217,25 +219,101 @@ namespace Portfolio.Api.Services
                     ExpressionAttributeValues = new Dictionary<string, AttributeValue> { [":p"] = new AttributeValue { S = prefix } }
                 };
 
-                var resp = await _dynamoDb.ScanAsync(scanReq);
-                if (resp.Items != null)
+                do
                 {
-                    foreach (var item in resp.Items)
+                    var resp = await _dynamoDb.ScanAsync(scanReq);
+                    var keysToDelete = new List<Dictionary<string, AttributeValue>>();
+                    if (resp.Items != null)
                     {
-                        if (item.TryGetValue("CacheKey", out var keyAttr) && !string.IsNullOrEmpty(keyAttr.S))
+                        foreach (var item in resp.Items)
                         {
-                            await _dynamoDb.DeleteItemAsync(new DeleteItemRequest
+                            if (item.TryGetValue("CacheKey", out var keyAttr) && !string.IsNullOrEmpty(keyAttr.S))
                             {
-                                TableName = table!,
-                                Key = new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = keyAttr.S } }
-                            });
+                                keysToDelete.Add(new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = keyAttr.S } });
+                            }
+                        }
+                    }
+
+                    // Batch delete in groups of 25
+                    const int batchSize = 25;
+                    for (int i = 0; i < keysToDelete.Count; i += batchSize)
+                    {
+                        var batch = keysToDelete.Skip(i).Take(batchSize).ToList();
+                        var writeRequests = new List<WriteRequest>();
+                        foreach (var k in batch)
+                        {
+                            writeRequests.Add(new WriteRequest { DeleteRequest = new DeleteRequest { Key = k } });
+                        }
+
+                        if (writeRequests.Count > 0)
+                        {
+                            var batchReq = new BatchWriteItemRequest
+                            {
+                                RequestItems = new Dictionary<string, List<WriteRequest>> { [table!] = writeRequests }
+                            };
+
+                            var batchResp = await _dynamoDb.BatchWriteItemAsync(batchReq);
+                            int retry = 0;
+                            while (batchResp.UnprocessedItems != null && batchResp.UnprocessedItems.Count > 0 && retry < 3)
+                            {
+                                await Task.Delay(100 * (retry + 1));
+                                batchResp = await _dynamoDb.BatchWriteItemAsync(new BatchWriteItemRequest { RequestItems = batchResp.UnprocessedItems });
+                                retry++;
+                            }
+                        }
+                    }
+
+                    scanReq.ExclusiveStartKey = resp.LastEvaluatedKey;
+                }
+                while (scanReq.ExclusiveStartKey != null && scanReq.ExclusiveStartKey.Count > 0);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "DynamoDB Invalidate cache failed for person {PersonId}", personId);
+            }
+        }
+
+        public async Task InvalidateKeysAsync(IEnumerable<string> keys, string? tableName = null)
+        {
+            if (string.IsNullOrWhiteSpace(tableName)) return;
+            var table = tableName;
+
+            try
+            {
+                var keyList = (keys ?? Array.Empty<string>()).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
+                if (keyList.Count == 0) return;
+
+                const int batchSize = 25;
+                for (int i = 0; i < keyList.Count; i += batchSize)
+                {
+                    var batch = keyList.Skip(i).Take(batchSize).ToList();
+                    var writeRequests = new List<WriteRequest>();
+                    foreach (var k in batch)
+                    {
+                        writeRequests.Add(new WriteRequest { DeleteRequest = new DeleteRequest { Key = new Dictionary<string, AttributeValue> { ["CacheKey"] = new AttributeValue { S = k } } } });
+                    }
+
+                    if (writeRequests.Count > 0)
+                    {
+                        var batchReq = new BatchWriteItemRequest
+                        {
+                            RequestItems = new Dictionary<string, List<WriteRequest>> { [table!] = writeRequests }
+                        };
+
+                        var batchResp = await _dynamoDb.BatchWriteItemAsync(batchReq);
+                        int retry = 0;
+                        while (batchResp.UnprocessedItems != null && batchResp.UnprocessedItems.Count > 0 && retry < 3)
+                        {
+                            await Task.Delay(100 * (retry + 1));
+                            batchResp = await _dynamoDb.BatchWriteItemAsync(new BatchWriteItemRequest { RequestItems = batchResp.UnprocessedItems });
+                            retry++;
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "DynamoDB Invalidate cache failed for person {PersonId}", personId);
+                _logger.LogWarning(ex, "DynamoDB InvalidateKeys failed");
             }
         }
     }

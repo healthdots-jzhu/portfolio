@@ -137,7 +137,16 @@
       "requiresAuth": "Please save your changes before creating a version",
       "confirmRequired": "Confirmation required to publish",
       "loadingPortfolios": "Loading your portfolios...",
-      "sessionExpiredSigningIn": "Session expired — signing you in..."
+      "sessionExpiredSigningIn": "Session expired — signing you in...",
+      "sessionRecoveryTitle": "Session expired before save",
+      "sessionRecoveryDescription": "Your unsaved edits are still here. Copy or download them before signing in again.",
+      "copySessionDraft": "Copy draft",
+      "downloadSessionDraft": "Download draft",
+      "signInAgain": "Sign in again",
+      "sessionDraftCopied": "Draft copied to clipboard",
+      "sessionDraftCopyFailed": "Could not copy draft. Please use Download draft.",
+      "autosaveRestored": "Recovered unsaved draft from your previous session.",
+      "unsavedChangesLeaveConfirm": "You have unsaved changes in this version. Leave and lose these changes?"
     },
     "errors": {
       "authRequired": "Authentication required",

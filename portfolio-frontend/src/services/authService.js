@@ -98,7 +98,7 @@ export const getAuthConfig = async () => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/config`);
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/config`);
     if (!response.ok) {
       throw new Error('Failed to fetch auth configuration');
     }

@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Portfolio.Api.Models.Dto;
 using Portfolio.Api.Services;
@@ -7,7 +8,8 @@ using System.Text.Json;
 namespace Portfolio.Api.Controllers;
 
 [ApiController]
-[Route("api/portfolios/{portfolioId}/versions")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/portfolios/{portfolioId}/versions")]
 public class VersionsController : ControllerBase
 {
     private readonly IVersionService _versionService;
