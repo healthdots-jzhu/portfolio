@@ -70,3 +70,5 @@ When asked to review code changes, write detailed review notes to `logs/code-rev
 
 ## Self-Improvement Rule
 After user correction, update this file with concise rules that prevent repeating the mistake.
+
+- For destroy workflows, always present execution in two phases when applicable: resources preserved via state removal/detach first, then resources actually destroyed; never mix these into one ordered destroy list.

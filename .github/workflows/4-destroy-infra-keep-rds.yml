@@ -1,4 +1,4 @@
-name: '[On-Demand] Destroy Infrastructure (Preserve RDS + Networking)'
+name: '[On-Demand] Destroy ECS + ALB Runtime (Preserve RDS/Network)'
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ env:
 
 jobs:
   destroy:
-    name: Terraform destroy (preserves RDS, VPC, subnets, security groups, ECR, KMS)
+    name: Terraform targeted destroy (ECS, ALB, CloudWatch, public IP resources)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -143,83 +143,60 @@ jobs:
           find . -name "*.tf" -exec sed -i 's/prevent_destroy\s*=\s*true/prevent_destroy = false/g' {} \;
           echo "prevent_destroy = true removed from all .tf files in runner workspace."
 
-      - name: Remove preserved resources from Terraform state (keeps them in AWS)
+      - name: Terraform destroy (targeted ECS/ALB/runtime resources only)
         shell: bash
         run: |
           set -euo pipefail
 
-          # Helper: remove a resource from state, silently skip if not present
-          rm_state() {
-            terraform state rm "$1" 2>&1 || true
+          mapfile -t STATE_RESOURCES < <(terraform state list)
+          TARGET_ARGS=()
+
+          add_if_present() {
+            local address="$1"
+            if printf '%s\n' "${STATE_RESOURCES[@]}" | grep -Fxq "$address"; then
+              TARGET_ARGS+=("-target=$address")
+            fi
           }
 
-          echo "=== Removing networking resources ==="
-          rm_state "aws_vpc.main"
-          rm_state "aws_internet_gateway.main"
-          rm_state "aws_subnet.public"
-          rm_state "aws_subnet.private"
-          rm_state "aws_subnet.private_2a"
-          rm_state "aws_subnet.private_2b"
-          rm_state "aws_subnet.private_app_2a"
-          rm_state "aws_subnet.private_app_2b"
-          rm_state "aws_subnet.public_2b"
-          rm_state "aws_route_table.public"
-          rm_state "aws_route_table.private_app"
-          rm_state "aws_route_table_association.public"
-          rm_state "aws_route_table_association.public_2b"
-          rm_state "aws_route_table_association.private_app_2a"
-          rm_state "aws_route_table_association.private_app_2b"
+          # ECS runtime resources
+          add_if_present "aws_appautoscaling_policy.portfolio_api_cpu"
+          add_if_present "aws_appautoscaling_target.portfolio_api"
+          add_if_present "aws_ecs_service.portfolio_api"
+          add_if_present "aws_ecs_task_definition.portfolio_api"
+          add_if_present "aws_ecs_cluster.main"
 
-          echo "=== Removing security groups ==="
-          rm_state "aws_security_group.ec2"
-          rm_state "aws_security_group.rds"
-          rm_state "aws_security_group.vpc_endpoints"
+          # ECS/ALB monitoring resources managed in Terraform
+          add_if_present "aws_cloudwatch_log_group.ecs_tasks"
 
-          echo "=== Removing EC2 SSM IAM resources ==="
-          rm_state "aws_iam_role.ec2_ssm_role"
-          rm_state "aws_iam_role_policy_attachment.ssm_policy"
-          rm_state "aws_iam_role_policy.ec2_ssm_ssmmessages"
-          rm_state "aws_iam_instance_profile.ec2_profile"
+          # ALB resources
+          add_if_present "aws_lb_listener_rule.portfolio_api"
+          add_if_present "aws_lb_listener.http"
+          add_if_present "aws_lb_target_group.portfolio_api"
+          add_if_present "aws_lb.main"
+          add_if_present "aws_security_group_rule.ecs_tasks_from_alb"
+          add_if_present "aws_security_group.alb"
 
-          echo "=== Removing RDS and dependencies ==="
-          rm_state "aws_db_parameter_group.postgres"
-          rm_state "aws_db_subnet_group.postgres"
-          rm_state "aws_db_instance.postgres-portfolio"
-          rm_state "aws_kms_key.rds"
-          rm_state "aws_kms_alias.rds"
+          # ECS/ALB optional resources with count/for_each
+          while IFS= read -r address; do
+            TARGET_ARGS+=("-target=$address")
+          done < <(printf '%s\n' "${STATE_RESOURCES[@]}" | grep '^aws_lb_listener\.https\[' || true)
 
-          echo "=== Removing SSM parameter and Hashids salt ==="
-          rm_state "random_password.hashids_salt"
-          rm_state "aws_ssm_parameter.hashids_salt"
+          while IFS= read -r address; do
+            TARGET_ARGS+=("-target=$address")
+          done < <(printf '%s\n' "${STATE_RESOURCES[@]}" | grep '^aws_lb_listener_certificate\.extra\[' || true)
 
-          echo "=== Removing ECR repository ==="
-          rm_state "aws_ecr_repository.portfolio_api"
-          rm_state "aws_ecr_lifecycle_policy.portfolio_api_untagged"
+          # Public-IP-bearing compute resource (no standalone aws_eip resources in this stack)
+          add_if_present "aws_instance.main"
 
-          echo "=== Removing ECS IAM roles (prevent_destroy) ==="
-          rm_state "aws_iam_role.ecs_task_execution"
-          rm_state "aws_iam_role_policy_attachment.ecs_task_execution"
-          rm_state "aws_iam_role_policy.ecs_secrets_access"
-          rm_state "aws_iam_role.ecs_task"
-          rm_state "aws_iam_role_policy.ecs_task_permissions"
+          if [ ${#TARGET_ARGS[@]} -eq 0 ]; then
+            echo "No matching targeted resources found in Terraform state. Nothing to destroy."
+            exit 0
+          fi
 
-          echo "Done removing preserved resources from state."
+          echo "Destroy targets:"
+          printf '  %s\n' "${TARGET_ARGS[@]}"
 
-      - name: Empty ALB logs S3 bucket before destroy
-        shell: bash
-        run: |
-          set -euo pipefail
-          BUCKET="${{ vars.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-alb-logs"
-          echo "Emptying S3 bucket: $BUCKET"
-          # Suppress error if bucket doesn't exist (may already be gone or never created)
-          aws s3 rm "s3://${BUCKET}" --recursive --region "${{ vars.AWS_REGION }}" 2>&1 || {
-            echo "Warning: Could not empty bucket '${BUCKET}' (may not exist or already empty). Continuing."
-          }
-
-      - name: Terraform destroy
-        shell: bash
-        run: |
-          terraform destroy -auto-approve
+          terraform destroy -auto-approve "${TARGET_ARGS[@]}"
 
       - name: Destroy summary
         if: always()
@@ -229,27 +206,20 @@ jobs:
           echo "Destroy workflow complete."
           echo "Environment: ${{ env.ENVIRONMENT }}"
           echo ""
-          echo "PRESERVED in AWS (removed from state before destroy):"
-          echo "  - VPC, Internet Gateway, all Subnets, Route Tables"
-          echo "  - Security Groups: ec2, rds, vpc_endpoints"
-          echo "  - EC2 SSM IAM Role + Instance Profile"
-          echo "  - RDS instance: aws_db_instance.postgres-portfolio"
-          echo "  - KMS key + alias for RDS"
-          echo "  - SSM Parameter: hashids_salt"
-          echo "  - ECR repository + lifecycle policy"
-          echo "  - ECS IAM Roles (task execution + task)"
+          echo "TARGETED FOR DESTROY (if present in state):"
+          echo "  - ECS service, task definition, cluster"
+          echo "  - ECS auto-scaling target + policy"
+          echo "  - ALB, listeners, listener cert attachments, listener rule, target group"
+          echo "  - CloudWatch log group for ECS tasks"
+          echo "  - ALB security group + ECS-from-ALB SG rule"
+          echo "  - EC2 bastion instance (public IP released with instance)"
           echo ""
-          echo "DESTROYED:"
-          echo "  - ECS Cluster, Service, Task Definition"
-          echo "  - CloudWatch Log Group (ECS tasks)"
-          echo "  - Application Load Balancer + Listeners + Target Groups"
-          echo "  - Route53 record for API subdomain"
-          echo "  - ALB Security Group"
-          echo "  - ECS Tasks Security Group + SG rules"
-          echo "  - DynamoDB cache table"
-          echo "  - Auto Scaling target + policy"
-          echo "  - EC2 bastion instance"
-          echo "  - Lambda scheduler + EventBridge rules"
+          echo "PRESERVED (not targeted by this workflow):"
+          echo "  - RDS and DB dependencies"
+          echo "  - VPC, subnets, route tables, Internet Gateway"
+          echo "  - RDS/EC2/VPC endpoint security groups"
+          echo "  - Route53 API DNS record"
+          echo "  - ECR, ECS IAM roles, DynamoDB cache, Lambda scheduler"
           echo "  - ALB logs S3 bucket"
           echo ""
           echo "State snapshot saved to:"
