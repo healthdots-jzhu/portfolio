@@ -186,9 +186,6 @@ jobs:
             TARGET_ARGS+=("-target=$address")
           done < <(printf '%s\n' "${STATE_RESOURCES[@]}" | grep '^aws_lb_listener_certificate\.extra\[' || true)
 
-          # Public-IP-bearing compute resource (no standalone aws_eip resources in this stack)
-          add_if_present "aws_instance.main"
-
           if [ ${#TARGET_ARGS[@]} -eq 0 ]; then
             echo "No matching targeted resources found in Terraform state. Nothing to destroy."
             exit 0
@@ -213,13 +210,14 @@ jobs:
           echo "  - ALB, listeners, listener cert attachments, listener rule, target group"
           echo "  - CloudWatch log group for ECS tasks"
           echo "  - ALB security group + ECS-from-ALB SG rule"
-          echo "  - EC2 bastion instance (public IP released with instance)"
+          echo "  - ECS task public IP attachments (released when ECS service/tasks are deleted)"
           echo ""
           echo "PRESERVED (not targeted by this workflow):"
           echo "  - RDS and DB dependencies"
           echo "  - VPC, subnets, route tables, Internet Gateway"
           echo "  - RDS/EC2/VPC endpoint security groups"
           echo "  - Route53 API DNS record"
+          echo "  - EC2 bastion instance and scheduler resources"
           echo "  - ECR, ECS IAM roles, DynamoDB cache, Lambda scheduler"
           echo "  - ALB logs S3 bucket"
           echo ""
