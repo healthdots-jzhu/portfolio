@@ -29,9 +29,6 @@ jobs:
   destroy:
     name: Terraform targeted destroy (ECS, ALB, CloudWatch, public IP resources)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: terraform
     environment: ${{ github.event.inputs.environment }}
 
     steps:
@@ -109,6 +106,7 @@ jobs:
           fi
 
       - name: Terraform init (S3 backend)
+        working-directory: terraform
         run: |
           terraform init -reconfigure \
             -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
@@ -119,6 +117,7 @@ jobs:
 
       - name: Save full state snapshot to S3 (pre-destroy backup)
         shell: bash
+        working-directory: terraform
         run: |
           set -euo pipefail
           terraform state pull > ../pre_destroy.tfstate
@@ -139,12 +138,14 @@ jobs:
 
       - name: Strip prevent_destroy from local .tf files (runner only — never committed)
         shell: bash
+        working-directory: terraform
         run: |
           find . -name "*.tf" -exec sed -i 's/prevent_destroy\s*=\s*true/prevent_destroy = false/g' {} \;
           echo "prevent_destroy = true removed from all .tf files in runner workspace."
 
       - name: Terraform destroy (targeted ECS/ALB/runtime resources only)
         shell: bash
+        working-directory: terraform
         run: |
           set -euo pipefail
 
