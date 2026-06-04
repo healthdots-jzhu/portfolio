@@ -662,11 +662,28 @@ export default function PortfolioEditor() {
       const portfolioData = await portfolioApi.getPortfolioForEdit(personId, token, { noCache: true });
       setPortfolio(portfolioData);
       setLanguages(portfolioData.availableLanguages || ['en']);
-      
+
       // Load versions
       const portfolioId = portfolioData.id;
-      const versionHistory = await portfolioApi.getVersionHistory(portfolioId, token);
-      setVersions(versionHistory);
+      let versionHistory = await portfolioApi.getVersionHistory(portfolioId, token);
+
+      // If there are no versions yet (fresh portfolio), create an initial draft
+      if (!Array.isArray(versionHistory) || versionHistory.length === 0) {
+        try {
+          const newVersion = await portfolioApi.createVersion(portfolioId, null, 'Initial draft', false, token);
+          // reload history
+          versionHistory = await portfolioApi.getVersionHistory(portfolioId, token);
+          setVersions(versionHistory);
+          // Select the newly created draft so user directly edits it
+          setSelectedVersionId(newVersion.id);
+        } catch (createErr) {
+          console.error('Failed to create initial draft version:', createErr);
+          // fallback: set versions to empty array
+          setVersions([]);
+        }
+      } else {
+        setVersions(versionHistory);
+      }
     } catch (err) {
       console.error('Error loading portfolio:', err);
       setError(locale.portfolioEditor.failed);
@@ -1296,6 +1313,9 @@ export default function PortfolioEditor() {
     );
   };
 
+  // Determine whether there is a published 'Live' version to show
+  const hasLivePublished = Array.isArray(versions) && versions.some((v) => v.isCurrentPublished === true || v.status === VersionStatusEnum.Published);
+
   if (loading) {
     return (
       <div className="portfolio-editor">
@@ -1751,25 +1771,27 @@ export default function PortfolioEditor() {
                 </button>
               </div>
               <div className="version-list">
-                {/* Live version - always first */}
-                <div 
-                  className={`version-item ${selectedVersionId === 'live' ? 'selected' : ''}`}
-                  onClick={() => {
-                    const switched = requestVersionSwitch('live');
-                    if (!switched) return;
-                    if (window.innerWidth <= 768) {
-                      setShowVersionHistory(false);
-                    }
-                  }}
-                >
-                  <div className="version-header">
-                    <span className="version-number">Live</span>
-                    <span className="version-status status-live">Current</span>
+                {/* Live version (only when a published/live version exists) */}
+                {hasLivePublished && (
+                  <div 
+                    className={`version-item ${selectedVersionId === 'live' ? 'selected' : ''}`}
+                    onClick={() => {
+                      const switched = requestVersionSwitch('live');
+                      if (!switched) return;
+                      if (window.innerWidth <= 768) {
+                        setShowVersionHistory(false);
+                      }
+                    }}
+                  >
+                    <div className="version-header">
+                      <span className="version-number">Live</span>
+                      <span className="version-status status-live">Current</span>
+                    </div>
+                    <div className="version-date">
+                      {locale.portfolioEditor.currentLiveContent}
+                    </div>
                   </div>
-                  <div className="version-date">
-                    {locale.portfolioEditor.currentLiveContent}
-                  </div>
-                </div>
+                )}
 
                 {/* All versions in descending order */}
                 {versions.map((version) => (

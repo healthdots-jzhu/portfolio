@@ -60,8 +60,15 @@ export const getAvailablePersons = async () => {
 
 // Check if a person exists (API only, must be implemented in portfolioApi or elsewhere)
 export const personExists = async (personId) => {
-  // This should call an API endpoint to check if a person exists
-  // Placeholder: always return true or implement as needed
-  return true;
+  if (!personId) return false;
+  try {
+    // Attempt to fetch portfolio metadata for the given personId
+    const portfolio = await portfolioApi.getPortfolio(personId, { noCache: true });
+    return !!(portfolio && (portfolio.id || portfolio.personId));
+  } catch (err) {
+    // If API returns 404 or any error, treat as non-existent
+    console.debug('personExists check failed for', personId, err && err.message);
+    return false;
+  }
 };
 

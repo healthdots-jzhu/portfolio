@@ -8,6 +8,7 @@ using Portfolio.Api.Models;
 using Portfolio.Api.Services;
 using Portfolio.Api.Models.Dto;
 using Portfolio.Api.Utils;
+using System.Text.Json;
 
 
 namespace Portfolio.Api.Controllers;
@@ -73,7 +74,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -207,7 +208,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -301,7 +302,7 @@ public class PortfoliosController : ControllerBase
 
         var portfolio = await _context.Portfolios
             .Include(p => p.Locales)
-            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -441,38 +442,36 @@ public class PortfoliosController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
-        var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+        // Global `PortfolioOwnershipFilter` validates that the caller owns the portfolio by `personId`.
+
+        // Locate the requested version and ensure it belongs to the portfolio referenced by personId
+        var version = await _context.PortfolioVersions
+            .Include(v => v.Portfolio)
+            .Where(v => v.Id == versionId && v.Portfolio.PersonId == personId && v.Portfolio.IsActive)
             .FirstOrDefaultAsync();
 
-        if (portfolio == null)
+        if (version == null)
         {
-            return NotFound(new { error = "Portfolio not found or access denied" });
+            return NotFound(new { error = "Version not found" });
         }
 
-        if (Request.Form.Files.Count == 0)
+        // Parse the version snapshot and return the requested language content if present.
+        if (string.IsNullOrWhiteSpace(version.LocaleSnapshot) || version.LocaleSnapshot == "{}")
         {
-            return BadRequest(new { error = "No file uploaded" });
+            return Content("{}", "application/json");
         }
 
-        var file = Request.Form.Files[0];
-        if (file.Length == 0)
+        using var doc = JsonDocument.Parse(version.LocaleSnapshot);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object)
         {
-            return BadRequest(new { error = "Empty file" });
+            return Content("{}", "application/json");
         }
 
-        int maxFiles = _configuration.GetValue<int>("PortfolioAssetLimits:MaxFilesPerPortfolio", 200);
-        long maxFileSize = _configuration.GetValue<long>("PortfolioAssetLimits:MaxFileSizeBytes", 10485760);
-        if (file.Length > maxFileSize)
+        if (doc.RootElement.TryGetProperty(language, out var langElement))
         {
-            return BadRequest(new { error = $"File size exceeds the maximum allowed size of {maxFileSize / (1024 * 1024)} MB." });
+            return Content(langElement.GetRawText(), "application/json");
         }
-        int assetCount = await _context.PortfolioAssets.CountAsync(a => a.PortfolioId == portfolio.Id);
-        if (assetCount >= maxFiles)
-        {
-            return BadRequest(new { error = $"This portfolio already has the maximum allowed number of assets ({maxFiles}). Please delete an asset before uploading a new one." });
-        }
-        // Ensure a return value for all code paths
+
         return Content("{}", "application/json");
     }
 
@@ -848,7 +847,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -966,7 +965,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -1010,7 +1009,7 @@ public class PortfoliosController : ControllerBase
 
         var portfolio = await _context.Portfolios
             .Include(p => p.Locales)
-            .Where(p => p.PersonId == personId && p.OwnerId == userId)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)

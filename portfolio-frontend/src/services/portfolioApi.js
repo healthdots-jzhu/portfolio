@@ -1,7 +1,11 @@
   // ...existing code...
 // API service for portfolio backend
 import { maybeRefreshAccessTokenOnActivity, getAccessToken, redirectToLogin } from './authService';
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Use environment variables or Vite globals, with fallback to localhost
+const API_BASE_URL = (typeof __API_URL__ !== 'undefined' ? __API_URL__ : null) ||
+                     import.meta.env.VITE_API_URL ||
+                     'http://localhost:5000';
 const API_PREFIX = '/api/v1';
 
 // Wrapper used for all API fetches so we can trigger the on-activity refresh
@@ -18,18 +22,30 @@ const apiFetch = async (url, opts = {}, providedToken) => {
   const token = providedToken || getAccessToken();
   const headers = { ...(opts.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
-  const response = await fetch(url, { ...opts, headers });
+  try {
+    const response = await fetch(url, { ...opts, headers });
 
-  if (response.status === 401) {
-    try {
-      await redirectToLogin();
-    } catch (e) {
-      console.error('Redirect to login failed:', e);
+    if (response.status === 401) {
+      try {
+        await redirectToLogin();
+      } catch (e) {
+        console.error('Redirect to login failed:', e);
+      }
+      throw new Error('Authentication required');
     }
-    throw new Error('Authentication required');
-  }
 
-  return response;
+    return response;
+  } catch (error) {
+    // Log helpful error messages for local development
+    if (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1')) {
+      console.error(
+        `API call failed to ${API_BASE_URL}${API_PREFIX}. ` +
+        'Ensure backend is running (dotnet run or docker-compose up).',
+        error
+      );
+    }
+    throw error;
+  }
 };
 
 class PortfolioApiService {

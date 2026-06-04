@@ -4,6 +4,7 @@ using Portfolio.Api.Models.Dto;
 using Portfolio.Api.Services;
 using Portfolio.Api.Models;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace Portfolio.Api.Controllers;
 
@@ -16,18 +17,23 @@ public class VersionsController : ControllerBase
     private readonly ILocaleValidator _localeValidator;
     private readonly ICurrentUserProvider _currentUser;
     private readonly ILogger<VersionsController> _logger;
+    private readonly Portfolio.Api.Data.AppDbContext _context;
 
     public VersionsController(
         IVersionService versionService,
         ILocaleValidator localeValidator,
         ICurrentUserProvider currentUser,
-        ILogger<VersionsController> logger)
+        ILogger<VersionsController> logger,
+        Portfolio.Api.Data.AppDbContext context)
     {
         _versionService = versionService;
         _localeValidator = localeValidator;
         _currentUser = currentUser;
         _logger = logger;
+        _context = context;
     }
+
+    // Ownership is enforced globally by PortfolioOwnershipFilter; per-controller helper removed.
 
     /// <summary>
     /// Get version history for a portfolio
@@ -40,6 +46,8 @@ public class VersionsController : ControllerBase
         {
             return Unauthorized(new { error = "Authentication required" });
         }
+
+        // Ownership validated by global filter
 
         var history = await _versionService.GetVersionHistoryAsync(portfolioId);
         return Ok(history);
@@ -56,6 +64,8 @@ public class VersionsController : ControllerBase
         {
             return Unauthorized(new { error = "Authentication required" });
         }
+
+        // Ownership validated by global filter
 
         var version = await _versionService.GetVersionAsync(versionId);
         if (version == null || version.PortfolioId != portfolioId)
@@ -103,6 +113,8 @@ public class VersionsController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
+        // Ownership validated by global filter
+
         try
         {
             var version = await _versionService.CreateVersionAsync(portfolioId, userId, request);
@@ -137,6 +149,8 @@ public class VersionsController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
+        // Ownership validated by global filter
+
         try
         {
             var success = await _versionService.UpdateVersionLocaleAsync(versionId, language, request.ContentJson);
@@ -165,6 +179,8 @@ public class VersionsController : ControllerBase
         {
             return Unauthorized(new { error = "Authentication required" });
         }
+
+        // Ownership validated by global filter
 
         if (!request.Confirmed)
         {
@@ -206,6 +222,8 @@ public class VersionsController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
+        // Ownership validated by global filter
+
         var version = await _versionService.StageVersionAsync(versionId);
         if (version == null)
         {
@@ -233,6 +251,8 @@ public class VersionsController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
+        // Ownership validated by global filter
+
         var success = await _versionService.UnstageVersionAsync(versionId);
         if (!success)
         {
@@ -253,6 +273,8 @@ public class VersionsController : ControllerBase
         {
             return Unauthorized(new { error = "Authentication required" });
         }
+
+        // Ownership validated by global filter
 
         var version = await _versionService.GetVersionAsync(versionId);
         if (version == null || version.PortfolioId != portfolioId)
@@ -286,6 +308,8 @@ public class VersionsController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
+        // Ownership validated by global filter
+
         var stagedVersions = await _versionService.GetStagedVersionsAsync(portfolioId);
         
         var result = stagedVersions.Select(v => new
@@ -314,6 +338,8 @@ public class VersionsController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
+        // Ownership validated by global filter
+
         try
         {
             var newVersion = await _versionService.CopyVersionAsync(versionId, userId);
@@ -341,13 +367,15 @@ public class VersionsController : ControllerBase
     /// Validate locale content without saving
     /// </summary>
     [HttpPost("validate")]
-    public IActionResult ValidateLocale(string portfolioId, [FromBody] ValidateLocaleRequest request)
+    public async Task<IActionResult> ValidateLocale(string portfolioId, [FromBody] ValidateLocaleRequest request)
     {
         var userId = _currentUser.GetUserId(HttpContext);
         if (userId == Guid.Empty)
         {
             return Unauthorized(new { error = "Authentication required" });
         }
+
+        // Ownership validated by global filter
 
         var result = _localeValidator.ValidateLocale(request.ContentJson, request.Language);
         return Ok(result);
