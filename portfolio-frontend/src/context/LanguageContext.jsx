@@ -183,6 +183,20 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
       resolvePath: (path) => path || '',
     };
 
+    const fallbackValue = {
+      personId: personId || '',
+      versionId: versionId || null,
+      basePrefix,
+      language,
+      availableLanguages: ['en'],
+      setLanguage,
+      fontFamily: 'Montserrat',
+      loading: true,
+      error: null,
+      t: () => '',
+      resolvePath: (path) => path || '',
+    };
+
     return (
       <LanguageContext.Provider value={fallbackValue}>
         {children}
