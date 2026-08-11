@@ -123,6 +123,7 @@ function PersonLoader() {
   const { personId, versionId } = useParams();
   const [exists, setExists] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
+  const [serviceUnavailable, setServiceUnavailable] = React.useState(false);
   const showLoading = useDelayedLoading(loading);
 
   React.useEffect(() => {
@@ -131,6 +132,9 @@ function PersonLoader() {
         const exists = await personExists(personId);
         setExists(!!exists);
       } catch (err) {
+        if (err?.code === 'SERVICE_UNAVAILABLE') {
+          setServiceUnavailable(true);
+        }
         setExists(false);
       } finally {
         setLoading(false);
@@ -148,6 +152,17 @@ function PersonLoader() {
   }
 
   if (!exists) {
+    if (serviceUnavailable) {
+      return (
+        <div style={{ minHeight: '60vh', display: 'grid', placeItems: 'center', padding: '2rem', textAlign: 'center' }}>
+          <div>
+            <h1>Portfolio Temporarily Unavailable</h1>
+            <p>Please come back later.</p>
+          </div>
+        </div>
+      );
+    }
+
     return <Navigate to="/" replace />;
   }
 

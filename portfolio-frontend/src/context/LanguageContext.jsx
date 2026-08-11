@@ -141,6 +141,33 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
     ? (versionId ? `/preview/${versionId}/${personId}` : `/p/${personId}`)
     : '';
 
+  if (!loading && error && !translations) {
+    return (
+      <LanguageContext.Provider
+        value={{
+          personId: personId || '',
+          versionId: versionId || null,
+          basePrefix,
+          language,
+          availableLanguages: ['en'],
+          setLanguage,
+          fontFamily: 'Montserrat',
+          loading: false,
+          error,
+          t: () => '',
+          resolvePath: (path) => path || '',
+        }}
+      >
+        <div style={{ minHeight: '60vh', display: 'grid', placeItems: 'center', padding: '2rem', textAlign: 'center' }}>
+          <div>
+            <h2>Portfolio Temporarily Unavailable</h2>
+            <p>The latest portfolio data is unavailable right now. Please come back later.</p>
+          </div>
+        </div>
+      </LanguageContext.Provider>
+    );
+  }
+
   if (loading || !translations) {
     const fallbackValue = {
       personId: personId || '',
@@ -162,11 +189,6 @@ export const LanguageProvider = ({ children, personId, versionId }) => {
         {showLoadingIndicator && <LoadingSpinner label="Loading..." className="loading-spinner-overlay" />}
       </LanguageContext.Provider>
     );
-  }
-
-  // If error and no translations, show error state
-  if (error && !translations) {
-    console.error('Translation loading error:', error);
   }
 
   const fontFamily = translations.theme?.fontFamily || 'Montserrat';

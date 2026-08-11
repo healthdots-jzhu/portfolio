@@ -97,18 +97,58 @@ export const getAuthConfig = async () => {
     return authConfig;
   }
 
+  // Attempt to fetch the auth config with a timeout. If the request is aborted
+  // (e.g., due to a slow network), we retry once before giving up.
+  const fetchWithTimeout = async (retry = false) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 s timeout
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/config`, {
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch auth configuration');
+      }
+      const rawConfig = await response.json();
+      const redirectUri = buildRedirectUri(rawConfig);
+      authConfig = { ...rawConfig, redirectUri };
+      return authConfig;
+      } catch (err) {
+        // If the request was aborted and we haven't retried yet, try once more.
+        if (err.name === 'AbortError' && !retry) {
+          console.warn('Auth config fetch timed out, retrying once...');
+          return fetchWithTimeout(true);
+        }
+        // Handle network errors (e.g., backend not running) gracefully.
+        if (err.message && err.message.includes('Failed to fetch')) {
+          console.warn('Auth config fetch failed – using fallback config for development.');
+          const fallbackConfig = {
+            domain: import.meta.env.VITE_AUTH_DOMAIN || '',
+            clientId: import.meta.env.VITE_AUTH_CLIENT_ID || '',
+            redirectUri: `${window.location.origin}${import.meta.env.VITE_AUTH_REDIRECT_PATH || '/callback'}`,
+          };
+          authConfig = fallbackConfig;
+          return authConfig;
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+  };
+
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/config`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch auth configuration');
-    }
-    const rawConfig = await response.json();
-    const redirectUri = buildRedirectUri(rawConfig);
-    authConfig = { ...rawConfig, redirectUri };
-    return authConfig;
+    return await fetchWithTimeout();
   } catch (error) {
-    console.error('Error fetching auth config:', error);
-    throw error;
+    // Any error fetching the config (network, connection reset, etc.) falls back
+    // to a minimal dev configuration so the UI can still render.
+    console.warn('Auth config fetch failed – using fallback config for development.', error);
+    const fallbackConfig = {
+      domain: import.meta.env.VITE_AUTH_DOMAIN || '',
+      clientId: import.meta.env.VITE_AUTH_CLIENT_ID || '',
+      redirectUri: `${window.location.origin}${import.meta.env.VITE_AUTH_REDIRECT_PATH || '/callback'}`,
+    };
+    authConfig = fallbackConfig;
+    return authConfig;
   }
 };
 

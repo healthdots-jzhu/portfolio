@@ -40,6 +40,13 @@
   --font-cursive: 'Edu NSW ACT Cursive', cursive;
   --font-uvn: 'UVN-Sang-Song', serif;
   font-family: var(--font-primary);
+  /* Spacing tokens (overridden at runtime by themeApplier.js) */
+  --home-hero-margin-bottom: 2.5rem;
+  --home-hero-line-height: 1.15;
+  /* Global section gap used by pages to avoid overlap */
+  --section-gap: 4rem;
+  /* hero bottom padding exposed to theme */
+  --home-hero-padding-bottom: 6rem;
 }
 
 body {

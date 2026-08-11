@@ -66,7 +66,17 @@ export const personExists = async (personId) => {
     const portfolio = await portfolioApi.getPortfolio(personId, { noCache: true });
     return !!(portfolio && (portfolio.id || portfolio.personId));
   } catch (err) {
-    // If API returns 404 or any error, treat as non-existent
+    // If API returns 404, treat as non-existent. For temporary outages, bubble up.
+    if (err?.status === 404) {
+      return false;
+    }
+
+    if (!err?.status || err.status >= 500) {
+      const unavailableError = new Error('Portfolio service temporarily unavailable');
+      unavailableError.code = 'SERVICE_UNAVAILABLE';
+      throw unavailableError;
+    }
+
     console.debug('personExists check failed for', personId, err && err.message);
     return false;
   }

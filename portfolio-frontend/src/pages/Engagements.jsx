@@ -1,12 +1,144 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslations } from '../context/LanguageContext';
+import { parseColorTags } from '../utils/textParser';
 import { parseIconSyntax } from '../utils/parseIconSyntax';
 import useDelayedLoading from '../hooks/useDelayedLoading';
 import LoadingSpinner from '../components/LoadingSpinner';
 import './Engagements.css';
 
+/* ─── Timeline layout (frames 7-14: Experience & Career History) ─── */
+const TimelineLayout = ({ engagementsRoot, resolvePath, basePrefix }) => {
+  const items = Array.isArray(engagementsRoot.items) ? engagementsRoot.items : [];
+  const impactSection = engagementsRoot.impactSection;
+  const ctaSection = engagementsRoot.ctaSection;
+
+  const resolveLink = (path) => {
+    if (!path) return '#';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `${basePrefix}/${path}`;
+  };
+
+  return (
+    <main className="timeline-page">
+      {/* Section header */}
+      <div className="timeline-header">
+        {engagementsRoot.badge && (
+          <span className="timeline-badge">{engagementsRoot.badge}</span>
+        )}
+        <h1 className="timeline-title">
+          {parseColorTags(engagementsRoot.title || '')}
+        </h1>
+        {engagementsRoot.introText && (
+          <p className="timeline-intro">{engagementsRoot.introText}</p>
+        )}
+      </div>
+
+      {/* Timeline entries */}
+      <div className="timeline-list">
+        {items.map((item, idx) => {
+          const achievements = Array.isArray(item.achievements) ? item.achievements : [];
+          const tags = Array.isArray(item.tags) ? item.tags : [];
+          return (
+            <div key={idx} className="timeline-entry">
+              {/* Left: meta */}
+              <div className="timeline-meta">
+                {item.dateRange && (
+                  <span className="timeline-date">{item.dateRange}</span>
+                )}
+                <h2 className="timeline-role">{item.title || item.heading}</h2>
+                {item.company && (
+                  <span className="timeline-company">{item.company}</span>
+                )}
+              </div>
+
+              {/* Centre line + dot */}
+              <div className="timeline-axis" aria-hidden="true">
+                <span className="timeline-dot" />
+              </div>
+
+              {/* Right: detail panel */}
+              <div className="timeline-detail">
+                {(item.description || item.taglineFirst) && (
+                  <p className="timeline-desc">
+                    {item.description || item.taglineFirst}
+                  </p>
+                )}
+                {achievements.map((ach, i) => (
+                  <div key={i} className="timeline-achievement">
+                    {ach.icon && (
+                      <span className="timeline-ach-icon" aria-hidden="true">{ach.icon}</span>
+                    )}
+                    <div>
+                      <strong className="timeline-ach-title">{ach.title}</strong>
+                      {ach.description && (
+                        <p className="timeline-ach-desc">{ach.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {tags.length > 0 && (
+                  <div className="timeline-tags">
+                    {tags.map((tag, i) => (
+                      <span key={i} className="timeline-tag">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Executive Impact stats */}
+      {impactSection && Array.isArray(impactSection.stats) && impactSection.stats.length > 0 && (
+        <section className="timeline-impact">
+          {impactSection.title && (
+            <h2 className="timeline-impact-title">
+              {parseColorTags(impactSection.title)}
+            </h2>
+          )}
+          <div className="timeline-impact-grid">
+            {impactSection.stats.map((stat, i) => (
+              <div key={i} className="timeline-impact-card">
+                <span className="timeline-impact-value">{parseColorTags(stat.value)}</span>
+                <span className="timeline-impact-label">{stat.label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* CTA band */}
+      {ctaSection && (
+        <section className="timeline-cta-band">
+          {ctaSection.title && (
+            <h2>{parseColorTags(ctaSection.title)}</h2>
+          )}
+          {ctaSection.description && <p>{ctaSection.description}</p>}
+          {Array.isArray(ctaSection.buttons) && ctaSection.buttons.length > 0 && (
+            <div className="timeline-cta-buttons">
+              {ctaSection.buttons.map((btn, i) => {
+                const isExternal = btn.path && (btn.path.startsWith('http://') || btn.path.startsWith('https://'));
+                const cls = `home-hero-cta${btn.primary ? ' home-hero-cta--primary' : ' home-hero-cta--ghost'}`;
+                return isExternal ? (
+                  <a key={i} href={btn.path} target="_blank" rel="noopener noreferrer" className={cls}>
+                    {btn.label}
+                  </a>
+                ) : (
+                  <Link key={i} to={resolveLink(btn.path)} className={cls}>{btn.label}</Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+    </main>
+  );
+};
+
 const Engagements = () => {
-  const { t, resolvePath, loading } = useTranslations();
+  const { t, resolvePath, loading, basePrefix } = useTranslations();
   const [expandedCards, setExpandedCards] = useState({});
   const contentRefs = useRef({});
   const [isClipped, setIsClipped] = useState({});
@@ -27,6 +159,12 @@ const Engagements = () => {
 
   // Support multiple engagements (array) while remaining backwards-compatible
   const engagementsRoot = t('engagements') || {};
+
+  // ── Timeline mode: activated when locale data sets timelineMode: true ──
+  if (engagementsRoot.timelineMode === true) {
+    return <TimelineLayout engagementsRoot={engagementsRoot} resolvePath={resolvePath} basePrefix={basePrefix || ''} />;
+  }
+
   const items = Array.isArray(engagementsRoot.items)
     ? engagementsRoot.items
     : [

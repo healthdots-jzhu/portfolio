@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Portfolio.Api.Data;
 using Portfolio.Api.Models;
@@ -22,6 +23,14 @@ public class EnsureUserExistsMiddleware
 
     public async Task InvokeAsync(HttpContext context, AppDbContext dbContext)
     {
+        // Do not perform JIT user provisioning for anonymous endpoints (e.g. auth config, health).
+        var endpoint = context.GetEndpoint();
+        if (endpoint?.Metadata?.GetMetadata<AllowAnonymousAttribute>() is not null)
+        {
+            await _next(context);
+            return;
+        }
+
         // Only process authenticated requests
         if (context.User.Identity?.IsAuthenticated == true)
         {

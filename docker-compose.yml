@@ -49,6 +49,7 @@ services:
       /usr/bin/mc alias set minio http://minio:9000 minioadmin minioadmin123;
       /usr/bin/mc mb minio/portfolio-dev --ignore-existing;
       /usr/bin/mc anonymous set public minio/portfolio-dev/img;
+      /usr/bin/mc anonymous set public minio/portfolio-dev/cache;
       echo 'MinIO initialized';
       "
     depends_on:
@@ -111,6 +112,8 @@ services:
       GitHubModels__Enabled: "false"
       GitHubModels__MockResponses: "true"
       Auth__JwtValidation: "false"
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin123
     ports:
       - "5000:80"
     depends_on:
@@ -124,11 +127,6 @@ services:
         condition: service_completed_successfully
     networks:
       - portfolio-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/api/v1/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   # Frontend (OPTIONAL - for development, run locally instead)
   # To use this container:
@@ -142,7 +140,7 @@ services:
     container_name: portfolio-frontend
     environment:
       VITE_API_URL: http://api:80
-      VITE_CDN_URL: http://minio:9000
+      VITE_CDN_URL: http://minio:9000/portfolio-dev
       VITE_AUTH_DOMAIN: healthdots.auth.ca-central-1.amazoncognito.com
       VITE_AUTH_CLIENT_ID: 4ligvh2gi6e7713i72dgob118u
       VITE_DEBUG: "false"

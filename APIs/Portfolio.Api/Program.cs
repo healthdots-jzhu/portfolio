@@ -14,6 +14,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Data.Common;
+using Npgsql;
 
 // Prevent claim type mapping (keep "sub" as "sub", not transform to ClaimTypes.NameIdentifier)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -330,6 +332,23 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+
+    static bool IsDatabaseUnavailableException(Exception ex)
+    {
+        var current = ex;
+        while (current != null)
+        {
+            if (current is NpgsqlException || current is DbException || current is TimeoutException)
+            {
+                return true;
+            }
+
+            current = current.InnerException;
+        }
+
+        return false;
+    }
+
     try
     {
         await next();
@@ -342,14 +361,26 @@ app.Use(async (context, next) =>
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Unhandled exception processing request {Method} {Path}", context.Request.Method, context.Request.Path);
+        var isDbUnavailable = IsDatabaseUnavailableException(ex);
+        if (isDbUnavailable)
+        {
+            logger.LogError(ex, "Database unavailable while processing request {Method} {Path}", context.Request.Method, context.Request.Path);
+        }
+        else
+        {
+            logger.LogError(ex, "Unhandled exception processing request {Method} {Path}", context.Request.Method, context.Request.Path);
+        }
 
         if (!context.Response.HasStarted)
         {
             context.Response.Clear();
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.StatusCode = isDbUnavailable
+                ? StatusCodes.Status503ServiceUnavailable
+                : StatusCodes.Status500InternalServerError;
             context.Response.ContentType = "application/json";
-            var payload = System.Text.Json.JsonSerializer.Serialize(new { error = "An unexpected error occurred." });
+            var payload = isDbUnavailable
+                ? System.Text.Json.JsonSerializer.Serialize(new { error = "Service temporarily unavailable. Please come back later." })
+                : System.Text.Json.JsonSerializer.Serialize(new { error = "An unexpected error occurred." });
             await context.Response.WriteAsync(payload);
         }
 

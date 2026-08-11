@@ -9,6 +9,7 @@ using Portfolio.Api.Services;
 using Portfolio.Api.Models.Dto;
 using Portfolio.Api.Utils;
 using System.Text.Json;
+using Npgsql;
 
 
 namespace Portfolio.Api.Controllers;
@@ -44,6 +45,10 @@ public class PortfoliosController : ControllerBase
     private readonly Portfolio.Api.Services.IDynamoCacheService _cacheService;
     private const string DynamoCacheTableKey = "LocalesCache";
     private readonly string? _resolvedDynamoCacheTableName;
+    private const string PortfolioCachePrefix = "cache/portfolios";
+    private const int S3CacheMaxAgeSeconds = 300;
+    private const int S3CacheStaleWhileRevalidateSeconds = 3600;
+    private const int S3CacheStaleIfErrorSeconds = 604800;
 
     // Dynamo cache table name resolution delegated to IConfiguration extension
 
@@ -256,6 +261,31 @@ public class PortfoliosController : ControllerBase
         return string.Join("_", segment.Replace('/', '_').Replace('\\', '_').Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
     }
 
+    private static string BuildPortfolioCacheKey(string personId) =>
+        $"{PortfolioCachePrefix}/{SanitizePathSegment(personId)}/portfolio.json";
+
+    private static string BuildLocaleCacheKey(string personId, string language) =>
+        $"{PortfolioCachePrefix}/{SanitizePathSegment(personId)}/locales/{SanitizePathSegment(language).ToLowerInvariant()}.json";
+
+    private static bool IsDatabaseUnavailableException(Exception ex)
+    {
+        var current = ex;
+        while (current != null)
+        {
+            if (current is NpgsqlException || current is TimeoutException)
+            {
+                return true;
+            }
+
+            current = current.InnerException;
+        }
+
+        return false;
+    }
+
+    private static string GetPortfolioCacheControlHeader() =>
+        $"public, max-age={S3CacheMaxAgeSeconds}, stale-while-revalidate={S3CacheStaleWhileRevalidateSeconds}, stale-if-error={S3CacheStaleIfErrorSeconds}";
+
     /// <summary>
     /// Get portfolios owned by the authenticated user (or all if admin).
     /// </summary>
@@ -359,42 +389,51 @@ public class PortfoliosController : ControllerBase
             return Content(cached, "application/json");
         }
 
-        var portfolio = await _context.Portfolios
-            .Include(p => p.Locales)
-            .Where(p => p.PersonId == personId && p.IsActive)
-            .FirstOrDefaultAsync();
-
-        if (portfolio == null)
+        try
         {
-            return NotFound(new { error = "Portfolio not found" });
+            var portfolio = await _context.Portfolios
+                .Include(p => p.Locales)
+                .Where(p => p.PersonId == personId && p.IsActive)
+                .FirstOrDefaultAsync();
+
+            if (portfolio == null)
+            {
+                return NotFound(new { error = "Portfolio not found" });
+            }
+
+            var availableLanguages = portfolio.Locales
+                .Where(l => !string.IsNullOrWhiteSpace(l.ContentJson) && l.ContentJson != "{}")
+                .Select(l => l.Language)
+                .Distinct()
+                .OrderBy(l => l)
+                .ToList();
+
+            var payload = new
+            {
+                id = portfolio.Id,
+                personId = portfolio.PersonId,
+                displayName = portfolio.DisplayName,
+                subdomain = portfolio.Subdomain,
+                createdAt = portfolio.CreatedAt,
+                availableLanguages = availableLanguages
+            };
+
+            // Serialize using camelCase property names for JS clients and store that
+            var json = System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            });
+
+            _ = _cacheService.SetAsync(cacheKey, json, cacheTable); // fire-and-forget cache set
+            _ = _s3Service.PutJsonObjectAsync(BuildPortfolioCacheKey(personId), json, GetPortfolioCacheControlHeader());
+
+            return Content(json, "application/json");
         }
-
-        var availableLanguages = portfolio.Locales
-            .Where(l => !string.IsNullOrWhiteSpace(l.ContentJson) && l.ContentJson != "{}")
-            .Select(l => l.Language)
-            .Distinct()
-            .OrderBy(l => l)
-            .ToList();
-
-        var payload = new
+        catch (Exception ex) when (IsDatabaseUnavailableException(ex))
         {
-            id = portfolio.Id,
-            personId = portfolio.PersonId,
-            displayName = portfolio.DisplayName,
-            subdomain = portfolio.Subdomain,
-            createdAt = portfolio.CreatedAt,
-            availableLanguages = availableLanguages
-        };
-
-        // Serialize using camelCase property names for JS clients and store that
-        var json = System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions
-        {
-            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-        });
-
-        _ = _cacheService.SetAsync(cacheKey, json, cacheTable); // fire-and-forget cache set
-
-        return Content(json, "application/json");
+            _logger.LogError(ex, "RDS unavailable for portfolio {PersonId}; returning 503.", personId);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Portfolio is temporarily unavailable. Please come back later." });
+        }
     }
 
     /// <summary>
@@ -412,19 +451,28 @@ public class PortfoliosController : ControllerBase
             return Content(cached, "application/json");
         }
 
-        var locale = await _context.PortfolioLocales
-            .Include(l => l.Portfolio)
-            .Where(l => l.Portfolio.PersonId == personId && l.Portfolio.IsActive && l.Language == language)
-            .FirstOrDefaultAsync();
-
-        if (locale == null)
+        try
         {
-            return NotFound(new { error = "Locale not found" });
-        }
+            var locale = await _context.PortfolioLocales
+                .Include(l => l.Portfolio)
+                .Where(l => l.Portfolio.PersonId == personId && l.Portfolio.IsActive && l.Language == language)
+                .FirstOrDefaultAsync();
 
-        var json = locale.ContentJson ?? "{}";
-        _ = _cacheService.SetAsync(cacheKey, json, cacheTable);
-        return Content(json, "application/json");
+            if (locale == null)
+            {
+                return NotFound(new { error = "Locale not found" });
+            }
+
+            var json = locale.ContentJson ?? "{}";
+            _ = _cacheService.SetAsync(cacheKey, json, cacheTable);
+            _ = _s3Service.PutJsonObjectAsync(BuildLocaleCacheKey(personId, language), json, GetPortfolioCacheControlHeader());
+            return Content(json, "application/json");
+        }
+        catch (Exception ex) when (IsDatabaseUnavailableException(ex))
+        {
+            _logger.LogError(ex, "RDS unavailable for locale {PersonId}/{Language}; returning 503.", personId, language);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Portfolio is temporarily unavailable. Please come back later." });
+        }
     }
 
     /// <summary>
