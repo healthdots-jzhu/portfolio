@@ -1,24 +1,165 @@
-version: '3.9'
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: portfolio-postgres
+    environment:
+      POSTGRES_DB: portfoliodb
+      POSTGRES_USER: portfolio_user
+      POSTGRES_PASSWORD: portfolio_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio_user -d portfoliodb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - portfolio-network
+
+  # MinIO (S3 Alternative)
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: portfolio-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/minio_data
+    command: server /minio_data --console-address ":9001"
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO Init (Create bucket)
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    container_name: portfolio-minio-init
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set minio http://minio:9000 minioadmin minioadmin123;
+      /usr/bin/mc mb minio/portfolio-dev --ignore-existing;
+      /usr/bin/mc anonymous set public minio/portfolio-dev/img;
+      /usr/bin/mc anonymous set public minio/portfolio-dev/cache;
+      echo 'MinIO initialized';
+      "
+    depends_on:
+      - minio
+    networks:
+      - portfolio-network
+
+  # DynamoDB Local
+  dynamodb-local:
+    image: amazon/dynamodb-local:3.3.0
+    container_name: portfolio-dynamodb
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb"
+    networks:
+      - portfolio-network
+    healthcheck:
+      # DynamoDB Local returns HTTP 400 at root; accept 200 or 400 as healthy
+      test: ["CMD-SHELL", "c=$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/); if [ \"$$c\" = \"200\" ] || [ \"$$c\" = \"400\" ]; then exit 0; else exit 1; fi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # DynamoDB Admin UI (optional - for inspection)
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:5.2.0
+    container_name: portfolio-dynamodb-admin
+    ports:
+      - "8001:8001"
+    environment:
+      DYNAMO_ENDPOINT: http://dynamodb-local:8000
+    depends_on:
+      - dynamodb-local
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Portfolio API Backend
   api:
     build:
       context: ./APIs/Portfolio.Api
       dockerfile: Dockerfile
+    container_name: portfolio-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=portfoliodb;Username=portfolio_user;Password=portfolio_password;SslMode=Disable"
+      Aws__Region: localhost
+      Aws__S3__BucketName: portfolio-dev
+      Aws__S3__ServiceUrl: http://minio:9000
+      Aws__CloudFront__Domain: http://minio:9000
+      DynamoCache__Enabled: "true"
+      DynamoCache__ServiceUrl: http://dynamodb-local:8000
+      DynamoCache__Tables__LocalesCache__TableName: portfolio-dev-cache
+      Hashids__Salt: local-dev-salt
+      GitHubModels__Enabled: "false"
+      GitHubModels__MockResponses: "true"
+      Auth__JwtValidation: "false"
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin123
     ports:
       - "5000:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dynamodb-local:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - portfolio-network
+
+  # Frontend (OPTIONAL - for development, run locally instead)
+  # To use this container:
+  #   docker-compose up frontend
+  # To run locally (recommended for hot reload):
+  #   cd portfolio-frontend && npm run dev
+  frontend:
+    build:
+      context: ./portfolio-frontend
+      dockerfile: Dockerfile
+    container_name: portfolio-frontend
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      Aws__Profile: ${AWS_PROFILE}
-      # Connection string (preferred override for containers)
-      #ConnectionStrings__Postgres: ${ConnectionStrings__Postgres}
-      # AWS / SSM settings
-      Aws__Region: ${AWS_REGION}
-      AWS_REGION: ${AWS_REGION}
-      AWS_SDK_LOAD_CONFIG: ${AWS_SDK_LOAD_CONFIG:-1}
-      #Aws__S3__BucketName: ${AWS_S3_BUCKET}
-      #Hashids__ParameterName: ${HASHIDS_PARAMETER}
-      # Direct AWS credentials (optional; prefer AWS_PROFILE or IAM role)
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
-    restart: unless-stopped
+      VITE_API_URL: http://api:80
+      VITE_CDN_URL: http://minio:9000/portfolio-dev
+      VITE_AUTH_DOMAIN: healthdots.auth.ca-central-1.amazoncognito.com
+      VITE_AUTH_CLIENT_ID: 4ligvh2gi6e7713i72dgob118u
+      VITE_DEBUG: "false"
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    volumes:
+      - ./portfolio-frontend/src:/app/src
+      - ./portfolio-frontend/public:/app/public
+    networks:
+      - portfolio-network
+    profiles:
+      - frontend
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  portfolio-network:
+    driver: bridge

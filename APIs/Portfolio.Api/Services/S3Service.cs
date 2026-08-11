@@ -10,6 +10,8 @@ public interface IS3Service
     string GetS3Uri(string s3Key);
     Task<bool> AssetExistsAsync(string s3Key);
     Task DeleteObjectAsync(string s3Key);
+    Task PutJsonObjectAsync(string s3Key, string jsonContent, string? cacheControl = null);
+    Task<string?> TryGetTextObjectAsync(string s3Key);
 }
 
 public class S3Service : IS3Service
@@ -130,6 +132,40 @@ public class S3Service : IS3Service
         {
             _logger?.LogWarning(ex, "Failed to delete S3 object {S3Key}", s3Key);
             throw;
+        }
+    }
+
+    public async Task PutJsonObjectAsync(string s3Key, string jsonContent, string? cacheControl = null)
+    {
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonContent));
+        var request = new PutObjectRequest
+        {
+            BucketName = _bucketName,
+            Key = s3Key,
+            InputStream = stream,
+            ContentType = "application/json; charset=utf-8",
+            CannedACL = S3CannedACL.Private
+        };
+
+        if (!string.IsNullOrWhiteSpace(cacheControl))
+        {
+            request.Headers.CacheControl = cacheControl;
+        }
+
+        await _s3Client.PutObjectAsync(request);
+    }
+
+    public async Task<string?> TryGetTextObjectAsync(string s3Key)
+    {
+        try
+        {
+            using var response = await _s3Client.GetObjectAsync(_bucketName, s3Key);
+            using var reader = new StreamReader(response.ResponseStream);
+            return await reader.ReadToEndAsync();
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound || ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            return null;
         }
     }
 

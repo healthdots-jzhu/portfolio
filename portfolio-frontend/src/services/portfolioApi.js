@@ -1,8 +1,22 @@
   // ...existing code...
 // API service for portfolio backend
 import { maybeRefreshAccessTokenOnActivity, getAccessToken, redirectToLogin } from './authService';
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Use environment variables or Vite globals, with fallback to localhost
+const API_BASE_URL = (typeof __API_URL__ !== 'undefined' ? __API_URL__ : null) ||
+                     import.meta.env.VITE_API_URL ||
+                     'http://localhost:5000';
 const API_PREFIX = '/api/v1';
+const CDN_BASE_URL = (import.meta.env.VITE_CDN_URL || '').replace(/\/$/, '');
+
+const createApiError = (message, status, statusText) => {
+  const err = new Error(message);
+  err.status = status;
+  err.statusText = statusText;
+  return err;
+};
+
+const isServiceUnavailable = (error) => !error?.status || error.status >= 500;
 
 // Wrapper used for all API fetches so we can trigger the on-activity refresh
 // attempt before performing the request and ensure we use the freshest
@@ -18,21 +32,80 @@ const apiFetch = async (url, opts = {}, providedToken) => {
   const token = providedToken || getAccessToken();
   const headers = { ...(opts.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 
-  const response = await fetch(url, { ...opts, headers });
+  try {
+    const response = await fetch(url, { ...opts, headers });
 
-  if (response.status === 401) {
-    try {
-      await redirectToLogin();
-    } catch (e) {
-      console.error('Redirect to login failed:', e);
+    if (response.status === 401) {
+      try {
+        await redirectToLogin();
+      } catch (e) {
+        console.error('Redirect to login failed:', e);
+      }
+      throw new Error('Authentication required');
     }
-    throw new Error('Authentication required');
-  }
 
-  return response;
+    return response;
+  } catch (error) {
+    // Log helpful error messages for local development
+    if (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1')) {
+      console.error(
+        `API call failed to ${API_BASE_URL}${API_PREFIX}. ` +
+        'Ensure backend is running (dotnet run or docker-compose up).',
+        error
+      );
+    }
+    throw error;
+  }
 };
 
 class PortfolioApiService {
+  buildPortfolioCacheUrl(personId) {
+    if (!CDN_BASE_URL) {
+      return null;
+    }
+
+    const encodedPersonId = encodeURIComponent(personId);
+    return `${CDN_BASE_URL}/cache/portfolios/${encodedPersonId}/portfolio.json`;
+  }
+
+  buildLocaleCacheUrl(personId, language) {
+    if (!CDN_BASE_URL) {
+      return null;
+    }
+
+    const encodedPersonId = encodeURIComponent(personId);
+    const encodedLanguage = encodeURIComponent(String(language || '').toLowerCase());
+    return `${CDN_BASE_URL}/cache/portfolios/${encodedPersonId}/locales/${encodedLanguage}.json`;
+  }
+
+  async getPortfolioFromCdnCache(personId) {
+    const url = this.buildPortfolioCacheUrl(personId);
+    if (!url) {
+      return null;
+    }
+
+    const response = await fetch(url, { method: 'GET', cache: 'default' });
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  }
+
+  async getLocaleFromCdnCache(personId, language) {
+    const url = this.buildLocaleCacheUrl(personId, language);
+    if (!url) {
+      return null;
+    }
+
+    const response = await fetch(url, { method: 'GET', cache: 'default' });
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.text();
+  }
+
   /**
    * Upload an asset (image/file) to a portfolio
    * POST /api/portfolios/{personId}/assets
@@ -129,9 +202,9 @@ class PortfolioApiService {
 
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error(`Locale not found: ${personId}/${language}`);
+          throw createApiError(`Locale not found: ${personId}/${language}`, response.status, response.statusText);
         }
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        throw createApiError(`API error: ${response.status} ${response.statusText}`, response.status, response.statusText);
       }
 
       // Get raw JSON text to preserve field order
@@ -144,6 +217,20 @@ class PortfolioApiService {
       
       return data;
     } catch (error) {
+      if (isServiceUnavailable(error)) {
+        try {
+          const fallback = await this.getLocaleFromCdnCache(personId, language);
+          if (fallback) {
+            if (!noCache) {
+              this.cache.set(cacheKey, fallback);
+            }
+            return fallback;
+          }
+        } catch (fallbackError) {
+          console.warn(`Failed CDN fallback for locale ${personId}/${language}:`, fallbackError);
+        }
+      }
+
       console.error(`Failed to fetch locale ${personId}/${language}:`, error);
       throw error;
     }
@@ -182,9 +269,9 @@ class PortfolioApiService {
 
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error(`Portfolio not found: ${personId}`);
+            throw createApiError(`Portfolio not found: ${personId}`, response.status, response.statusText);
           }
-          throw new Error(`API error: ${response.status} ${response.statusText}`);
+          throw createApiError(`API error: ${response.status} ${response.statusText}`, response.status, response.statusText);
         }
 
         const data = await response.json();
@@ -196,6 +283,20 @@ class PortfolioApiService {
         
         return data;
       } catch (error) {
+        if (isServiceUnavailable(error)) {
+          try {
+            const fallback = await this.getPortfolioFromCdnCache(personId);
+            if (fallback) {
+              if (!noCache) {
+                this.cache.set(cacheKey, fallback);
+              }
+              return fallback;
+            }
+          } catch (fallbackError) {
+            console.warn(`Failed CDN fallback for portfolio ${personId}:`, fallbackError);
+          }
+        }
+
         console.error(`Failed to fetch portfolio ${personId}:`, error);
         throw error;
       } finally {

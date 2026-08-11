@@ -44,63 +44,42 @@ The platform supports public portfolio delivery, authenticated portfolio managem
 
 ## Local Development
 
-### Prerequisites
+## Quick Start (short)
+
+This README is the project entrypoint. For the fastest developer setup follow the short flow in QUICK_START.md.
+
+Prerequisites (minimum)
 
 - .NET SDK 10
-- Node.js and npm
-- PostgreSQL access
-- AWS credentials for any flow that touches S3, SSM, Secrets Manager, or Cognito-backed resources
-- Terraform if you need to work on infrastructure
+- Node.js (LTS, e.g. 18 or 20)
+- Docker (optional, for Docker-based modes)
+- `dotnet-ef` CLI (optional for migrations): `dotnet tool install --global dotnet-ef`
 
-### Backend API
+Short examples (see component READMEs for full details):
 
 ```powershell
 Set-Location APIs/Portfolio.Api
 dotnet run
-```
 
-Apply migrations when needed:
-
-```powershell
 Set-Location APIs/Portfolio.Api
 dotnet ef database update
-```
 
-### Frontend
-
-```powershell
 Set-Location portfolio-frontend
 npm install
 npm run dev
+
+docker compose up --build  # Docker-based local stack
 ```
 
-Useful frontend commands:
+Where to find detailed developer docs
 
-```powershell
-Set-Location portfolio-frontend
-npm run build
-npm run test:e2e
-npm run test:unit
-```
+- Quick setup: `QUICK_START.md`
+- Local development (full Docker & hybrid): `README.dev.local.md`
+- Docker-based API notes: `README.dev.docker.md`
+- Backend-specific details: `APIs/Portfolio.Api/README.md`
+- Infrastructure: `terraform/README.md`
 
-Notes:
-
-- Playwright defaults to `http://localhost:5173`.
-- Override the e2e target with `E2E_BASE_URL` when testing against another environment.
-- Some end-to-end scenarios require the backend API to be available.
-
-### API In Docker
-
-The repository includes a compose setup for running the API in a container while pointing at an external database.
-
-```powershell
-docker compose up --build
-```
-
-Before doing that:
-
-1. Copy `.env.example` to `.env`.
-2. Fill in the database connection string and AWS-related values.
+For a new developer, start with `QUICK_START.md`, then follow the linked component README that matches your workflow.
 
 Important details:
 

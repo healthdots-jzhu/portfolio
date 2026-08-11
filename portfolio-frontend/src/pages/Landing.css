@@ -45,13 +45,18 @@
   overflow: visible;
 }
 
+/* Increase the container width to give the hero title more horizontal space.
+   This reduces excessive line‑breaks on large monitors while still centering the content. */
 .hero-content {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
+/* Use a fluid, responsive font size for the hero title. clamp(min, preferred, max)
+   scales the text based on viewport width, keeping it large on wide screens and
+   shrinking gracefully on smaller screens. */
 .landing-hero h1 {
-  font-size: 3rem;
+  font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 800;
   color: #232946;
   margin: 0 0 1rem 0;
@@ -210,7 +215,9 @@
   }
 
   .landing-hero h1 {
-    font-size: 2rem;
+    /* On narrow viewports the clamp above already reduces the size, but we keep a
+       fallback to ensure readability on very small screens. */
+    font-size: clamp(1.5rem, 4vw, 2rem);
   }
 
   .hero-subtitle {

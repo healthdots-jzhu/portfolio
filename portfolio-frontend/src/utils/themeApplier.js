@@ -19,6 +19,7 @@ export const COLOR_VAR_MAP = {
   surface:         '--color-surface',
   gray:            '--color-gray',
   footer:          '--color-footer',
+  shadow:          '--color-shadow',
 };
 
 /** Map from locale JSON key → CSS variable name (font sizes) */
@@ -53,6 +54,20 @@ export const DEFAULT_COLORS = {
   surface:         '#f8f9fa',
   gray:            '#e8e8e8',
   footer:          '#888888',
+  shadow:          '#dadee9aa',
+};
+
+/** Map spacing keys to CSS vars */
+export const SPACING_VAR_MAP = {
+  heroMarginBottom: '--home-hero-margin-bottom',
+  heroLineHeight:   '--home-hero-line-height',
+  heroPaddingBottom: '--home-hero-padding-bottom',
+};
+
+export const DEFAULT_SPACING = {
+  heroMarginBottom: '2.5rem',
+  heroLineHeight: '1.15',
+  heroPaddingBottom: '6rem',
 };
 
 /**
@@ -95,4 +110,21 @@ export const applyTheme = (theme) => {
       root.style.setProperty(cssVar, DEFAULT_FONT_SIZES[key]);
     }
   });
+
+  // ── Spacing (new keys) ─────────────────────────────────────────────────────
+  const spacing = theme?.spacing || {};
+  Object.entries(SPACING_VAR_MAP).forEach(([key, cssVar]) => {
+    const value = spacing[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      root.style.setProperty(cssVar, String(value).trim());
+    } else {
+      root.style.setProperty(cssVar, DEFAULT_SPACING[key]);
+    }
+  });
+
+  // ── Font family (apply to --font-primary so CSS picks it up)
+  const fontFamily = theme?.fontFamily;
+  if (fontFamily && typeof fontFamily === 'string' && fontFamily.trim()) {
+    root.style.setProperty('--font-primary', fontFamily.trim());
+  }
 };

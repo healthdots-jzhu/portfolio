@@ -61,27 +61,376 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Home Page Styles */
+/* ═══════════════════════════════════════════
+   Home Page — base + executive design system
+   ═══════════════════════════════════════════ */
+
 .home-page {
   padding: 0.5rem 0.5rem;
 }
 
-/* Hero Section */
-.home-hero {
+/* Full-bleed executive home — grid background spans the viewport */
+main.home-page.home-page--executive {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure consistent spacing between top-level home sections to avoid overlap */
+.home-page--executive {
+  padding: 0;
+  /* Subtle grid texture using CSS gradients — honours --color-bg */
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-color: var(--color-bg);
+}
+
+/* ── Executive hero two-column ── */
+.home-hero--executive {
+  text-align: left;
+  margin-bottom: var(--home-hero-margin-bottom, 2.5rem);
+  padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 4vw, 3rem) var(--home-hero-padding-bottom, 4rem);
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.home-hero-executive-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+}
+
+.home-hero-executive-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 1.25rem;
+  max-width: 38rem;
+}
+
+.home-hero-eyebrow {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.home-hero--executive h1 {
+  font-size: clamp(2rem, 4.5vw, var(--font-size-hero, 4rem));
+  /* Ensure multi-line titles never collide — theme token is a floor, not a cap */
+  line-height: max(1.25, var(--home-hero-line-height, 1.15));
+  font-weight: 700;
+  margin: 0;
+  height: auto;
+  width: 100%;
+  text-align: left;
+  color: var(--color-header);
+  font-family: var(--font-primary), sans-serif;
+}
+
+/* Shared styling for subtitle and intro in executive hero */
+.home-hero--executive .home-hero-subtitle,
+.home-hero--executive .home-hero-intro {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.6;
+  max-width: 54ch;
+  text-align: left;
+}
+
+/* Individual font sizes */
+.home-hero--executive .home-hero-subtitle {
+  font-size: var(--font-size-subtitle, 1rem);
+}
+.home-hero--executive .home-hero-intro {
+  font-size: var(--font-size-body, 1rem);
+}
+
+/* CTA buttons */
+.home-hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.home-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.78rem 1.6rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.home-hero-cta--primary {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: 2px solid var(--color-accent);
+}
+
+.home-hero-cta--ghost {
+  background: transparent;
+  color: var(--color-header);
+  border: 2px solid var(--color-header);
+  opacity: 0.75;
+}
+
+.home-hero-cta:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+  color: inherit;
+}
+
+/* Hero photo */
+.home-hero-executive-photo {
+  flex-shrink: 0;
+}
+
+.home-hero-photo {
+  width: 280px;
+  height: 280px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--color-gray);
+  filter: grayscale(100%);
+  display: block;
+}
+
+/* ── Stats row ── */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0;
+  max-width: 1200px;
+  margin: 3rem auto;
+  padding: 0 2rem;
+}
+
+.home-stat-card {
+  padding: 2.4rem 2rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.home-stat-card:nth-child(2) {
+  border-left: 3px solid var(--color-accent);
+}
+
+.home-stat-value {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.home-stat-card:first-child .home-stat-value,
+.home-stat-card:last-child .home-stat-value {
+  color: var(--color-header);
+}
+
+.home-stat-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.home-stat-desc {
+  font-size: 0.88rem;
+  color: var(--color-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Philosophy / feature cards section ── */
+.home-philosophy {
+  max-width: 1200px;
+  margin: 4rem auto;
+  padding: 0 2rem;
+}
+
+.home-philosophy-head {
+  margin-bottom: 2.5rem;
+}
+
+.home-section-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 0.9rem;
+}
+
+.home-philosophy-head h2 {
+  font-size: clamp(1.7rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--color-header);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.home-philosophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.home-philosophy-card {
+  padding: 2rem 1.6rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.2s ease;
+}
+
+.home-philosophy-card:hover {
+  border-color: var(--color-accent);
+}
+
+.home-philosophy-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.home-philosophy-card h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-header);
+  margin: 0;
+}
+
+.home-philosophy-card p {
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── CTA band ── */
+.home-cta-band {
+  max-width: 900px;
+  margin: 4rem auto;
+  padding: 3.5rem 3rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray);
+  border-radius: 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4rem;
+}
+
+.home-cta-band h2 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  color: var(--color-header);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.home-cta-band p {
+  font-size: 0.97rem;
+  color: var(--color-muted);
+  margin: 0;
+  max-width: 55ch;
+  line-height: 1.7;
+}
+
+.home-cta-band-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .home-hero--executive {
+    padding: 3rem 1.5rem 2.5rem;
+  }
+
+  .home-hero-executive-inner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .home-hero-executive-photo {
+    order: -1;
+  }
+
+  .home-hero-photo {
+    width: 180px;
+    height: 180px;
+  }
+
+  .home-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .home-stat-card:nth-child(2) {
+    border-left: 1px solid var(--color-gray);
+    border-top: 3px solid var(--color-accent);
+  }
+
+  .home-philosophy {
+    padding: 0 1.5rem;
+  }
+
+  .home-philosophy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-cta-band {
+    padding: 2.5rem 1.5rem;
+    margin: 2.5rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-hero-photo {
+    width: 320px;
+    height: 320px;
+  }
+}
+
+/* Hero Section — classic centred layout (non-executive) */
+.home-hero:not(.home-hero--executive) {
   text-align: center;
   margin-bottom: 3rem;
   padding: 0.5rem 0;
 }
 
-.home-hero h1 {
+.home-hero:not(.home-hero--executive) h1 {
   font-size: var(--font-size-hero);
   margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  line-height: var(--home-hero-line-height, 1.15);
   color: var(--color-header);
-}
-
-/* Use UVN-Sang-Song for the hero title when available */
-.home-hero h1 {
   font-family: var(--font-uvn), var(--font-display), serif;
 }
 
@@ -96,8 +445,11 @@
   font-size: var(--font-size-subtitle);
   line-height: 1.8;
   max-width: 800px;
-  margin: 0 auto;
   color: var(--color-text);
+}
+
+.home-hero:not(.home-hero--executive) .home-hero-intro {
+  margin: 0 auto;
 }
 
 /* Features/Interests Grid */
@@ -257,9 +609,9 @@
 
 /* Larger screens */
 @media (min-width: 1024px) {
-  .home-hero h1 {
+  /* Classic centred hero only — executive hero keeps its own clamp() sizing */
+  .home-hero:not(.home-hero--executive) h1 {
     font-size: 7rem;
-    height: 138px;
   }
 
   .home-engagement-content h2 {

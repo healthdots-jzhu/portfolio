@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Portfolio.Api.Data;
+using Portfolio.Api.Filters;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 using Amazon.Runtime;
@@ -12,6 +14,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Data.Common;
+using Npgsql;
 
 // Prevent claim type mapping (keep "sub" as "sub", not transform to ClaimTypes.NameIdentifier)
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -47,23 +51,35 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Configure AWS Cognito JWT authentication
 var cognitoAuthority = builder.Configuration["Aws:Cognito:Authority"];
 var cognitoAudience = builder.Configuration.GetSection("Aws:Cognito:Audience").Get<string[]>();
+var validateJwt = builder.Configuration.GetValue<bool>("Auth:JwtValidation", true);
 
-// Enable JWT Bearer authentication in ALL environments.
-// ECS tasks now run in public subnets with internet access, allowing direct validation
-// of JWT tokens against Cognito's JWKS endpoint without requiring VPC endpoints or NAT gateway.
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = cognitoAuthority;
-        options.TokenValidationParameters = new TokenValidationParameters
+// Conditionally enable JWT Bearer authentication or use mock auth for local development
+if (validateJwt)
+{
+    // ECS tasks now run in public subnets with internet access, allowing direct validation
+    // of JWT tokens against Cognito's JWKS endpoint without requiring VPC endpoints or NAT gateway.
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            ValidateIssuer = true,
-            ValidIssuer = cognitoAuthority,
-            ValidateAudience = true,
-            ValidAudiences = cognitoAudience,
-            ValidateLifetime = true
-        };
-    });
+            options.Authority = cognitoAuthority;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = cognitoAuthority,
+                ValidateAudience = true,
+                ValidAudiences = cognitoAudience,
+                ValidateLifetime = true
+            };
+        });
+}
+else
+{
+    // Use mock authentication for local development (no JWT validation)
+    builder.Services.AddAuthentication("MockDevelopment")
+        .AddScheme<AuthenticationSchemeOptions, Portfolio.Api.Middleware.MockAuthenticationHandler>(
+            "MockDevelopment", 
+            options => { });
+}
 
 builder.Services.AddAuthorization(options =>
 {
@@ -103,9 +119,24 @@ if (!string.IsNullOrWhiteSpace(awsProfileName))
     }
 }
 
+var s3ServiceUrl = builder.Configuration["Aws:S3:ServiceUrl"];
+var s3Config = new Amazon.S3.AmazonS3Config();
+
+if (!string.IsNullOrWhiteSpace(s3ServiceUrl))
+{
+    // Use custom S3 service URL (e.g., MinIO for local development)
+    s3Config.ServiceURL = s3ServiceUrl;
+    s3Config.ForcePathStyle = true; // Required for MinIO compatibility
+}
+else if (awsRegion is not null)
+{
+    // Use AWS region endpoint
+    s3Config.RegionEndpoint = awsRegion;
+}
+
 var s3Client = awsCredentials is not null
-    ? (awsRegion is not null ? new Amazon.S3.AmazonS3Client(awsCredentials, awsRegion) : new Amazon.S3.AmazonS3Client(awsCredentials))
-    : (awsRegion is not null ? new Amazon.S3.AmazonS3Client(awsRegion) : new Amazon.S3.AmazonS3Client());
+    ? new Amazon.S3.AmazonS3Client(awsCredentials, s3Config)
+    : new Amazon.S3.AmazonS3Client(s3Config);
 
 var ssmClient = awsCredentials is not null
     ? (awsRegion is not null ? new AmazonSimpleSystemsManagementClient(awsCredentials, awsRegion) : new AmazonSimpleSystemsManagementClient(awsCredentials))
@@ -113,13 +144,32 @@ var ssmClient = awsCredentials is not null
 
 builder.Services.AddSingleton<Amazon.S3.IAmazonS3>(s3Client);
 builder.Services.AddSingleton<IAmazonSimpleSystemsManagement>(ssmClient);
-var dynamoClient = awsCredentials is not null
-    ? (awsRegion is not null ? new Amazon.DynamoDBv2.AmazonDynamoDBClient(awsCredentials, awsRegion) : new Amazon.DynamoDBv2.AmazonDynamoDBClient(awsCredentials))
-    : (awsRegion is not null ? new Amazon.DynamoDBv2.AmazonDynamoDBClient(awsRegion) : new Amazon.DynamoDBv2.AmazonDynamoDBClient());
+var dynamoServiceUrl = builder.Configuration["DynamoCache:ServiceUrl"];
+var dynamoEnabled = builder.Configuration.GetValue<bool>("DynamoCache:Enabled", true);
 
-builder.Services.AddSingleton<Amazon.DynamoDBv2.IAmazonDynamoDB>(dynamoClient);
-// Register DynamoDB cache service
-builder.Services.AddSingleton<Portfolio.Api.Services.IDynamoCacheService, Portfolio.Api.Services.DynamoCacheService>();
+if (dynamoEnabled)
+{
+    var dynamoConfig = new Amazon.DynamoDBv2.AmazonDynamoDBConfig();
+    
+    if (!string.IsNullOrWhiteSpace(dynamoServiceUrl))
+    {
+        // Use custom DynamoDB endpoint (e.g., dynamodb-local for local development)
+        dynamoConfig.ServiceURL = dynamoServiceUrl;
+    }
+    else if (awsRegion is not null)
+    {
+        // Use AWS region endpoint
+        dynamoConfig.RegionEndpoint = awsRegion;
+    }
+
+    var dynamoClient = awsCredentials is not null
+        ? new Amazon.DynamoDBv2.AmazonDynamoDBClient(awsCredentials, dynamoConfig)
+        : new Amazon.DynamoDBv2.AmazonDynamoDBClient(dynamoConfig);
+
+    builder.Services.AddSingleton<Amazon.DynamoDBv2.IAmazonDynamoDB>(dynamoClient);
+    // Register DynamoDB cache service
+    builder.Services.AddSingleton<Portfolio.Api.Services.IDynamoCacheService, Portfolio.Api.Services.DynamoCacheService>();
+}
 builder.Services.AddScoped<Portfolio.Api.Services.IS3Service, Portfolio.Api.Services.S3Service>();
 // Memory cache and token provider for GitHub Models API token caching
 builder.Services.AddMemoryCache();
@@ -170,35 +220,49 @@ builder.Services.AddScoped<Portfolio.Api.Services.ILocaleValidator, Portfolio.Ap
 // GitHub Models service registration: prefer env var for API token (runtime secrets injection)
 var gitHubModelsApiToken = Environment.GetEnvironmentVariable("GitHubModels__ApiToken")
     ?? builder.Configuration["GitHubModels:ApiToken"];
+var gitHubModelsEnabled = builder.Configuration.GetValue<bool>("GitHubModels:Enabled", true);
 
 // Register a named HttpClient with a retry handler and scoped service that uses IHttpClientFactory.
 builder.Services.AddTransient<Portfolio.Api.Services.GitHubModelsRetryHandler>();
-// Named client "GitHubModels" centralizes default headers, base address and timeout.
-builder.Services.AddHttpClient("GitHubModels", client =>
+
+// Register the appropriate GitHub Models service implementation
+if (gitHubModelsEnabled)
 {
-    var baseUrl = builder.Configuration["GitHubModels:BaseUrl"];
-    if (!string.IsNullOrWhiteSpace(baseUrl))
+    // Named client "GitHubModels" centralizes default headers, base address and timeout.
+    builder.Services.AddHttpClient("GitHubModels", client =>
     {
-        try { client.BaseAddress = new Uri(baseUrl); } catch { }
-    }
-    // Default headers common to GitHub Models / inference hosts
-    try { client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json"); } catch { }
-    try { client.DefaultRequestHeaders.UserAgent.ParseAdd("Portfolio.Api/1.0"); } catch { }
-    
-    // Add Authorization header if token is present
-    if (!string.IsNullOrWhiteSpace(gitHubModelsApiToken))
-    {
-        try { client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", gitHubModelsApiToken); } catch { }
-    }
-    
-    // Increase default timeout for potentially long model generation calls
-    client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 120));
-})
-.AddHttpMessageHandler<Portfolio.Api.Services.GitHubModelsRetryHandler>();
+        var baseUrl = builder.Configuration["GitHubModels:BaseUrl"];
+        if (!string.IsNullOrWhiteSpace(baseUrl))
+        {
+            try { client.BaseAddress = new Uri(baseUrl); } catch { }
+        }
+        // Default headers common to GitHub Models / inference hosts
+        try { client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json"); } catch { }
+        try { client.DefaultRequestHeaders.UserAgent.ParseAdd("Portfolio.Api/1.0"); } catch { }
+        
+        // Add Authorization header if token is present
+        if (!string.IsNullOrWhiteSpace(gitHubModelsApiToken))
+        {
+            try { client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", gitHubModelsApiToken); } catch { }
+        }
+        
+        // Increase default timeout for potentially long model generation calls
+        client.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue<int>("GitHubModels:TimeoutSeconds", 120));
+    })
+    .AddHttpMessageHandler<Portfolio.Api.Services.GitHubModelsRetryHandler>();
 
-builder.Services.AddScoped<Portfolio.Api.Services.IGitHubModelsService, Portfolio.Api.Services.GitHubModelsService>();
+    builder.Services.AddScoped<Portfolio.Api.Services.IGitHubModelsService, Portfolio.Api.Services.GitHubModelsService>();
+}
+else
+{
+    // Use mock GitHub Models service for local development
+    builder.Services.AddScoped<Portfolio.Api.Services.IGitHubModelsService, Portfolio.Api.Services.MockGitHubModelsService>();
+}
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<PortfolioOwnershipFilter>();
+});
 
 // API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -268,6 +332,23 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+
+    static bool IsDatabaseUnavailableException(Exception ex)
+    {
+        var current = ex;
+        while (current != null)
+        {
+            if (current is NpgsqlException || current is DbException || current is TimeoutException)
+            {
+                return true;
+            }
+
+            current = current.InnerException;
+        }
+
+        return false;
+    }
+
     try
     {
         await next();
@@ -280,14 +361,26 @@ app.Use(async (context, next) =>
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Unhandled exception processing request {Method} {Path}", context.Request.Method, context.Request.Path);
+        var isDbUnavailable = IsDatabaseUnavailableException(ex);
+        if (isDbUnavailable)
+        {
+            logger.LogError(ex, "Database unavailable while processing request {Method} {Path}", context.Request.Method, context.Request.Path);
+        }
+        else
+        {
+            logger.LogError(ex, "Unhandled exception processing request {Method} {Path}", context.Request.Method, context.Request.Path);
+        }
 
         if (!context.Response.HasStarted)
         {
             context.Response.Clear();
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.StatusCode = isDbUnavailable
+                ? StatusCodes.Status503ServiceUnavailable
+                : StatusCodes.Status500InternalServerError;
             context.Response.ContentType = "application/json";
-            var payload = System.Text.Json.JsonSerializer.Serialize(new { error = "An unexpected error occurred." });
+            var payload = isDbUnavailable
+                ? System.Text.Json.JsonSerializer.Serialize(new { error = "Service temporarily unavailable. Please come back later." })
+                : System.Text.Json.JsonSerializer.Serialize(new { error = "An unexpected error occurred." });
             await context.Response.WriteAsync(payload);
         }
 

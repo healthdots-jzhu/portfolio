@@ -204,6 +204,8 @@ export default function PortfolioManager() {
                 <button 
                   className="btn-preview"
                   onClick={() => handlePreviewPortfolio(portfolio)}
+                  disabled={(portfolio.localeCount || 0) === 0}
+                  title={(portfolio.localeCount || 0) === 0 ? locale.portfolioManager.previewDisabledTitle || 'No live content yet' : ''}
                 >
                   {locale.portfolioManager.preview}
                 </button>

@@ -216,6 +216,19 @@ data "aws_iam_policy_document" "ci_policy_doc" {
     ]
     resources = ["*"]
   }
+
+  # Allow frontend deploy workflow to invalidate CloudFront cache after publishing static assets.
+  statement {
+    actions = [
+      "cloudfront:CreateInvalidation",
+      "cloudfront:GetDistribution",
+      "cloudfront:GetDistributionConfig",
+      "cloudfront:GetInvalidation",
+      "cloudfront:ListDistributions",
+      "cloudfront:ListInvalidations"
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "ci_policy" {

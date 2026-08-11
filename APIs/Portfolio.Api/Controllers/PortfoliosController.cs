@@ -1,5 +1,6 @@
 ﻿    // ...existing code...
 using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,8 @@ using Portfolio.Api.Models;
 using Portfolio.Api.Services;
 using Portfolio.Api.Models.Dto;
 using Portfolio.Api.Utils;
+using System.Text.Json;
+using Npgsql;
 
 
 namespace Portfolio.Api.Controllers;
@@ -15,6 +18,8 @@ namespace Portfolio.Api.Controllers;
 
 
 [ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 public class PortfoliosController : ControllerBase
@@ -43,6 +48,10 @@ public class PortfoliosController : ControllerBase
     private readonly Portfolio.Api.Services.IDynamoCacheService _cacheService;
     private const string DynamoCacheTableKey = "LocalesCache";
     private readonly string? _resolvedDynamoCacheTableName;
+    private const string PortfolioCachePrefix = "cache/portfolios";
+    private const int S3CacheMaxAgeSeconds = 300;
+    private const int S3CacheStaleWhileRevalidateSeconds = 3600;
+    private const int S3CacheStaleIfErrorSeconds = 604800;
 
     // Dynamo cache table name resolution delegated to IConfiguration extension
 
@@ -57,6 +66,7 @@ public class PortfoliosController : ControllerBase
         _localeValidator = localeValidator;
         _logger = logger;
         _cacheService = cacheService;
+        _resolvedDynamoCacheTableName = _configuration.ResolveDynamoCacheTableName(DynamoCacheTableKey);
         _resolvedDynamoCacheTableName = _configuration.ResolveDynamoCacheTableName(DynamoCacheTableKey);
     }
 
@@ -73,7 +83,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -185,6 +195,8 @@ public class PortfoliosController : ControllerBase
 
         // Enqueue cache invalidation based on DB-derived keys
         _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, portfolio.PersonId, portfolio.Id, _logger);
+        // Enqueue cache invalidation based on DB-derived keys
+        _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, portfolio.PersonId, portfolio.Id, _logger);
 
         return Ok(new
         {
@@ -207,7 +219,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -238,6 +250,8 @@ public class PortfoliosController : ControllerBase
 
         // Enqueue cache invalidation based on DB-derived keys
         _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
+        // Enqueue cache invalidation based on DB-derived keys
+        _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
 
         return NoContent();
 
@@ -254,6 +268,31 @@ public class PortfoliosController : ControllerBase
         var invalidChars = System.IO.Path.GetInvalidPathChars();
         return string.Join("_", segment.Replace('/', '_').Replace('\\', '_').Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
     }
+
+    private static string BuildPortfolioCacheKey(string personId) =>
+        $"{PortfolioCachePrefix}/{SanitizePathSegment(personId)}/portfolio.json";
+
+    private static string BuildLocaleCacheKey(string personId, string language) =>
+        $"{PortfolioCachePrefix}/{SanitizePathSegment(personId)}/locales/{SanitizePathSegment(language).ToLowerInvariant()}.json";
+
+    private static bool IsDatabaseUnavailableException(Exception ex)
+    {
+        var current = ex;
+        while (current != null)
+        {
+            if (current is NpgsqlException || current is TimeoutException)
+            {
+                return true;
+            }
+
+            current = current.InnerException;
+        }
+
+        return false;
+    }
+
+    private static string GetPortfolioCacheControlHeader() =>
+        $"public, max-age={S3CacheMaxAgeSeconds}, stale-while-revalidate={S3CacheStaleWhileRevalidateSeconds}, stale-if-error={S3CacheStaleIfErrorSeconds}";
 
     /// <summary>
     /// Get portfolios owned by the authenticated user (or all if admin).
@@ -301,7 +340,7 @@ public class PortfoliosController : ControllerBase
 
         var portfolio = await _context.Portfolios
             .Include(p => p.Locales)
-            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -358,42 +397,51 @@ public class PortfoliosController : ControllerBase
             return Content(cached, "application/json");
         }
 
-        var portfolio = await _context.Portfolios
-            .Include(p => p.Locales)
-            .Where(p => p.PersonId == personId && p.IsActive)
-            .FirstOrDefaultAsync();
-
-        if (portfolio == null)
+        try
         {
-            return NotFound(new { error = "Portfolio not found" });
+            var portfolio = await _context.Portfolios
+                .Include(p => p.Locales)
+                .Where(p => p.PersonId == personId && p.IsActive)
+                .FirstOrDefaultAsync();
+
+            if (portfolio == null)
+            {
+                return NotFound(new { error = "Portfolio not found" });
+            }
+
+            var availableLanguages = portfolio.Locales
+                .Where(l => !string.IsNullOrWhiteSpace(l.ContentJson) && l.ContentJson != "{}")
+                .Select(l => l.Language)
+                .Distinct()
+                .OrderBy(l => l)
+                .ToList();
+
+            var payload = new
+            {
+                id = portfolio.Id,
+                personId = portfolio.PersonId,
+                displayName = portfolio.DisplayName,
+                subdomain = portfolio.Subdomain,
+                createdAt = portfolio.CreatedAt,
+                availableLanguages = availableLanguages
+            };
+
+            // Serialize using camelCase property names for JS clients and store that
+            var json = System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            });
+
+            _ = _cacheService.SetAsync(cacheKey, json, cacheTable); // fire-and-forget cache set
+            _ = _s3Service.PutJsonObjectAsync(BuildPortfolioCacheKey(personId), json, GetPortfolioCacheControlHeader());
+
+            return Content(json, "application/json");
         }
-
-        var availableLanguages = portfolio.Locales
-            .Where(l => !string.IsNullOrWhiteSpace(l.ContentJson) && l.ContentJson != "{}")
-            .Select(l => l.Language)
-            .Distinct()
-            .OrderBy(l => l)
-            .ToList();
-
-        var payload = new
+        catch (Exception ex) when (IsDatabaseUnavailableException(ex))
         {
-            id = portfolio.Id,
-            personId = portfolio.PersonId,
-            displayName = portfolio.DisplayName,
-            subdomain = portfolio.Subdomain,
-            createdAt = portfolio.CreatedAt,
-            availableLanguages = availableLanguages
-        };
-
-        // Serialize using camelCase property names for JS clients and store that
-        var json = System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions
-        {
-            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-        });
-
-        _ = _cacheService.SetAsync(cacheKey, json, cacheTable); // fire-and-forget cache set
-
-        return Content(json, "application/json");
+            _logger.LogError(ex, "RDS unavailable for portfolio {PersonId}; returning 503.", personId);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Portfolio is temporarily unavailable. Please come back later." });
+        }
     }
 
     /// <summary>
@@ -411,19 +459,28 @@ public class PortfoliosController : ControllerBase
             return Content(cached, "application/json");
         }
 
-        var locale = await _context.PortfolioLocales
-            .Include(l => l.Portfolio)
-            .Where(l => l.Portfolio.PersonId == personId && l.Portfolio.IsActive && l.Language == language)
-            .FirstOrDefaultAsync();
-
-        if (locale == null)
+        try
         {
-            return NotFound(new { error = "Locale not found" });
-        }
+            var locale = await _context.PortfolioLocales
+                .Include(l => l.Portfolio)
+                .Where(l => l.Portfolio.PersonId == personId && l.Portfolio.IsActive && l.Language == language)
+                .FirstOrDefaultAsync();
 
-        var json = locale.ContentJson ?? "{}";
-        _ = _cacheService.SetAsync(cacheKey, json, cacheTable);
-        return Content(json, "application/json");
+            if (locale == null)
+            {
+                return NotFound(new { error = "Locale not found" });
+            }
+
+            var json = locale.ContentJson ?? "{}";
+            _ = _cacheService.SetAsync(cacheKey, json, cacheTable);
+            _ = _s3Service.PutJsonObjectAsync(BuildLocaleCacheKey(personId, language), json, GetPortfolioCacheControlHeader());
+            return Content(json, "application/json");
+        }
+        catch (Exception ex) when (IsDatabaseUnavailableException(ex))
+        {
+            _logger.LogError(ex, "RDS unavailable for locale {PersonId}/{Language}; returning 503.", personId, language);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Portfolio is temporarily unavailable. Please come back later." });
+        }
     }
 
     /// <summary>
@@ -441,38 +498,36 @@ public class PortfoliosController : ControllerBase
             return Unauthorized(new { error = "Authentication required" });
         }
 
-        var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId && p.IsActive)
+        // Global `PortfolioOwnershipFilter` validates that the caller owns the portfolio by `personId`.
+
+        // Locate the requested version and ensure it belongs to the portfolio referenced by personId
+        var version = await _context.PortfolioVersions
+            .Include(v => v.Portfolio)
+            .Where(v => v.Id == versionId && v.Portfolio.PersonId == personId && v.Portfolio.IsActive)
             .FirstOrDefaultAsync();
 
-        if (portfolio == null)
+        if (version == null)
         {
-            return NotFound(new { error = "Portfolio not found or access denied" });
+            return NotFound(new { error = "Version not found" });
         }
 
-        if (Request.Form.Files.Count == 0)
+        // Parse the version snapshot and return the requested language content if present.
+        if (string.IsNullOrWhiteSpace(version.LocaleSnapshot) || version.LocaleSnapshot == "{}")
         {
-            return BadRequest(new { error = "No file uploaded" });
+            return Content("{}", "application/json");
         }
 
-        var file = Request.Form.Files[0];
-        if (file.Length == 0)
+        using var doc = JsonDocument.Parse(version.LocaleSnapshot);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object)
         {
-            return BadRequest(new { error = "Empty file" });
+            return Content("{}", "application/json");
         }
 
-        int maxFiles = _configuration.GetValue<int>("PortfolioAssetLimits:MaxFilesPerPortfolio", 200);
-        long maxFileSize = _configuration.GetValue<long>("PortfolioAssetLimits:MaxFileSizeBytes", 10485760);
-        if (file.Length > maxFileSize)
+        if (doc.RootElement.TryGetProperty(language, out var langElement))
         {
-            return BadRequest(new { error = $"File size exceeds the maximum allowed size of {maxFileSize / (1024 * 1024)} MB." });
+            return Content(langElement.GetRawText(), "application/json");
         }
-        int assetCount = await _context.PortfolioAssets.CountAsync(a => a.PortfolioId == portfolio.Id);
-        if (assetCount >= maxFiles)
-        {
-            return BadRequest(new { error = $"This portfolio already has the maximum allowed number of assets ({maxFiles}). Please delete an asset before uploading a new one." });
-        }
-        // Ensure a return value for all code paths
+
         return Content("{}", "application/json");
     }
 
@@ -848,7 +903,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -861,6 +916,20 @@ public class PortfoliosController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+        // Invalidate cache for this personId (derive keys from Postgres)
+        try
+        {
+            var localeLanguages = await _context.PortfolioLocales
+                .Where(l => l.PortfolioId == portfolio.Id)
+                .Select(l => l.Language)
+                .ToListAsync();
+
+            _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to enqueue cache invalidation for person {PersonId}", personId);
+        }
         // Invalidate cache for this personId (derive keys from Postgres)
         try
         {
@@ -918,6 +987,8 @@ public class PortfoliosController : ControllerBase
 
         // Enqueue cache invalidation based on DB-derived keys
         _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, portfolio.PersonId, portfolio.Id, _logger);
+        // Enqueue cache invalidation based on DB-derived keys
+        _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, portfolio.PersonId, portfolio.Id, _logger);
 
         return CreatedAtAction(nameof(GetPortfolio), new { personId = portfolio.PersonId }, new
         {
@@ -966,7 +1037,7 @@ public class PortfoliosController : ControllerBase
         }
 
         var portfolio = await _context.Portfolios
-            .Where(p => p.PersonId == personId && p.OwnerId == userId)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -982,6 +1053,8 @@ public class PortfoliosController : ControllerBase
 
         await _context.SaveChangesAsync();
 
+            // Enqueue cache invalidation using centralized helper (DB-derived keys)
+            _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
             // Enqueue cache invalidation using centralized helper (DB-derived keys)
             _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
 
@@ -1010,7 +1083,7 @@ public class PortfoliosController : ControllerBase
 
         var portfolio = await _context.Portfolios
             .Include(p => p.Locales)
-            .Where(p => p.PersonId == personId && p.OwnerId == userId)
+            .Where(p => p.PersonId == personId && p.IsActive)
             .FirstOrDefaultAsync();
 
         if (portfolio == null)
@@ -1030,6 +1103,8 @@ public class PortfoliosController : ControllerBase
                 _context.PortfolioLocales.Remove(locale);
                 portfolio.UpdatedAt = DateTimeOffset.UtcNow;
                 await _context.SaveChangesAsync();
+                // Enqueue cache invalidation (include the removed locale key explicitly)
+                _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger, new[] { $"{personId}#{language}" });
                 // Enqueue cache invalidation (include the removed locale key explicitly)
                 _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger, new[] { $"{personId}#{language}" });
                 return Ok(new { message = "Locale removed successfully", language });
@@ -1057,8 +1132,11 @@ public class PortfoliosController : ControllerBase
         portfolio.UpdatedAt = DateTimeOffset.UtcNow;
 
 
+
         await _context.SaveChangesAsync();
 
+        // Enqueue cache invalidation using centralized helper (DB-derived keys)
+        _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
         // Enqueue cache invalidation using centralized helper (DB-derived keys)
         _ = CacheInvalidationHelper.EnqueueInvalidateKeysForPortfolioAsync(_cacheService, _context, _resolvedDynamoCacheTableName, personId, portfolio.Id, _logger);
 

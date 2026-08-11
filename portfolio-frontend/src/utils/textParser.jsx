@@ -75,7 +75,21 @@ export const parseColorTags = (text) => {
     return parts;
   };
 
-  const parts = processText(text);
+  // Support alternate bracket-style tokens used by Stitch variants: [#rrggbb]text[/]
+  const normalizeBracketTags = (str) => {
+    if (!str) return str;
+    let prev;
+    // Match [#RRGGBB]...[/]
+    const bracketRegex = /\[(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}))\](.*?)\[\/\]/gs;
+    do {
+      prev = str;
+      str = str.replace(bracketRegex, (m, p1, p2) => `<color:${p1}>${p2}</color>`);
+    } while (str !== prev);
+    return str;
+  };
+
+  const normalized = normalizeBracketTags(text);
+  const parts = processText(normalized);
 
   // Convert parts to React elements
   return parts.map(part => {
