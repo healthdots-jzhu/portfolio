@@ -1,0 +1,402 @@
+{
+  "common": {
+    "siteName": "HealthDots Solutions",
+    "baseTitle": "HealthDots Solutions | Practical AI Transformation",
+    "nav": [
+      {
+        "label": "Offerings",
+        "path": "showcase/0"
+      },
+      {
+        "label": "Engagement Models",
+        "path": "engagements"
+      },
+      {
+        "label": "About",
+        "path": "about"
+      }
+    ],
+    "languageLabel": "Language",
+    "languages": {
+      "en": "English",
+      "fr": "Français"
+    },
+    "toggleNavMenu": "Toggle navigation menu",
+    "footer": "© 2026 HealthDots Solutions | Practical AI Transformation",
+    "footerData": {
+      "leftLabel": "HEALTHDOTS SOLUTIONS",
+      "copyright": "© 2026 HealthDots Solutions. Practical AI transformation.",
+      "links": [
+        {
+          "label": "healthdots.ca",
+          "url": "https://healthdots.ca"
+        }
+      ]
+    },
+    "showcases": [
+      {
+        "style": "pillars",
+        "preTitle": "AI transformation consulting offerings",
+        "title": "Four connected offerings<br/>for practical AI transformation",
+        "subtitle": "Team capability provides capacity, AI use cases create business value, and portfolio discipline protects investment focus. A parallel studio validates priority ideas without disrupting the roadmap.",
+        "pillarButtons": [
+          {
+            "name": "Agentic AI for teams",
+            "path": "#pillar01"
+          },
+          {
+            "name": "AI in workflows & products",
+            "path": "#pillar02"
+          },
+          {
+            "name": "Portfolio priorities",
+            "path": "#pillar03"
+          },
+          {
+            "name": "Parallel innovation studio",
+            "path": "#pillar04"
+          }
+        ],
+        "pillars": [
+          {
+            "number": "01",
+            "label": "Offering 1",
+            "title": "Agentic AI for high-performing teams",
+            "subTitle": "Capacity grows when AI becomes part of the team's operating system.",
+            "description": "We identify repeatable tasks, define reusable context and guardrails, coach managers and teams, and measure whether adoption improves speed and quality without weakening accountability. Agents accelerate production. People own intent, evidence and release decisions.",
+            "tools": "Context, Plan, Build, Verify, Release & learn",
+            "bullets": [
+              {
+                "title": "Engineering workflow",
+                "description": "Planning, coding, test creation, review preparation, documentation and release readiness."
+              },
+              {
+                "title": "Manager workflow",
+                "description": "Coaching preparation, risk synthesis, decision records, dependency visibility and status communication."
+              },
+              {
+                "title": "Operating model",
+                "description": "Role clarity, guardrails, reusable agents, context standards and explicit human approvals."
+              },
+              {
+                "title": "Adoption system",
+                "description": "Hands-on enablement, champions, usage measures, quality measures and continuous improvement."
+              },
+              {
+                "title": "The agentic delivery system",
+                "description": "The organization supplies trusted context (product intent, architecture, standards). Agents help plan and produce work (work breakdown, code, tests, documentation). Automated checks, human review and security collect evidence at human gates, and a release owner approves controlled rollout. The learn stage turns telemetry and lessons into better reusable context."
+              }
+            ]
+          },
+          {
+            "number": "02",
+            "label": "Offering 2",
+            "title": "AI in workflows and products",
+            "subTitle": "Reduce friction in internal work. Create useful customer capabilities.",
+            "description": "We separate workflow AI from product AI because the users, controls and value measures differ. In both cases, the work starts with a real decision or task, then connects data, experience design, architecture and evaluation to a production path.",
+            "tools": "Data rights, Security, Evaluation, Human override, Monitoring, Cost",
+            "bullets": [
+              {
+                "title": "Knowledge access",
+                "description": "Workflow AI: grounded answers from trusted sources."
+              },
+              {
+                "title": "Document processing",
+                "description": "Workflow AI: intake, extraction and exception handling."
+              },
+              {
+                "title": "Decision support",
+                "description": "Workflow AI: evidence for accountable people."
+              },
+              {
+                "title": "Operational agents",
+                "description": "Workflow AI: bounded actions with logging and recovery."
+              },
+              {
+                "title": "Copilots",
+                "description": "Product AI: guidance inside the customer journey."
+              },
+              {
+                "title": "Intelligent search",
+                "description": "Product AI: relevant answers with citations."
+              },
+              {
+                "title": "Recommendations",
+                "description": "Product AI: next-best actions governed by rules."
+              },
+              {
+                "title": "Risk signals",
+                "description": "Product AI: cues for investigation and response."
+              }
+            ]
+          },
+          {
+            "number": "03",
+            "label": "Offering 3",
+            "title": "Portfolio priorities",
+            "subTitle": "Every demand competes for the same constrained capacity.",
+            "description": "The portfolio process puts unlike work on a common decision basis without pretending every item is identical. Leaders see the evidence, constraints and strategic trade-offs, then record what moves now, next, later or stops. The scoring model and weights are co-designed with the client.",
+            "tools": "Business impact, Urgency & risk, Strategic fit, Effort & dependencies, Learning value",
+            "bullets": [
+              {
+                "title": "Customer demand",
+                "description": "Revenue, retention, commitments and market urgency."
+              },
+              {
+                "title": "Technical debt",
+                "description": "Reliability, security, compliance and developer friction."
+              },
+              {
+                "title": "Modernization",
+                "description": "Architecture, platforms, cloud and data foundations."
+              },
+              {
+                "title": "Innovation",
+                "description": "AI opportunities, new products and business experiments."
+              },
+              {
+                "title": "Now · Next · Later · Stop",
+                "description": "The decision output includes capacity allocation, assumptions, milestones and explicit review dates."
+              },
+              {
+                "title": "A decision system leaders can defend",
+                "description": "Evidence (customer and market signal, operational and quality data, architecture and security risk, cost and dependency facts) feeds trade-offs (comparable scoring, capacity scenarios, dependency map, risk and learning assumptions). Each decision records a priority and owner, expected outcome, funding and milestone, and a review, scale or stop date. Governance reviews changed evidence, resolves trade-offs and retires stale commitments."
+              }
+            ]
+          },
+          {
+            "number": "04",
+            "label": "Offering 4",
+            "title": "Parallel innovation studio",
+            "subTitle": "Validate strategic ideas without pulling delivery teams off committed work.",
+            "description": "The studio creates a parallel lane staffed for discovery, design and proof. The committed roadmap continues while existing experts contribute in bounded workshops and review gates instead of becoming the POC team. Each engagement ends with evidence and an explicit scale, revise, handoff or stop decision.",
+            "tools": "One sponsor, Bounded SME workshops, Review gates",
+            "bullets": [
+              {
+                "title": "1. Frame",
+                "description": "Outcome, users, constraints and success measures."
+              },
+              {
+                "title": "2. Design",
+                "description": "Architecture, data, controls and evaluation."
+              },
+              {
+                "title": "3. Build",
+                "description": "Working POC, integration and test evidence."
+              },
+              {
+                "title": "4. Decide",
+                "description": "Scale plan, handoff, revise or stop."
+              },
+              {
+                "title": "Client involvement",
+                "description": "One sponsor, bounded SME workshops, and delivery-team review at agreed gates."
+              }
+            ]
+          }
+        ],
+        "coreSkills": {
+          "preTitle": "What success looks like",
+          "title": "Baseline first. Set targets together. Track benefits and new risks.",
+          "rows": [
+            [
+              "Team system",
+              "Cycle and wait time",
+              "Review load and rework",
+              "Agent adoption and reuse",
+              "Quality and escaped defects",
+              "Manager capacity"
+            ],
+            [
+              "Portfolio system",
+              "Time to decision",
+              "Capacity mix by work type",
+              "Risk retired",
+              "Dependencies resolved",
+              "Investment redirected or stopped"
+            ],
+            [
+              "AI system",
+              "Evaluation pass rate",
+              "User adoption",
+              "Task quality and exception rate",
+              "Human override rate",
+              "Cost per successful task"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  "theme": {
+    "fontFamily": "Inter",
+    "colors": {
+      "bg": "#F4F7FA",
+      "header": "#0B1726",
+      "text": "#142235",
+      "muted": "#516274",
+      "accent": "#087E71",
+      "accentSecondary": "#F26B4E",
+      "link": "#3478E5",
+      "surface": "#FFFFFF",
+      "gray": "#D9E2EA",
+      "footer": "#748395",
+      "shadow": "#C4D2DEaa"
+    }
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "HealthDots Solutions · AI transformation consulting",
+      "title": "Practical AI <color:#087E71>transformation</color>",
+      "subtitle": "Raise delivery capacity with agentic ways of working. Prove valuable AI capabilities before scaling investment.",
+      "intro": "Build stronger teams, embed AI in real work, and fund the right technology bets.",
+      "ctas": [
+        {
+          "label": "Explore the offerings",
+          "path": "showcase/0",
+          "primary": true
+        },
+        {
+          "label": "Engagement models",
+          "path": "engagements",
+          "primary": false
+        }
+      ]
+    },
+    "stats": {
+      "items": [
+        {
+          "value": "<color:#087E71>25+</color>",
+          "label": "Years building and leading software organizations"
+        },
+        {
+          "value": "<color:#087E71>50+</color>",
+          "label": "Person engineering organization led across product, platform and operations"
+        },
+        {
+          "value": "<color:#087E71>4×</color>",
+          "label": "Revenue growth scaled while sustaining 99.9%+ availability"
+        },
+        {
+          "value": "<color:#087E71>30%+</color>",
+          "label": "Engineering cost reduction through platform modernization"
+        }
+      ]
+    },
+    "philosophy": {
+      "badge": "Run today. Build tomorrow. Same team.",
+      "title": "A focused <color:#087E71>transformation mandate</color>",
+      "items": [
+        {
+          "icon": "01",
+          "title": "Raise team capacity",
+          "description": "Put agentic AI inside engineering and management workflows, with clear human decision points and measurable adoption."
+        },
+        {
+          "icon": "02",
+          "title": "Embed useful AI",
+          "description": "Select workflow and product use cases where data, architecture and evaluation support a credible path to production."
+        },
+        {
+          "icon": "03",
+          "title": "Fund the right work",
+          "description": "Balance customer demand, technical debt, modernization and innovation through a transparent portfolio decision system."
+        },
+        {
+          "icon": "04",
+          "title": "Prove it in parallel",
+          "description": "When both agendas depend on the same experts, urgent delivery wins and strategic learning slows. A parallel execution lane turns priority ideas into evidence without displacing committed delivery work."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Start with <color:#087E71>one decision</color> that matters",
+      "description": "A 90-minute executive working session. Where can agentic AI lift delivery capacity this quarter? Which AI opportunity deserves a proof of concept? What should move up, down or off the roadmap? Leave with a sharper decision and a practical next step.",
+      "buttons": [
+        {
+          "label": "Book a working session",
+          "path": "https://healthdots.ca",
+          "primary": true
+        },
+        {
+          "label": "See engagement models",
+          "path": "engagements",
+          "primary": false
+        }
+      ]
+    }
+  },
+  "engagements": {
+    "timelineMode": true,
+    "badge": "Engagement models",
+    "title": "Start with the <color:#087E71>smallest engagement</color> that can change a real decision",
+    "introText": "These models can stand alone or sequence together. The assessment clarifies choices, a focused proof of concept produces evidence, and an embedded model supports sustained adoption and portfolio execution. Timelines are planning ranges and are confirmed after scope, access and dependencies are understood.",
+    "items": [
+      {
+        "dateRange": "3–4 weeks",
+        "title": "AI & delivery assessment",
+        "company": "Best when priorities and readiness are unclear",
+        "description": "Clarifies where AI and delivery changes will create value, and what the organization is ready to take on.",
+        "tags": [
+          "Current-state evidence",
+          "Use-case portfolio",
+          "Operating model",
+          "90-day plan"
+        ]
+      },
+      {
+        "dateRange": "4–8 weeks",
+        "title": "Focused proof of concept",
+        "company": "Best when a priority idea needs technical and user evidence",
+        "description": "Produces the evidence needed to scale, revise, hand off or stop a priority idea.",
+        "tags": [
+          "Working POC",
+          "Evaluation results",
+          "Risks",
+          "Cost view",
+          "Production path"
+        ]
+      },
+      {
+        "dateRange": "Flexible",
+        "title": "Embedded advisory",
+        "company": "Best when leaders need ongoing capacity and decision support",
+        "description": "Supports sustained adoption and portfolio execution alongside the leadership team.",
+        "tags": [
+          "Portfolio cadence",
+          "Team enablement",
+          "Architecture guidance",
+          "Targeted prototypes"
+        ]
+      }
+    ],
+    "ctaSection": {
+      "title": "Start with a <color:#087E71>90-minute</color> executive working session",
+      "description": "Clarify the decision, the evidence gaps and the smallest useful engagement.",
+      "buttons": [
+        {
+          "label": "Book a working session",
+          "path": "https://healthdots.ca",
+          "primary": true
+        },
+        {
+          "label": "Explore the offerings",
+          "path": "showcase/0",
+          "primary": false
+        }
+      ]
+    }
+  },
+  "about": {
+    "pageTitle": "About | HealthDots Solutions",
+    "avatarSrc": "/img/{person_id}/jason-zhu.jpg",
+    "avatarAlt": "Jason Zhu, Principal Technology Consultant & AI Strategy Advisor",
+    "subtitle": "Experience behind the offering",
+    "aboutParagraphs": [
+      "Jason Zhu is the Principal Technology Consultant & AI Strategy Advisor at HealthDots Solutions, with 25+ years building and leading software organizations.",
+      "He has led a 50+ person engineering organization across product, platform and operations, helped scale AdjudiCare through 4× revenue growth while sustaining 99.9%+ availability, and reduced engineering costs by 30%+ through platform modernization and operating changes.",
+      "His Director and VP of Engineering experience is now applied through independent technology and AI advisory work, spanning healthcare, insurance, cloud platforms, AI adoption and regulated delivery.",
+      "The result is strategy grounded in hands-on architecture, delivery and organizational leadership."
+    ]
+  }
+}

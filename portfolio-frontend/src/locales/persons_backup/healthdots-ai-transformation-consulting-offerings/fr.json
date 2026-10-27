@@ -1,0 +1,402 @@
+{
+  "common": {
+    "siteName": "HealthDots Solutions",
+    "baseTitle": "HealthDots Solutions | Transformation IA pragmatique",
+    "nav": [
+      {
+        "label": "Offres",
+        "path": "showcase/0"
+      },
+      {
+        "label": "Modèles d'engagement",
+        "path": "engagements"
+      },
+      {
+        "label": "À propos",
+        "path": "about"
+      }
+    ],
+    "languageLabel": "Langue",
+    "languages": {
+      "en": "English",
+      "fr": "Français"
+    },
+    "toggleNavMenu": "Afficher ou masquer le menu de navigation",
+    "footer": "© 2026 HealthDots Solutions | Transformation IA pragmatique",
+    "footerData": {
+      "leftLabel": "HEALTHDOTS SOLUTIONS",
+      "copyright": "© 2026 HealthDots Solutions. Transformation IA pragmatique.",
+      "links": [
+        {
+          "label": "healthdots.ca",
+          "url": "https://healthdots.ca"
+        }
+      ]
+    },
+    "showcases": [
+      {
+        "style": "pillars",
+        "preTitle": "Offres de conseil en transformation IA",
+        "title": "Quatre offres complémentaires<br/>pour une transformation IA pragmatique",
+        "subtitle": "La capacité des équipes fournit la marge de manœuvre, les cas d'usage IA créent de la valeur d'affaires et la discipline de portefeuille protège l'orientation des investissements. Un studio parallèle valide les idées prioritaires sans perturber la feuille de route.",
+        "pillarButtons": [
+          {
+            "name": "IA agentique pour les équipes",
+            "path": "#pillar01"
+          },
+          {
+            "name": "IA dans les processus et produits",
+            "path": "#pillar02"
+          },
+          {
+            "name": "Priorités de portefeuille",
+            "path": "#pillar03"
+          },
+          {
+            "name": "Studio d'innovation parallèle",
+            "path": "#pillar04"
+          }
+        ],
+        "pillars": [
+          {
+            "number": "01",
+            "label": "Offre 1",
+            "title": "IA agentique pour des équipes performantes",
+            "subTitle": "La capacité augmente lorsque l'IA fait partie du système d'exploitation de l'équipe.",
+            "description": "Nous repérons les tâches répétables, définissons un contexte et des garde-fous réutilisables, accompagnons les gestionnaires et les équipes, et mesurons si l'adoption améliore la vitesse et la qualité sans affaiblir la responsabilisation. Les agents accélèrent la production. Les personnes restent responsables de l'intention, des preuves et des décisions de mise en production.",
+            "tools": "Contexte, Planifier, Construire, Vérifier, Livrer et apprendre",
+            "bullets": [
+              {
+                "title": "Processus d'ingénierie",
+                "description": "Planification, développement, création de tests, préparation des revues, documentation et préparation des mises en production."
+              },
+              {
+                "title": "Processus de gestion",
+                "description": "Préparation du coaching, synthèse des risques, registres de décisions, visibilité des dépendances et communication de l'avancement."
+              },
+              {
+                "title": "Modèle opérationnel",
+                "description": "Clarté des rôles, garde-fous, agents réutilisables, normes de contexte et approbations humaines explicites."
+              },
+              {
+                "title": "Système d'adoption",
+                "description": "Habilitation pratique, ambassadeurs, mesures d'utilisation, mesures de qualité et amélioration continue."
+              },
+              {
+                "title": "Le système de livraison agentique",
+                "description": "L'organisation fournit un contexte fiable (intention produit, architecture, normes). Les agents aident à planifier et à produire le travail (découpage, code, tests, documentation). Les contrôles automatisés, la revue humaine et la sécurité recueillent les preuves aux points de contrôle humains, et un responsable de mise en production approuve un déploiement contrôlé. L'étape d'apprentissage transforme la télémétrie et les leçons apprises en un meilleur contexte réutilisable."
+              }
+            ]
+          },
+          {
+            "number": "02",
+            "label": "Offre 2",
+            "title": "L'IA dans les processus et les produits",
+            "subTitle": "Réduire les frictions du travail interne. Créer des capacités utiles pour la clientèle.",
+            "description": "Nous distinguons l'IA des processus de l'IA des produits, car les utilisateurs, les contrôles et les mesures de valeur diffèrent. Dans les deux cas, le travail part d'une décision ou d'une tâche réelle, puis relie les données, la conception de l'expérience, l'architecture et l'évaluation à une voie vers la production.",
+            "tools": "Droits sur les données, Sécurité, Évaluation, Contrôle humain, Surveillance, Coûts",
+            "bullets": [
+              {
+                "title": "Accès aux connaissances",
+                "description": "IA des processus : des réponses fondées sur des sources fiables."
+              },
+              {
+                "title": "Traitement des documents",
+                "description": "IA des processus : réception, extraction et gestion des exceptions."
+              },
+              {
+                "title": "Aide à la décision",
+                "description": "IA des processus : des preuves pour les personnes responsables."
+              },
+              {
+                "title": "Agents opérationnels",
+                "description": "IA des processus : des actions encadrées, journalisées et réversibles."
+              },
+              {
+                "title": "Copilotes",
+                "description": "IA des produits : de l'accompagnement intégré au parcours client."
+              },
+              {
+                "title": "Recherche intelligente",
+                "description": "IA des produits : des réponses pertinentes avec citations."
+              },
+              {
+                "title": "Recommandations",
+                "description": "IA des produits : des prochaines meilleures actions encadrées par des règles."
+              },
+              {
+                "title": "Signaux de risque",
+                "description": "IA des produits : des indices pour l'enquête et l'intervention."
+              }
+            ]
+          },
+          {
+            "number": "03",
+            "label": "Offre 3",
+            "title": "Priorités de portefeuille",
+            "subTitle": "Chaque demande se dispute la même capacité limitée.",
+            "description": "Le processus de portefeuille place des travaux de nature différente sur une base de décision commune, sans prétendre qu'ils sont identiques. Les dirigeants voient les preuves, les contraintes et les arbitrages stratégiques, puis consignent ce qui avance maintenant, ensuite, plus tard ou s'arrête. Le modèle de pointage et ses pondérations sont conçus conjointement avec le client.",
+            "tools": "Impact d'affaires, Urgence et risque, Alignement stratégique, Effort et dépendances, Valeur d'apprentissage",
+            "bullets": [
+              {
+                "title": "Demande des clients",
+                "description": "Revenus, fidélisation, engagements et urgence du marché."
+              },
+              {
+                "title": "Dette technique",
+                "description": "Fiabilité, sécurité, conformité et frictions pour les développeurs."
+              },
+              {
+                "title": "Modernisation",
+                "description": "Architecture, plateformes, infonuagique et fondations de données."
+              },
+              {
+                "title": "Innovation",
+                "description": "Occasions liées à l'IA, nouveaux produits et expériences d'affaires."
+              },
+              {
+                "title": "Maintenant · Ensuite · Plus tard · Arrêter",
+                "description": "Le résultat de la décision comprend l'allocation de la capacité, les hypothèses, les jalons et des dates de révision explicites."
+              },
+              {
+                "title": "Un système de décision que les dirigeants peuvent défendre",
+                "description": "Les preuves (signaux clients et marché, données opérationnelles et de qualité, risques d'architecture et de sécurité, coûts et dépendances) alimentent les arbitrages (pointage comparable, scénarios de capacité, carte des dépendances, hypothèses de risque et d'apprentissage). Chaque décision consigne une priorité et un responsable, un résultat attendu, un financement et un jalon, ainsi qu'une date de révision, de mise à l'échelle ou d'arrêt. La gouvernance examine les preuves qui ont changé, tranche les arbitrages et retire les engagements périmés."
+              }
+            ]
+          },
+          {
+            "number": "04",
+            "label": "Offre 4",
+            "title": "Studio d'innovation parallèle",
+            "subTitle": "Valider les idées stratégiques sans retirer les équipes de livraison de leurs engagements.",
+            "description": "Le studio crée une voie parallèle dotée des ressources nécessaires à l'exploration, à la conception et à la preuve. La feuille de route engagée se poursuit pendant que les experts existants contribuent lors d'ateliers ciblés et de points de contrôle, plutôt que de devenir l'équipe de la preuve de concept. Chaque mandat se conclut par des preuves et une décision explicite : mettre à l'échelle, réviser, transférer ou arrêter.",
+            "tools": "Un commanditaire, Ateliers d'experts ciblés, Points de contrôle",
+            "bullets": [
+              {
+                "title": "1. Cadrer",
+                "description": "Résultats visés, utilisateurs, contraintes et mesures de succès."
+              },
+              {
+                "title": "2. Concevoir",
+                "description": "Architecture, données, contrôles et évaluation."
+              },
+              {
+                "title": "3. Construire",
+                "description": "Preuve de concept fonctionnelle, intégration et preuves de test."
+              },
+              {
+                "title": "4. Décider",
+                "description": "Plan de mise à l'échelle, transfert, révision ou arrêt."
+              },
+              {
+                "title": "Participation du client",
+                "description": "Un commanditaire, des ateliers d'experts ciblés et une revue par l'équipe de livraison aux points de contrôle convenus."
+              }
+            ]
+          }
+        ],
+        "coreSkills": {
+          "preTitle": "À quoi ressemble le succès",
+          "title": "D'abord une base de référence. Des cibles fixées ensemble. Un suivi des bénéfices et des nouveaux risques.",
+          "rows": [
+            [
+              "Système d'équipe",
+              "Temps de cycle et d'attente",
+              "Charge de revue et reprises",
+              "Adoption et réutilisation des agents",
+              "Qualité et défauts échappés",
+              "Capacité des gestionnaires"
+            ],
+            [
+              "Système de portefeuille",
+              "Délai de décision",
+              "Répartition de la capacité par type de travail",
+              "Risques éliminés",
+              "Dépendances résolues",
+              "Investissements réorientés ou arrêtés"
+            ],
+            [
+              "Système d'IA",
+              "Taux de réussite des évaluations",
+              "Adoption par les utilisateurs",
+              "Qualité des tâches et taux d'exceptions",
+              "Taux d'intervention humaine",
+              "Coût par tâche réussie"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  "theme": {
+    "fontFamily": "Inter",
+    "colors": {
+      "bg": "#F4F7FA",
+      "header": "#0B1726",
+      "text": "#142235",
+      "muted": "#516274",
+      "accent": "#087E71",
+      "accentSecondary": "#F26B4E",
+      "link": "#3478E5",
+      "surface": "#FFFFFF",
+      "gray": "#D9E2EA",
+      "footer": "#748395",
+      "shadow": "#C4D2DEaa"
+    }
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "HealthDots Solutions · Conseil en transformation IA",
+      "title": "Transformation IA <color:#087E71>pragmatique</color>",
+      "subtitle": "Augmenter la capacité de livraison grâce à des méthodes de travail agentiques. Prouver la valeur des capacités IA avant d'intensifier l'investissement.",
+      "intro": "Renforcer les équipes, intégrer l'IA au travail réel et financer les bons paris technologiques.",
+      "ctas": [
+        {
+          "label": "Découvrir les offres",
+          "path": "showcase/0",
+          "primary": true
+        },
+        {
+          "label": "Modèles d'engagement",
+          "path": "engagements",
+          "primary": false
+        }
+      ]
+    },
+    "stats": {
+      "items": [
+        {
+          "value": "<color:#087E71>25+</color>",
+          "label": "Années à bâtir et à diriger des organisations logicielles"
+        },
+        {
+          "value": "<color:#087E71>50+</color>",
+          "label": "Personnes dirigées dans une organisation d'ingénierie couvrant produit, plateforme et opérations"
+        },
+        {
+          "value": "<color:#087E71>4×</color>",
+          "label": "Croissance des revenus soutenue avec une disponibilité de plus de 99,9 %"
+        },
+        {
+          "value": "<color:#087E71>30 %+</color>",
+          "label": "Réduction des coûts d'ingénierie grâce à la modernisation de la plateforme"
+        }
+      ]
+    },
+    "philosophy": {
+      "badge": "Exécuter aujourd'hui. Bâtir demain. La même équipe.",
+      "title": "Un <color:#087E71>mandat de transformation</color> ciblé",
+      "items": [
+        {
+          "icon": "01",
+          "title": "Augmenter la capacité des équipes",
+          "description": "Intégrer l'IA agentique aux processus d'ingénierie et de gestion, avec des points de décision humains clairs et une adoption mesurable."
+        },
+        {
+          "icon": "02",
+          "title": "Intégrer une IA utile",
+          "description": "Choisir des cas d'usage, dans les processus comme dans les produits, où les données, l'architecture et l'évaluation soutiennent une voie crédible vers la production."
+        },
+        {
+          "icon": "03",
+          "title": "Financer le bon travail",
+          "description": "Équilibrer la demande des clients, la dette technique, la modernisation et l'innovation grâce à un système de décision de portefeuille transparent."
+        },
+        {
+          "icon": "04",
+          "title": "Prouver en parallèle",
+          "description": "Lorsque les deux programmes reposent sur les mêmes experts, la livraison urgente l'emporte et l'apprentissage stratégique ralentit. Une voie d'exécution parallèle transforme les idées prioritaires en preuves sans déplacer le travail de livraison engagé."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Commencer par <color:#087E71>une décision</color> qui compte",
+      "description": "Une séance de travail de 90 minutes avec la direction. Où l'IA agentique peut-elle augmenter la capacité de livraison ce trimestre? Quelle occasion IA mérite une preuve de concept? Qu'est-ce qui doit monter, descendre ou sortir de la feuille de route? Repartez avec une décision plus claire et une prochaine étape concrète.",
+      "buttons": [
+        {
+          "label": "Réserver une séance de travail",
+          "path": "https://healthdots.ca",
+          "primary": true
+        },
+        {
+          "label": "Voir les modèles d'engagement",
+          "path": "engagements",
+          "primary": false
+        }
+      ]
+    }
+  },
+  "engagements": {
+    "timelineMode": true,
+    "badge": "Modèles d'engagement",
+    "title": "Commencer par le <color:#087E71>plus petit mandat</color> capable de changer une vraie décision",
+    "introText": "Ces modèles peuvent être utilisés seuls ou enchaînés. L'évaluation clarifie les choix, une preuve de concept ciblée produit des preuves et un accompagnement intégré soutient l'adoption durable et l'exécution du portefeuille. Les échéanciers sont des fourchettes de planification, confirmées une fois la portée, les accès et les dépendances bien compris.",
+    "items": [
+      {
+        "dateRange": "3 à 4 semaines",
+        "title": "Évaluation IA et livraison",
+        "company": "Idéal lorsque les priorités et le niveau de préparation sont flous",
+        "description": "Clarifie où l'IA et les changements de livraison créeront de la valeur, et ce que l'organisation est prête à entreprendre.",
+        "tags": [
+          "Portrait de la situation actuelle",
+          "Portefeuille de cas d'usage",
+          "Modèle opérationnel",
+          "Plan de 90 jours"
+        ]
+      },
+      {
+        "dateRange": "4 à 8 semaines",
+        "title": "Preuve de concept ciblée",
+        "company": "Idéal lorsqu'une idée prioritaire exige des preuves techniques et auprès des utilisateurs",
+        "description": "Produit les preuves nécessaires pour mettre à l'échelle, réviser, transférer ou arrêter une idée prioritaire.",
+        "tags": [
+          "Preuve de concept fonctionnelle",
+          "Résultats d'évaluation",
+          "Risques",
+          "Portrait des coûts",
+          "Voie vers la production"
+        ]
+      },
+      {
+        "dateRange": "Flexible",
+        "title": "Accompagnement intégré",
+        "company": "Idéal lorsque la direction a besoin d'une capacité et d'un soutien décisionnel continus",
+        "description": "Soutient l'adoption durable et l'exécution du portefeuille aux côtés de l'équipe de direction.",
+        "tags": [
+          "Cadence de portefeuille",
+          "Habilitation des équipes",
+          "Conseils en architecture",
+          "Prototypes ciblés"
+        ]
+      }
+    ],
+    "ctaSection": {
+      "title": "Commencer par une séance de travail de <color:#087E71>90 minutes</color> avec la direction",
+      "description": "Clarifier la décision, les lacunes dans les preuves et le plus petit mandat utile.",
+      "buttons": [
+        {
+          "label": "Réserver une séance de travail",
+          "path": "https://healthdots.ca",
+          "primary": true
+        },
+        {
+          "label": "Découvrir les offres",
+          "path": "showcase/0",
+          "primary": false
+        }
+      ]
+    }
+  },
+  "about": {
+    "pageTitle": "À propos | HealthDots Solutions",
+    "avatarSrc": "/img/{person_id}/jason-zhu.jpg",
+    "avatarAlt": "Jason Zhu, consultant principal en technologie et conseiller en stratégie IA",
+    "subtitle": "L'expérience derrière l'offre",
+    "aboutParagraphs": [
+      "Jason Zhu est consultant principal en technologie et conseiller en stratégie IA chez HealthDots Solutions. Il cumule plus de 25 ans d'expérience à bâtir et à diriger des organisations logicielles.",
+      "Il a dirigé une organisation d'ingénierie de plus de 50 personnes couvrant produit, plateforme et opérations, contribué à la croissance d'AdjudiCare, dont les revenus ont quadruplé tout en maintenant une disponibilité de plus de 99,9 %, et réduit les coûts d'ingénierie de plus de 30 % grâce à la modernisation de la plateforme et à des changements opérationnels.",
+      "Son expérience de directeur et de vice-président de l'ingénierie s'exerce aujourd'hui dans le cadre de mandats indépendants de conseil en technologie et en IA, dans les domaines de la santé, de l'assurance, des plateformes infonuagiques, de l'adoption de l'IA et de la livraison en milieu réglementé.",
+      "Il en résulte une stratégie ancrée dans une pratique concrète de l'architecture, de la livraison et du leadership organisationnel."
+    ]
+  }
+}
