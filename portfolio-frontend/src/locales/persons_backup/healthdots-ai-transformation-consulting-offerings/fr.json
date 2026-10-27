@@ -2,6 +2,7 @@
   "common": {
     "siteName": "HealthDots Solutions",
     "baseTitle": "HealthDots Solutions | Transformation IA pragmatique",
+    "logoSrc": "/img/{person_id}/Logo_healthdots_1.png",
     "nav": [
       {
         "label": "Offres",

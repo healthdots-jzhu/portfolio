@@ -6,7 +6,7 @@ import './Navbar.css';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { personId } = useParams();
-  const { t, language, setLanguage, availableLanguages, personId: contextPersonId, versionId } = useTranslations();
+  const { t, language, setLanguage, availableLanguages, personId: contextPersonId, versionId, resolvePath } = useTranslations();
 
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
@@ -15,6 +15,8 @@ const Navbar = () => {
   const navConfig = Array.isArray(rawNav) ? rawNav : [];
   const languageLabel = t('common.languageLabel');
   const languageNames = t('common.languages') || {};
+  // Optional logo image shown before the site name (opt-in via common.logoSrc)
+  const logoSrc = t('common.logoSrc');
 
   // Use personId from context (which handles default route) or from params
   const currentPersonId = personId || contextPersonId;
@@ -48,7 +50,12 @@ const Navbar = () => {
 
   return (
     <nav className="navbar" data-testid="portfolio-navbar">
-      <Link to={currentPersonId ? basePrefix : '/'} className="navbar-logo">{t('common.siteName')}</Link>
+      <Link to={currentPersonId ? basePrefix : '/'} className={`navbar-logo${logoSrc ? ' navbar-logo--with-image' : ''}`}>
+        {logoSrc && (
+          <img src={resolvePath(logoSrc)} alt="" className="navbar-logo-image" data-testid="portfolio-navbar-logo" />
+        )}
+        {t('common.siteName')}
+      </Link>
       <div className="navbar-controls"></div>
       <div className="navbar-right">
         <div className="language-select-wrapper">
