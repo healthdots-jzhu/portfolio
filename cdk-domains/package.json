@@ -1,0 +1,29 @@
+{
+  "name": "healthdots-domains-cdk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Certificates, CloudFront redirect and DNS for the HealthDots domains",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy"
+  },
+  "dependencies": {
+    "@aws-sdk/client-acm": "^3.1158.0",
+    "@aws-sdk/client-cloudformation": "^3.1158.0",
+    "@aws-sdk/client-cloudfront": "^3.1158.0",
+    "@aws-sdk/client-route-53": "^3.1158.0",
+    "aws-cdk-lib": "^2.275.0",
+    "constructs": "^10.8.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.164",
+    "@types/node": "^26.6.5",
+    "aws-cdk": "^2.1146.1",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

@@ -29,8 +29,8 @@
       "copyright": "© 2026 HealthDots Solutions. Practical AI transformation.",
       "links": [
         {
-          "label": "healthdots.ca",
-          "url": "https://healthdots.ca"
+          "label": "healthdots.net",
+          "url": "https://www.healthdots.net"
         }
       ]
     },
@@ -377,7 +377,7 @@
       "buttons": [
         {
           "label": "Book a working session",
-          "path": "https://healthdots.ca",
+          "path": "https://www.healthdots.net",
           "primary": true
         },
         {
